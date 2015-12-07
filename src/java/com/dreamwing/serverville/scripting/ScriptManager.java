@@ -1,0 +1,174 @@
+package com.dreamwing.serverville.scripting;
+
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.Semaphore;
+
+import javax.script.ScriptException;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.dreamwing.serverville.util.FileUtil;
+
+
+public class ScriptManager
+{
+	public static final int MAX_ENGINES=4;
+	
+	private static final Logger l = LogManager.getLogger(ScriptManager.class);
+	
+	public static String EngineBaseSource;
+	
+	private static Semaphore EngineLock;
+	private static ScriptEngineContext[] Engines;
+	
+	private static volatile int ScriptVersion=0;
+	
+	private static Set<String> ClientHandlers;
+	private static Set<String> AdminHandlers;
+	private static Set<String> AgentHandlers;
+	
+	public static void init() throws Exception
+	{
+		ClassLoader loader = ScriptManager.class.getClassLoader();
+		EngineBaseSource = FileUtil.readStreamToString(loader.getResourceAsStream("javascript/engine.js"), StandardCharsets.UTF_8);
+		
+		Engines = new ScriptEngineContext[MAX_ENGINES];
+		EngineLock = new Semaphore(MAX_ENGINES, true);
+
+		updateHandlerSets();
+		
+		try
+		{
+			getEngine().invokeFunction("globalInit");
+		} catch (NoSuchMethodException e) {
+			// No function, no problem
+		} catch (ScriptException e) {
+			l.error("Error executing script globalInit: ", e);
+		}
+	}
+	
+	public static ScriptEngineContext getEngine() throws InterruptedException
+	{
+		ScriptEngineContext engine = getEngineContext();
+		
+		if(!engine.init(ScriptVersion))
+		{
+			l.error("Error creating new engine");
+			EngineLock.release();
+			return null;
+		}
+		
+		return engine;
+	}
+	
+	private static ScriptEngineContext getEngineContext() throws InterruptedException
+	{
+		EngineLock.acquire();
+		synchronized(ScriptManager.class)
+		{
+			for(int i = 0; i<MAX_ENGINES; i++)
+			{
+				ScriptEngineContext info = Engines[i];
+				
+				if(info == null)
+				{
+					info = new ScriptEngineContext();
+					Engines[i] = info;
+				}
+				else if(info.InUse)
+				{
+					continue;
+				}
+				
+				info.InUse = true;
+				return info;
+			}
+		}
+		EngineLock.release();
+		
+		l.error("No engine available, something is out of sync");
+		
+		return null;
+	}
+	
+	public static void returnEngine(ScriptEngineContext engineInfo)
+	{
+		if(engineInfo == null)
+			return;
+		
+		engineInfo.InUse = false;
+		EngineLock.release();
+	}
+	
+	public static void scriptsUpdated()
+	{
+		ScriptVersion++;
+		
+		updateHandlerSets();
+	}
+	
+	private static void updateHandlerSets()
+	{
+		ScriptEngineContext ctx = new ScriptEngineContext();
+		ctx.init(ScriptVersion);
+		
+		Set<String> clientHandlers = new HashSet<String>();
+
+		String[] clientHandlerList = ctx.getClientHandlerList();
+		if(clientHandlerList != null)
+		{
+			for(String handlerName : clientHandlerList)
+			{
+				clientHandlers.add(handlerName);
+			}
+		}
+		
+		ClientHandlers = clientHandlers;
+		
+		
+		Set<String> agentHandlers = new HashSet<String>();
+		
+		String[] agentHandlerList = ctx.getAgentHandlerList();
+		if(agentHandlerList != null)
+		{
+			for(String handlerName : agentHandlerList)
+			{
+				agentHandlers.add(handlerName);
+			}
+		}
+		
+		AgentHandlers = agentHandlers;
+		
+		Set<String> adminHandlers = new HashSet<String>();
+		
+		String[] adminHandlerList = ctx.getAdminHandlerList();
+		if(adminHandlerList != null)
+		{
+			for(String handlerName : adminHandlerList)
+			{
+				adminHandlers.add(handlerName);
+			}
+		}
+		
+		AdminHandlers = adminHandlers;
+	}
+	
+	public static boolean hasClientHandler(String apiType)
+	{
+		return ClientHandlers.contains(apiType);
+	}
+	
+	public static boolean hasAgentHandler(String apiType)
+	{
+		return AgentHandlers.contains(apiType);
+	}
+	
+	public static boolean hasAdminHandler(String apiType)
+	{
+		return AdminHandlers.contains(apiType);
+	}
+	
+}

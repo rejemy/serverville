@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn" nam="Serverville">
+  <Properties>
+    <Property name="logPath">data/logs</Property>
+    <Property name="logFilePath">${logPath}/app.log</Property>
+    <Property name="logArchivePath">${logPath}/app-%d{yyyy-MM-dd}-%i.log</Property>
+    <Property name="basePattern">%d ${hostName} %5p [%t] %m%n</Property>
+    <Property name="errorPattern">%d ${hostName} %5p [%t:%l] %m%n</Property>
+    <Property name="archiveSize">20 KB</Property>
+  </Properties>
+  <Appenders>
+    <RollingLuceneFile name="file" fileName="${logFilePath}" filePattern="${logArchivePath}">
+      <PatternLayout pattern="${basePattern}"/>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${archiveSize}"/>
+      </Policies>
+      <Filters>
+		<ThresholdFilter level="TRACE"/>
+		<ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="NEUTRAL"/>
+	  </Filters>
+    </RollingLuceneFile>
+    <RollingLuceneFile name="file_err" fileName="${logFilePath}" filePattern="${logArchivePath}">
+      <PatternLayout pattern="${errorPattern}"/>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${archiveSize}"/>
+      </Policies>
+      <Filters>
+		<ThresholdFilter level="ERROR"/>
+	  </Filters>
+    </RollingLuceneFile>
+    <Console name="console" target="SYSTEM_OUT">
+      <PatternLayout pattern="${basePattern}"/>
+      <Filters>
+		<ThresholdFilter level="TRACE"/>
+		<ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="NEUTRAL"/>
+	  </Filters>
+    </Console>
+    <Console name="console_err" target="SYSTEM_OUT">
+      <PatternLayout pattern="${errorPattern}"/>
+      <Filters>
+		<ThresholdFilter level="ERROR"/>
+	  </Filters>
+    </Console>
+  </Appenders>
+  <Loggers>
+    <logger name="com.dreamwing" level="debug"/>
+    <Root level="info">
+      <AppenderRef ref="console"/>
+      <AppenderRef ref="console_err"/>
+      <AppenderRef ref="file"/>
+      <AppenderRef ref="file_err"/>
+    </Root>
+  </Loggers>
+</Configuration>
