@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.dreamwing.serverville.client.ClientMessages.*;
-import com.dreamwing.serverville.data.DataItemVisibility;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.ServervilleUser;
@@ -120,7 +119,7 @@ public class ClientAPI {
 		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException("Invalid key name: "+request.key);
 		
-		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(request.key, request.data_type, request.value, request.visibility);
+		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(request.key, request.data_type, request.value);
 		long updateTime = KeyDataManager.saveKey(info.User.getId(), item);
 		
 		reply.updated_at = updateTime;
@@ -138,7 +137,7 @@ public class ClientAPI {
 			if(!KeyDataItem.isValidKeyname(data.key))
 				throw new JsonApiException("Invalid key name: "+data.key);
 			
-			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value, data.visibility);
+			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
 			itemList.add(item);
 		}
 		
@@ -159,7 +158,6 @@ public class ClientAPI {
 		data.data_type = JsonDataType.fromKeyDataType(item.datatype);
 		data.created = item.created;
 		data.modified = item.modified;
-		data.visibility = item.visibility;
 		return data;
 	}
 	
@@ -221,18 +219,15 @@ public class ClientAPI {
 		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException("Invalid key name: "+request.key);
 		
+		// If it's not our data, we can't see it
+		if(!request.id.equals(info.User.getId()) && KeyDataItem.isPrivateKeyname(request.key))
+		{
+			throw new JsonApiException("Private key: "+request.key);
+		}
+		
 		KeyDataItem item = KeyDataManager.loadKey(request.id, request.key);
 		if(item == null)
 			throw new JsonApiException("Key not found");
-		
-		if(item.visibility == DataItemVisibility.PRIVATE)
-		{
-			// If it's not our data, we can't see it
-			if(!request.id.equals(info.User.getId()))
-			{
-				throw new JsonApiException("Key not found");
-			}
-		}
 		
 		return KeyDataItemToDataItemReply(request.id, item);
 	}
@@ -243,6 +238,14 @@ public class ClientAPI {
 		if(request.id == null || request.id.length() == 0)
 			throw new JsonApiException("Missing id");
 		
+		boolean isMe = request.id.equals(info.User.getId());
+		
+		for(String keyname : request.keys)
+		{
+			if(!isMe && KeyDataItem.isPrivateKeyname(keyname))
+				throw new JsonApiException("Private key: "+keyname);
+		}
+		
 		List<KeyDataItem> items = KeyDataManager.loadKeysSince(request.id, request.keys, (long)request.since);
 		if(items == null)
 			throw new JsonApiException("Key not found");
@@ -250,16 +253,10 @@ public class ClientAPI {
 		UserDataReply reply = new UserDataReply();
 		
 		reply.values = new HashMap<String,DataItemReply>();
-		
-		boolean isMe = request.id.equals(info.User.getId());
-		
+
 		for(KeyDataItem item : items)
 		{
-			if(item.visibility == DataItemVisibility.PRIVATE)
-			{
-				if(!isMe)
-					continue;
-			}
+
 			DataItemReply data = KeyDataItemToDataItemReply(request.id, item);
 			reply.values.put(data.key, data);
 		}
@@ -284,10 +281,9 @@ public class ClientAPI {
 		
 		for(KeyDataItem item : items)
 		{
-			if(item.visibility == DataItemVisibility.PRIVATE)
+			if(!isMe && KeyDataItem.isPrivateKeyname(item.key))
 			{
-				if(!isMe)
-					continue;
+				continue;
 			}
 			
 			DataItemReply data = KeyDataItemToDataItemReply(info.User.getId(), item);

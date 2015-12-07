@@ -5,21 +5,15 @@ import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
 
-import com.dreamwing.serverville.data.DataItemVisibility;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.db.KeyDataManager.StringFlavor;
 
 public class JsonDataDecoder {
 
-	public static KeyDataItem MakeKeyDataFromJson(String keyname, JsonDataType userSuppliedType, Object data, DataItemVisibility visibility) throws Exception
+	public static KeyDataItem MakeKeyDataFromJson(String keyname, JsonDataType userSuppliedType, Object data) throws Exception
 	{
 		KeyDataItem item = new KeyDataItem(keyname);
-		
-		if(visibility == null)
-			visibility = DataItemVisibility.PRIVATE;
-		
-		item.visibility = visibility;
 		
 		if(userSuppliedType != null)
 		{

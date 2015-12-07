@@ -2,10 +2,9 @@ package com.dreamwing.serverville.agent;
 
 import java.sql.SQLException;
 
-import com.dreamwing.serverville.agent.AgentMessages.SetGlobalDataRequest;
 import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.agent.AgentMessages.UserInfoRequest;
-import com.dreamwing.serverville.client.ClientMessages.SetDataReply;
+import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.db.KeyDataManager;
@@ -40,20 +39,17 @@ public class AgentScriptAPI
 		return info;
 	}
 	
-	public static SetDataReply SetDataKey(SetGlobalDataRequest request) throws JsonApiException, SQLException, Exception
+	public static double SetDataKey(String id, String key, Object value, JsonDataType data_type) throws Exception
 	{
-		SetDataReply reply = new SetDataReply();
+		if(id == null)
+			throw new JsonApiException("Invalid id: "+id);
 		
-		if(request.id == null)
-			throw new JsonApiException("Invalid id: "+request.id);
+		if(!KeyDataItem.isValidKeyname(key))
+			throw new JsonApiException("Invalid key name: "+key);
 		
-		if(!KeyDataItem.isValidKeyname(request.key))
-			throw new JsonApiException("Invalid key name: "+request.key);
+		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, data_type, value);
+		long updateTime = KeyDataManager.saveKey(id, item);
 		
-		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(request.key, request.data_type, request.value, request.visibility);
-		long updateTime = KeyDataManager.saveKey(request.id, item);
-		
-		reply.updated_at = updateTime;
-		return reply;
+		return updateTime;
 	}
 }

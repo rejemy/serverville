@@ -45,7 +45,7 @@ public class AgentAPI
 		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException("Invalid key name: "+request.key);
 		
-		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(request.key, request.data_type, request.value, request.visibility);
+		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(request.key, request.data_type, request.value);
 		long updateTime = KeyDataManager.saveKey(request.id, item);
 		
 		reply.updated_at = updateTime;
@@ -66,7 +66,7 @@ public class AgentAPI
 			if(!KeyDataItem.isValidKeyname(data.key))
 				throw new JsonApiException("Invalid key name: "+data.key);
 			
-			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value, data.visibility);
+			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
 			itemList.add(item);
 		}
 		
@@ -85,7 +85,6 @@ public class AgentAPI
 		data.data_type = JsonDataType.fromKeyDataType(item.datatype);
 		data.created = item.created;
 		data.modified = item.modified;
-		data.visibility = item.visibility;
 		return data;
 	}
 	

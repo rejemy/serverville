@@ -20,7 +20,6 @@ public class KeyDataItem
 	public KeyDataTypes datatype;
 	public long created;
 	public long modified;
-	public DataItemVisibility visibility;
 	public boolean dirty;
 	public Boolean deleted;
 	
@@ -29,25 +28,22 @@ public class KeyDataItem
 	public KeyDataItem(String key)
 	{
 		this.key = key;
-		this.visibility = DataItemVisibility.PRIVATE;
 	}
 	
-	public KeyDataItem(String key, byte[] data, KeyDataTypes datatype, DataItemVisibility visibility)
+	public KeyDataItem(String key, byte[] data, KeyDataTypes datatype)
 	{
 		this.key = key;
 		this.data = data;
 		this.datatype = datatype;
-		this.visibility = visibility;
 		
 		decode();
 	}
 	
-	public KeyDataItem(String key, Object value, KeyDataTypes datatype, DataItemVisibility visibility)
+	public KeyDataItem(String key, Object value, KeyDataTypes datatype)
 	{
 		this.key = key;
 		this.value = value;
 		this.datatype = datatype;
-		this.visibility = visibility;
 	}
 	
 	public KeyDataItem(ResultSet rs) throws SQLException
@@ -57,8 +53,7 @@ public class KeyDataItem
 		datatype = KeyDataTypes.fromInt(rs.getInt(4));
 		created = rs.getLong(5);
 		modified = rs.getLong(6);
-		visibility = DataItemVisibility.fromByte(rs.getByte(7));
-		deleted = (Boolean)rs.getObject(8);
+		deleted = (Boolean)rs.getObject(7);
 		decode();
 	}
 	
@@ -297,5 +292,12 @@ public class KeyDataItem
 		if(key == null)
 			return false;
 		return ValidKeynameRegex.test(key);
+	}
+	
+	public static boolean isPrivateKeyname(String key)
+	{
+		if(key == null)
+			return false;
+		return key.charAt(0) == '_';
 	}
 }

@@ -11,7 +11,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.dreamwing.serverville.ServervilleMain;
-import com.dreamwing.serverville.data.DataItemVisibility;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataTypes;
 import com.dreamwing.serverville.db.KeyDataResultHandlers.*;
@@ -31,9 +30,9 @@ public class KeyDataManager {
 	public static final int MaxItemBytes = 62000;
 	
 	private static final String UpsertStatement = 
-			"INSERT INTO `keydata_item` (`id`,`key`,`data`,`datatype`,`created`,`modified`,`visibility`) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `data`=VALUES(`data`), `datatype`=VALUES(`datatype`), `modified`=VALUES(`modified`), `visibility`=VALUES(`visibility`), `deleted`=NULL;";
+			"INSERT INTO `keydata_item` (`id`,`key`,`data`,`datatype`,`created`,`modified`) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `data`=VALUES(`data`), `datatype`=VALUES(`datatype`), `modified`=VALUES(`modified`), `deleted`=NULL;";
 	private static final String UpsertWithDeleteStatement = 
-			"INSERT INTO `keydata_item` (`id`,`key`,`data`,`datatype`,`created`,`modified`,`visibility`,`deleted`) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `data`=VALUES(`data`), `datatype`=VALUES(`datatype`), `modified`=VALUES(`modified`), `visibility`=VALUES(`visibility`), `deleted`=VALUES(`deleted`);";
+			"INSERT INTO `keydata_item` (`id`,`key`,`data`,`datatype`,`created`,`modified`,`deleted`) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `data`=VALUES(`data`), `datatype`=VALUES(`datatype`), `modified`=VALUES(`modified`), `deleted`=VALUES(`deleted`);";
 	
 	
 	
@@ -73,86 +72,86 @@ public class KeyDataManager {
 		return ServervilleMain.DataRoot.resolve("logs").toFile();
 	}
 	
-	public static long saveKeyNull(String id, String key, DataItemVisibility visibility) throws SQLException
+	public static long saveKeyNull(String id, String key) throws SQLException
 	{
-		return saveKey(id, key, null, KeyDataTypes.NULL, visibility);
+		return saveKey(id, key, null, KeyDataTypes.NULL);
 	}
 	
-	public static long saveKeyValue(String id, String key, boolean value, DataItemVisibility visibility) throws SQLException
+	public static long saveKeyValue(String id, String key, boolean value) throws SQLException
 	{
 		KeyDataTypes t = value ? KeyDataTypes.TRUE : KeyDataTypes.FALSE;
-		return saveKey(id, key, null, t, visibility);
+		return saveKey(id, key, null, t);
 	}
 	
-	public static long saveKeyValue(String id, String key, byte value, DataItemVisibility visibility) throws SQLException
+	public static long saveKeyValue(String id, String key, byte value) throws SQLException
 	{
 		if(value == 0)
-			return saveKey(id, key, null, KeyDataTypes.BYTE_ZERO, visibility);
+			return saveKey(id, key, null, KeyDataTypes.BYTE_ZERO);
 		else if(value == 1)
-			return saveKey(id, key, null, KeyDataTypes.BYTE_ONE, visibility);
+			return saveKey(id, key, null, KeyDataTypes.BYTE_ONE);
 		else
-			return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.BYTE, visibility);
+			return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.BYTE);
 	}
 	
-	public static long saveKeyValue(String id, String key, short value, DataItemVisibility visibility) throws SQLException
+	public static long saveKeyValue(String id, String key, short value) throws SQLException
 	{
 		if(value == 0)
-			return saveKey(id, key, null, KeyDataTypes.SHORT_ZERO, visibility);
+			return saveKey(id, key, null, KeyDataTypes.SHORT_ZERO);
 		else if(value == 1)
-			return saveKey(id, key, null, KeyDataTypes.SHORT_ONE, visibility);
+			return saveKey(id, key, null, KeyDataTypes.SHORT_ONE);
 		else
-			return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.SHORT, visibility);
+			return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.SHORT);
 	}
 	
-	public static long saveKeyValue(String id, String key, int value, DataItemVisibility visibility) throws SQLException
+	public static long saveKeyValue(String id, String key, int value) throws SQLException
 	{
 		if(value == 0)
-			return saveKey(id, key, null, KeyDataTypes.INT_ZERO, visibility);
+			return saveKey(id, key, null, KeyDataTypes.INT_ZERO);
 		else if(value == 1)
-			return saveKey(id, key, null, KeyDataTypes.INT_ONE, visibility);
+			return saveKey(id, key, null, KeyDataTypes.INT_ONE);
 		else
-			return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.INT, visibility);
+			return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.INT);
 	}
 	
-	public static long saveKeyValue(String id, String key, long value, DataItemVisibility visibility) throws SQLException
+	public static long saveKeyValue(String id, String key, long value) throws SQLException
 	{
 		if(value == 0)
-			return saveKey(id, key, null, KeyDataTypes.LONG_ZERO, visibility);
+			return saveKey(id, key, null, KeyDataTypes.LONG_ZERO);
 		else if(value == 1)
-			return saveKey(id, key, null, KeyDataTypes.LONG_ONE, visibility);
+			return saveKey(id, key, null, KeyDataTypes.LONG_ONE);
 		else
-			return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.LONG, visibility);
+			return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.LONG);
 	}
 	
-	public static long saveKeyValue(String id, String key, float value, DataItemVisibility visibility) throws SQLException
+	public static long saveKeyValue(String id, String key, float value) throws SQLException
 	{
 		if(value == 0.0f)
-			return saveKey(id, key, null, KeyDataTypes.FLOAT_ZERO, visibility);
+			return saveKey(id, key, null, KeyDataTypes.FLOAT_ZERO);
 		else if(value == 1.0f)
-			return saveKey(id, key, null, KeyDataTypes.FLOAT_ONE, visibility);
+			return saveKey(id, key, null, KeyDataTypes.FLOAT_ONE);
 		else
-			return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.FLOAT, visibility);
+			return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.FLOAT);
 	}
 	
-	public static long saveKeyValue(String id, String key, double value, DataItemVisibility visibility) throws SQLException
+	public static long saveKeyValue(String id, String key, double value) throws SQLException
 	{
 		if(value == 0.0)
-			return saveKey(id, key, null, KeyDataTypes.DOUBLE_ZERO, visibility);
+			return saveKey(id, key, null, KeyDataTypes.DOUBLE_ZERO);
 		else if(value == 1.0)
-			return saveKey(id, key, null, KeyDataTypes.DOUBLE_ONE, visibility);
+			return saveKey(id, key, null, KeyDataTypes.DOUBLE_ONE);
 		else
-			return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.DOUBLE, visibility);
+			return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.DOUBLE);
 	}
 	
-	public static long saveKeyValue(String id, String key, String value, DataItemVisibility visibility) throws SQLException
+	public static long saveKeyValue(String id, String key, String value) throws SQLException
 	{
-		return saveKeyValue(id, key, value, StringFlavor.TEXT, visibility);
+		return saveKeyValue(id, key, value, StringFlavor.TEXT);
 	}
 	
-	public static long saveKeyValue(String id, String key, String value, StringFlavor flavor, DataItemVisibility visibility) throws SQLException
+	public static long saveKeyValue(String id, String key, String value, StringFlavor flavor) throws SQLException
 	{
 		if(value == null)
-			return saveKey(id, key, null, KeyDataTypes.NULL, visibility);
+			return saveKey(id, key, null, KeyDataTypes.NULL);
 		
 		KeyDataTypes t = KeyDataTypes.STRING;
 		switch(flavor)
@@ -167,23 +166,23 @@ public class KeyDataManager {
 			t = KeyDataTypes.STRING_XML;
 			break;
 		}
-		return saveKey(id, key, ByteEncoder.encode(value), t, visibility);
+		return saveKey(id, key, ByteEncoder.encode(value), t);
 	}
 	
-	public static long saveKeyValue(String id, String key, Date value, DataItemVisibility visibility) throws SQLException
+	public static long saveKeyValue(String id, String key, Date value) throws SQLException
 	{
 		if(value == null)
-			return saveKey(id, key, null, KeyDataTypes.NULL, visibility);
+			return saveKey(id, key, null, KeyDataTypes.NULL);
 		
-		return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.DATETIME, visibility);
+		return saveKey(id, key, ByteEncoder.encode(value), KeyDataTypes.DATETIME);
 	}
 	
-	public static long saveKeyValue(String id, String key, byte[] data, DataItemVisibility visibility) throws SQLException
+	public static long saveKeyValue(String id, String key, byte[] data) throws SQLException
 	{
-		return saveKey(id, key, data, KeyDataTypes.BYTES, visibility);
+		return saveKey(id, key, data, KeyDataTypes.BYTES);
 	}
 	
-	public static long saveKey(String id, String key, byte[] data, KeyDataTypes datatype, DataItemVisibility visibility) throws SQLException
+	public static long saveKey(String id, String key, byte[] data, KeyDataTypes datatype) throws SQLException
 	{
 		if(id == null || id.length() == 0)
 		{
@@ -206,7 +205,7 @@ public class KeyDataManager {
 		long time = System.currentTimeMillis();
 		
 		try {
-			DatabaseManager.getServer().update(UpsertStatement, id, key, data, datatype.toInt(), time, time, visibility.getDbId());
+			DatabaseManager.getServer().update(UpsertStatement, id, key, data, datatype.toInt(), time, time);
 		} catch (SQLException e) {
 			l.error("Error saving item "+id+" to database ", e);
 			throw e;
@@ -234,7 +233,7 @@ public class KeyDataManager {
 		long time = System.currentTimeMillis();
 		
 		try {
-			DatabaseManager.getServer().update(UpsertStatement, id, key.key, key.data, key.datatype.toInt(), time, time, key.visibility.getDbId());
+			DatabaseManager.getServer().update(UpsertStatement, id, key.key, key.data, key.datatype.toInt(), time, time);
 		} catch (SQLException e) {
 			l.error("Error saving item "+id+" to database ", e);
 			throw e;
@@ -278,7 +277,7 @@ public class KeyDataManager {
 			
 			data.encode();
 			
-			params[i++] = new Object[] {id, data.key, data.data, data.datatype.toInt(), time, time, data.visibility.getDbId()};
+			params[i++] = new Object[] {id, data.key, data.data, data.datatype.toInt(), time, time};
 		}
 		
 		try {

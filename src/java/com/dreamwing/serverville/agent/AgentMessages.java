@@ -2,7 +2,6 @@ package com.dreamwing.serverville.agent;
 
 import java.util.List;
 
-import com.dreamwing.serverville.data.DataItemVisibility;
 import com.dreamwing.serverville.data.JsonDataType;
 
 public class AgentMessages
@@ -28,7 +27,6 @@ public class AgentMessages
 		public String key;
 		public Object value;
 		public JsonDataType data_type;
-		public DataItemVisibility visibility;
 	}
 	
 	public static class SetGlobalDataItemRequest
@@ -36,7 +34,6 @@ public class AgentMessages
 		public String key;
 		public Object value;
 		public JsonDataType data_type;
-		public DataItemVisibility visibility;
 	}
 	
 	public static class SetGlobalDataListRequest

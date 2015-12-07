@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.junit.Assert;
 
-import com.dreamwing.serverville.data.DataItemVisibility;
 import com.dreamwing.serverville.data.KeyData;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataTypes;
@@ -33,7 +32,7 @@ public class DataTests {
 		for(int i=0; i<TestItemBytes.length; i++)
 			TestItemBytes[i] = 0;
 		
-		KeyDataManager.saveKey(TestItemID, "testkey", TestItemBytes, KeyDataTypes.BYTES, DataItemVisibility.PRIVATE);
+		KeyDataManager.saveKey(TestItemID, "testkey", TestItemBytes, KeyDataTypes.BYTES);
 	}
 	
 	@Test(order=3)
@@ -42,7 +41,7 @@ public class DataTests {
 		for(int i=0; i<TestItemBytes.length; i++)
 			TestItemBytes[i] = 1;
 		
-		KeyDataManager.saveKey(TestItemID, "testkey", TestItemBytes, KeyDataTypes.BYTES, DataItemVisibility.PRIVATE);
+		KeyDataManager.saveKey(TestItemID, "testkey", TestItemBytes, KeyDataTypes.BYTES);
 	}
 	
 	@Test(order=4)
@@ -71,11 +70,11 @@ public class DataTests {
 	
 	private static KeyDataItem BatchData[] = new KeyDataItem[]
 		{
-			new KeyDataItem("BatchTestKey1", new byte[]{0,0,0}, KeyDataTypes.BYTES, DataItemVisibility.PRIVATE),
-			new KeyDataItem("BatchTestKey2", new byte[]{0,-1,1}, KeyDataTypes.BYTES, DataItemVisibility.PRIVATE),
-			new KeyDataItem("BatchTestKey3", new byte[]{0,-2,2}, KeyDataTypes.BYTES, DataItemVisibility.PRIVATE),
-			new KeyDataItem("BatchTestKey4", new byte[]{0,-3,3}, KeyDataTypes.BYTES, DataItemVisibility.PRIVATE),
-			new KeyDataItem("BatchTestKey5", new byte[]{0,-4,4}, KeyDataTypes.BYTES, DataItemVisibility.PRIVATE)
+			new KeyDataItem("BatchTestKey1", new byte[]{0,0,0}, KeyDataTypes.BYTES),
+			new KeyDataItem("BatchTestKey2", new byte[]{0,-1,1}, KeyDataTypes.BYTES),
+			new KeyDataItem("BatchTestKey3", new byte[]{0,-2,2}, KeyDataTypes.BYTES),
+			new KeyDataItem("BatchTestKey4", new byte[]{0,-3,3}, KeyDataTypes.BYTES),
+			new KeyDataItem("BatchTestKey5", new byte[]{0,-4,4}, KeyDataTypes.BYTES)
 		};
 	
 	private static long Batch1SaveTime;
@@ -110,9 +109,9 @@ public class DataTests {
 	
 	private static KeyDataItem Batch2Data[] = new KeyDataItem[]
 		{
-			new KeyDataItem("BatchTestKey6", new byte[]{0,-6,6}, KeyDataTypes.BYTES, DataItemVisibility.PRIVATE),
-			new KeyDataItem("BatchTestKey7", new byte[]{0,-7,7}, KeyDataTypes.BYTES, DataItemVisibility.PRIVATE),
-			new KeyDataItem("BatchTestKey8", new byte[]{0,-8,8}, KeyDataTypes.BYTES, DataItemVisibility.PRIVATE)
+			new KeyDataItem("BatchTestKey6", new byte[]{0,-6,6}, KeyDataTypes.BYTES),
+			new KeyDataItem("BatchTestKey7", new byte[]{0,-7,7}, KeyDataTypes.BYTES),
+			new KeyDataItem("BatchTestKey8", new byte[]{0,-8,8}, KeyDataTypes.BYTES)
 		};
 	
 	@Test(order=8)
@@ -191,8 +190,8 @@ public class DataTests {
 		KeyData data = new KeyData(TestItemID);
 		data.loadAll();
 		
-		KeyDataManager.saveKeyValue(TestItemID, "str", "yo", DataItemVisibility.PRIVATE);
-		KeyDataManager.saveKeyValue(TestItemID, "testkey", "new", DataItemVisibility.PRIVATE);
+		KeyDataManager.saveKeyValue(TestItemID, "str", "yo");
+		KeyDataManager.saveKeyValue(TestItemID, "testkey", "new");
 		KeyDataManager.deleteKey(TestItemID, "float");
 		
 		data.refresh();

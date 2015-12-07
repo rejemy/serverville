@@ -692,7 +692,8 @@ public class AdminAPI {
 		}
 		
 		try {
-			ScriptEngineContext.makeEngine(scripts);
+			ScriptEngineContext testContext = new ScriptEngineContext();
+			testContext.init(scripts);
 		} catch (ScriptLoadException e) {
 			String errorMessage = e.getCause().getMessage();
 			errorMessage = errorMessage.replaceAll("\\<eval\\>", e.ScriptId);

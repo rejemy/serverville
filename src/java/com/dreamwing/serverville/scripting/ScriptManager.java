@@ -54,9 +54,10 @@ public class ScriptManager
 	{
 		ScriptEngineContext engine = getEngineContext();
 		
-		if(!engine.init(ScriptVersion))
-		{
-			l.error("Error creating new engine");
+		try {
+			engine.init(ScriptVersion);
+		} catch (Exception e) {
+			l.error("Error creating new engine", e);
 			EngineLock.release();
 			return null;
 		}
@@ -113,7 +114,13 @@ public class ScriptManager
 	private static void updateHandlerSets()
 	{
 		ScriptEngineContext ctx = new ScriptEngineContext();
-		ctx.init(ScriptVersion);
+		
+		try {
+			ctx.init(ScriptVersion);
+		} catch (Exception e) {
+			l.error("Couldn't update script handler sets due exception", e);
+			return;
+		}
 		
 		Set<String> clientHandlers = new HashSet<String>();
 

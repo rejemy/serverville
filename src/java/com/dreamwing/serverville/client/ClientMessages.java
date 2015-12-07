@@ -3,7 +3,6 @@ package com.dreamwing.serverville.client;
 import java.util.List;
 import java.util.Map;
 
-import com.dreamwing.serverville.data.DataItemVisibility;
 import com.dreamwing.serverville.data.JsonDataType;
 
 
@@ -46,7 +45,6 @@ public class ClientMessages {
 		public String key;
 		public Object value;
 		public JsonDataType data_type;
-		public DataItemVisibility visibility;
 	}
 	
 	public static class UserDataRequestList
@@ -72,7 +70,6 @@ public class ClientMessages {
 		public JsonDataType data_type;
 		public double created;
 		public double modified;
-		public DataItemVisibility visibility;
 	}
 	
 	public static class KeysRequest

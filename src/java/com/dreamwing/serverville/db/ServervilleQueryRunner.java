@@ -179,7 +179,6 @@ public class ServervilleQueryRunner extends QueryRunner {
         stmt.setObject(4, item.datatype.toInt());
         stmt.setObject(5, time);
         stmt.setObject(6, time);
-        stmt.setObject(7, item.visibility.getDbId());
-        stmt.setObject(8, item.deleted);
+        stmt.setObject(7, item.deleted);
     }
 }
