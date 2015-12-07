@@ -1,0 +1,5 @@
+build.path.exportedFolder=
+build.path.sourceFolder=src/typescript
+compiler.outputDirOption=
+compiler.outputFileOption=res/admin/webroot/lib/pagegraph.js
+eclipse.preferences.version=1
