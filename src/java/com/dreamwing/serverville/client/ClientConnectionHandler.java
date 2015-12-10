@@ -128,10 +128,10 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
     		{
     			lastWrite.addListener(ChannelFutureListener.CLOSE);
     		}
-    		else
-    		{
-    			ctx.close();
-    		}
+    		//else
+    		//{
+    		//	ctx.close();
+    		//}
         }
 	}
 	
@@ -167,6 +167,11 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	
 	private ChannelFuture handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request) throws URISyntaxException, JsonProcessingException
 	{
+		if(request.getMethod() == HttpMethod.OPTIONS)
+    	{
+    		return HttpUtil.sendPreflightApproval(ctx);
+    	}
+		
 		URI uri = new URI(request.getUri());
     	
 		HttpRequestInfo currRequest = new HttpRequestInfo();
@@ -240,10 +245,13 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 				return HttpUtil.sendError(currRequest, "Um", HttpResponseStatus.INTERNAL_SERVER_ERROR);
 			}
 			
-
+			if(reply == null)
+				return null;
 			
 			HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK,
 					reply);
+			
+			response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 			
 			if(reply != null)
 			{

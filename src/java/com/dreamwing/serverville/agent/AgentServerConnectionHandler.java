@@ -142,6 +142,11 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 	
 	private ChannelFuture handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request) throws URISyntaxException, JsonProcessingException
 	{
+		if(request.getMethod() == HttpMethod.OPTIONS)
+    	{
+    		return HttpUtil.sendPreflightApproval(ctx);
+    	}
+		
 		URI uri = new URI(request.getUri());
     	
 		HttpRequestInfo CurrRequest = new HttpRequestInfo();
@@ -214,7 +219,6 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 			}
 			
 
-			
 			HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK,
 					reply);
 			
@@ -223,6 +227,8 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 				HttpUtil.setContentTypeHeader(response, "application/json");
 				HttpHeaders.setContentLength(response, reply.readableBytes());
 			}
+			
+			response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 			
 			return ctx.writeAndFlush(response);
 		}

@@ -75,6 +75,10 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
 
     private ChannelFuture HandleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception
     {
+    	if(request.getMethod() == HttpMethod.OPTIONS)
+    	{
+    		return HttpUtil.sendPreflightApproval(ctx);
+    	}
     	
     	CurrRequest = new HttpRequestInfo();
     	CurrRequest.init(Info, request, SVID.makeSVID());

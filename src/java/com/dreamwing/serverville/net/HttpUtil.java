@@ -17,6 +17,7 @@ import com.squareup.okhttp.Response;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -41,10 +42,23 @@ public class HttpUtil {
 		SharedHttpClient.getConnectionPool().evictAll();
 	}
 	
+	public static ChannelFuture sendPreflightApproval(ChannelHandlerContext ctx)
+	{
+		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+		HttpHeaders.setContentLength(response, 0);
+		
+		response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		response.headers().set(Names.ACCESS_CONTROL_ALLOW_HEADERS, "Content-Type, Authorization");
+		
+		return ctx.writeAndFlush(response);
+	}
+	
 	public static ChannelFuture sendSuccess(HttpRequestInfo req)
 	{
 		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
 		HttpHeaders.setContentLength(response, 0);
+		
+		response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 		
 		return req.Connection.Ctx.writeAndFlush(response);
 	}
@@ -63,6 +77,8 @@ public class HttpUtil {
 		HttpUtil.setContentTypeHeader(response, contentType);
 		HttpHeaders.setContentLength(response, content.readableBytes());
 		
+		response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		
 		return req.Connection.Ctx.writeAndFlush(response);
 	}
 	
@@ -75,6 +91,8 @@ public class HttpUtil {
 		
 		HttpUtil.setContentTypeHeader(response, "application/json");
 		HttpHeaders.setContentLength(response, content.readableBytes());
+		
+		response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 		
 		return req.Connection.Ctx.writeAndFlush(response);
 	}
@@ -96,6 +114,8 @@ public class HttpUtil {
 		
 		HttpUtil.setContentTypeHeader(response, "application/json");
 		HttpHeaders.setContentLength(response, content.readableBytes());
+		
+		response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 		
 		return req.Connection.Ctx.writeAndFlush(response);
 	}

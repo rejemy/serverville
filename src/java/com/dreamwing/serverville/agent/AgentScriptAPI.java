@@ -165,19 +165,5 @@ public class AgentScriptAPI
 		return reply;
 	}
 	
-	/*
-	public ScriptKeyData newData(String id)
-	{
-		ScriptKeyData data = new ScriptKeyData(id);
-		return data;
-	}
 	
-	public ScriptKeyData loadData(String id) throws Exception
-	{
-		ScriptKeyData data = new ScriptKeyData(id);
-		data.refresh();
-		return data;
-	}
-	*/
-
 }
