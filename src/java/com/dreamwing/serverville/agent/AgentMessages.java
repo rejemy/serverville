@@ -18,7 +18,7 @@ public class AgentMessages
 		public String username;
 		public double created;
 		public double modified;
-		public double admin_level;
+		public String admin_level;
 	}
 	
 	public static class SetGlobalDataRequest

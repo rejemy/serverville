@@ -2,7 +2,6 @@ package com.dreamwing.serverville.agent;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import com.dreamwing.serverville.agent.AgentMessages.*;
@@ -12,7 +11,6 @@ import com.dreamwing.serverville.client.ClientMessages.GlobalKeyRequest;
 import com.dreamwing.serverville.client.ClientMessages.GlobalKeysRequest;
 import com.dreamwing.serverville.client.ClientMessages.SetDataReply;
 import com.dreamwing.serverville.client.ClientMessages.UserDataReply;
-import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.HttpUtil.JsonApiException;
@@ -22,20 +20,14 @@ import com.dreamwing.serverville.serialize.JsonDataDecoder;
 
 public class AgentAPI
 {
-	
-	private static AgentScriptAPI ApiInst = new AgentScriptAPI();
+	private static AgentScriptAPI ApiInst = new AgentScriptAPI(null);
 	
 	public static UserInfoReply GetUserInfo(UserInfoRequest request) throws JsonApiException, SQLException, Exception
 	{
-		UserInfoReply info = ApiInst.GetUserInfo(request);
-		if(info == null)
-			throw new JsonApiException("User not found");
-
-		
-		return info;
+		return AgentShared.getUserInfo(request.id, request.username);
 	}
 	
-	public static SetDataReply SetDataKey(SetGlobalDataRequest request) throws JsonApiException, SQLException, Exception
+	public static SetDataReply SetDataKey(SetGlobalDataRequest request) throws Exception
 	{
 		SetDataReply reply = new SetDataReply();
 		
@@ -49,6 +41,7 @@ public class AgentAPI
 		long updateTime = KeyDataManager.saveKey(request.id, item);
 		
 		reply.updated_at = updateTime;
+		
 		return reply;
 	}
 	
@@ -76,75 +69,25 @@ public class AgentAPI
 		return reply;
 	}
 	
-	private static DataItemReply KeyDataItemToDataItemReply(String id, KeyDataItem item)
-	{
-		DataItemReply data = new DataItemReply();
-		data.id = id;
-		data.key = item.key;
-		data.value = item.asObject();
-		data.data_type = JsonDataType.fromKeyDataType(item.datatype);
-		data.created = item.created;
-		data.modified = item.modified;
-		return data;
-	}
+	
 	
 	public static DataItemReply GetDataKey(GlobalKeyRequest request) throws JsonApiException, SQLException
 	{
-		if(request.id == null || request.id.length() == 0)
-			throw new JsonApiException("Missing id");
-
-		if(!KeyDataItem.isValidKeyname(request.key))
-			throw new JsonApiException("Invalid key name: "+request.key);
-		
-		KeyDataItem item = KeyDataManager.loadKey(request.id, request.key);
-		if(item == null)
-			throw new JsonApiException("Key not found");
-		
-		return KeyDataItemToDataItemReply(request.id, item);
+		return ApiInst.getDataKey(request.id, request.key);
 	}
 	
 	
 	public static UserDataReply GetDataKeys(GlobalKeysRequest request) throws JsonApiException, SQLException
 	{
-		if(request.id == null || request.id.length() == 0)
-			throw new JsonApiException("Missing id");
-		
-		List<KeyDataItem> items = KeyDataManager.loadKeysSince(request.id, request.keys, (long)request.since);
-		if(items == null)
-			throw new JsonApiException("Key not found");
-		
 		UserDataReply reply = new UserDataReply();
-		
-		reply.values = new HashMap<String,DataItemReply>();
-		
-		for(KeyDataItem item : items)
-		{
-			DataItemReply data = KeyDataItemToDataItemReply(request.id, item);
-			reply.values.put(data.key, data);
-		}
-		
+		reply.values = ApiInst.getDataKeys(request.id, request.keys, request.since, request.include_deleted);
 		return reply;
 	}
 	
 	public static UserDataReply GetAllDataKeys(AllGlobalKeysRequest request) throws JsonApiException, SQLException
 	{
-		if(request.id == null || request.id.length() == 0)
-			throw new JsonApiException("Missing id");
-		
-		List<KeyDataItem> items = KeyDataManager.loadAllKeysSince(request.id, (long)request.since);
-		if(items == null)
-			throw new JsonApiException("Key not found");
-		
 		UserDataReply reply = new UserDataReply();
-		
-		reply.values = new HashMap<String,DataItemReply>();
-		
-		for(KeyDataItem item : items)
-		{
-			DataItemReply data = KeyDataItemToDataItemReply(request.id, item);
-			reply.values.put(data.key, data);
-		}
-		
+		reply.values = ApiInst.getAllDataKeys(request.id, request.since, request.include_deleted);
 		return reply;
 	}
 }

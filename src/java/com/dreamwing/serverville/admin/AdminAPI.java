@@ -325,7 +325,7 @@ public class AdminAPI {
 		String email = req.getOneBody("email", null);
 		
 		String adminLevelStr = req.getOneBody("admin_level", "user");
-		int adminLevel = parseAdminLevel(adminLevelStr);
+		int adminLevel = ServervilleUser.parseAdminLevel(adminLevelStr);
 		if(adminLevel < 0)
 			return HttpUtil.sendError(req, "Invalid user level: "+adminLevelStr, HttpResponseStatus.BAD_REQUEST);
 
@@ -340,24 +340,7 @@ public class AdminAPI {
 		return HttpUtil.sendJson(req, reply);
 	}
 	
-	private static int parseAdminLevel(String adminLevelStr)
-	{
-		switch(adminLevelStr)
-		{
-		case "user":
-			return ServervilleUser.AdminLevel_User;
-		case "readOnlyAgent":
-			return ServervilleUser.AdminLevel_AgentReadOnly;
-		case "agent":
-			return ServervilleUser.AdminLevel_Agent;
-		case "readOnlyAdmin":
-			return ServervilleUser.AdminLevel_AdminReadOnly;
-		case "admin":
-			return ServervilleUser.AdminLevel_Admin;
-		default:
-			return -1;
-		}
-	}
+
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
 	public static ChannelFuture deleteUser(HttpRequestInfo req) throws Exception
@@ -443,7 +426,7 @@ public class AdminAPI {
 			return HttpUtil.sendError(req, "User not found: "+userId, HttpResponseStatus.BAD_REQUEST);
 		}
 		
-		int adminLevel = parseAdminLevel(adminLevelStr);
+		int adminLevel = ServervilleUser.parseAdminLevel(adminLevelStr);
 		if(adminLevel < 0)
 			return HttpUtil.sendError(req, "Invalid user level: "+adminLevelStr, HttpResponseStatus.BAD_REQUEST);
 		

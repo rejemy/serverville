@@ -16,6 +16,7 @@ import com.dreamwing.serverville.data.KeyDataTypes;
 import com.dreamwing.serverville.db.KeyDataResultHandlers.*;
 import com.dreamwing.serverville.net.HttpUtil.JsonApiException;
 import com.dreamwing.serverville.serialize.ByteEncoder;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class KeyDataManager {
 
@@ -214,7 +215,7 @@ public class KeyDataManager {
 		return time;
 	}
 	
-	public static long saveKey(String id, KeyDataItem key) throws SQLException
+	public static long saveKey(String id, KeyDataItem key) throws SQLException, JsonProcessingException
 	{
 		if(id == null || id.length() == 0)
 		{
@@ -242,7 +243,7 @@ public class KeyDataManager {
 		return time;
 	}
 	
-	public static long saveKeys(String id, Collection<KeyDataItem> keys) throws SQLException
+	public static long saveKeys(String id, Collection<KeyDataItem> keys) throws SQLException, JsonProcessingException
 	{
 		if(id == null || id.length() == 0)
 		{
@@ -382,6 +383,11 @@ public class KeyDataManager {
 	
 	public static List<KeyDataItem> loadKeys(String id, Collection<String> keys) throws SQLException, JsonApiException
 	{
+		return loadKeys(id, keys, false);
+	}
+	
+	public static List<KeyDataItem> loadKeys(String id, Collection<String> keys, boolean includeDeleted) throws SQLException, JsonApiException
+	{
 		if(id == null || id.length() == 0)
 		{
 			l.error("Data item has invalid id: "+id);
@@ -396,8 +402,15 @@ public class KeyDataManager {
 		
 		try {
 			List<KeyDataItem> results = null;
+
+			String queryStr = null;
+			
 			// Key names are not SQL escaped here, so we have to be really dang sure they've been validated
-			String queryStr = "SELECT * FROM `keydata_item` WHERE `id`=? AND `key` IN "+collectionToList(keys)+" AND `deleted` IS NULL;";
+			if(includeDeleted)
+				queryStr = "SELECT * FROM `keydata_item` WHERE `id`=? AND `key` IN "+collectionToList(keys)+";";
+			else
+				queryStr = "SELECT * FROM `keydata_item` WHERE `id`=? AND `key` IN "+collectionToList(keys)+" AND `deleted` IS NULL;";
+			
 			results = DatabaseManager.getServer().query(queryStr, ItemListHandler, id);
 			return results;
 		} catch (SQLException e) {
@@ -407,6 +420,11 @@ public class KeyDataManager {
 	}
 	
 	public static List<KeyDataItem> loadKeysSince(String id, Collection<String> keys, long time) throws SQLException, JsonApiException
+	{
+		return loadKeysSince(id, keys, time, false);
+	}
+	
+	public static List<KeyDataItem> loadKeysSince(String id, Collection<String> keys, long time, boolean includeDeleted) throws SQLException, JsonApiException
 	{
 		if(time <= 0)
 			return loadKeys(id, keys);
@@ -425,8 +443,15 @@ public class KeyDataManager {
 		
 		try {
 			List<KeyDataItem> results = null;
+			
+			String queryStr = null;
+			
 			// Key names are not SQL escaped here, so we have to be really dang sure they've been validated
-			String queryStr = "SELECT * FROM `keydata_item` WHERE `id`=? AND `key` IN "+collectionToList(keys)+" AND `modified`>? AND `deleted` IS NULL;";
+			if(includeDeleted)
+				queryStr = "SELECT * FROM `keydata_item` WHERE `id`=? AND `key` IN "+collectionToList(keys)+" AND `modified`>?;";
+			else
+				queryStr = "SELECT * FROM `keydata_item` WHERE `id`=? AND `key` IN "+collectionToList(keys)+" AND `modified`>? AND `deleted` IS NULL;";
+			
 			results = DatabaseManager.getServer().query(queryStr, ItemListHandler, id, time);
 			return results;
 		} catch (SQLException e) {

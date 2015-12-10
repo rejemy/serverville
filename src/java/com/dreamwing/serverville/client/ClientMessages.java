@@ -72,6 +72,11 @@ public class ClientMessages {
 		public double modified;
 	}
 	
+	public static class DataItemExtendedReply extends DataItemReply
+	{
+		public boolean deleted;
+	}
+	
 	public static class KeysRequest
 	{
 		public List<String> keys;
@@ -100,12 +105,14 @@ public class ClientMessages {
 		public String id;
 		public List<String> keys;
 		public double since;
+		public boolean include_deleted;
 	}
 	
 	public static class AllGlobalKeysRequest
 	{
 		public String id;
 		public double since;
+		public boolean include_deleted;
 	}
 	
 	/*

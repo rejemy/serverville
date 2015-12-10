@@ -6,6 +6,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.dreamwing.serverville.agent.AgentShared;
 import com.dreamwing.serverville.net.ApiNotFoundException;
 import com.dreamwing.serverville.net.NotAuthenticatedException;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
@@ -106,7 +107,7 @@ public class ClientDispatcher {
 			ScriptEngineContext context = ScriptManager.getEngine();
 			try
 			{
-				return context.invokeClientHandler(messageType, messageData, info.User);
+				return context.invokeClientHandler(messageType, messageData, AgentShared.userToUserInfo(info.User));
 			}
 			finally
 			{

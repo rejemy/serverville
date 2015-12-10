@@ -45,7 +45,14 @@ public class KeyData {
 		
 		for(KeyDataItem item : data)
 		{
-			Keys.put(item.key, item);
+			if(item.isDeleted())
+			{
+				Keys.remove(item.key);
+			}
+			else
+			{
+				Keys.put(item.key, item);
+			}
 			if(item.modified > MostRecent)
 				MostRecent = item.modified;
 		}

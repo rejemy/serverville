@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.dreamwing.serverville.client.ClientMessages.*;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
@@ -16,6 +19,8 @@ import com.dreamwing.serverville.serialize.JsonDataDecoder;
 import com.dreamwing.serverville.util.PasswordUtil;
 
 public class ClientAPI {
+	
+	private static final Logger l = LogManager.getLogger(ClientAPI.class);
 	
 	@ClientHandlerOptions(auth=false)
 	public static SignInReply SignIn(SignIn request, ClientMessageInfo info) throws JsonApiException, Exception
@@ -154,7 +159,15 @@ public class ClientAPI {
 		DataItemReply data = new DataItemReply();
 		data.id = id;
 		data.key = item.key;
-		data.value = item.asObject();
+		try
+		{
+			data.value = item.asDecodedObject();
+		}
+		catch(Exception e)
+		{
+			l.error("Exception decoding JSON value: ",e);
+			data.value = "<error>";
+		}
 		data.data_type = JsonDataType.fromKeyDataType(item.datatype);
 		data.created = item.created;
 		data.modified = item.modified;

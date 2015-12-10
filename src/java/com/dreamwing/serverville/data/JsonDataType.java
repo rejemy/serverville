@@ -11,7 +11,8 @@ public enum JsonDataType {
 	JSON("json"),
 	XML("xml"),
 	DATETIME("datetime"),
-	BYTES("bytes");
+	BYTES("bytes"),
+	OBJECT("object");
 	
 	private final String value;
 	
@@ -72,6 +73,8 @@ public enum JsonDataType {
 			case BYTES:
 			case JAVA_SERIALIZED:
 				return JsonDataType.BYTES;
+			case JSON:
+				return JsonDataType.OBJECT;
 			default:
 				return null;
 		}

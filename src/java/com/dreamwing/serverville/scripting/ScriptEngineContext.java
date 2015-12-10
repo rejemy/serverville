@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.data.ServervilleUser;
-
+import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.agent.AgentScriptAPI;
 
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
@@ -27,7 +27,7 @@ public class ScriptEngineContext {
 	public volatile boolean InUse=false;
 	private int Version;
 	
-	private ScriptObjectMirror JsonDecoder;
+	private ScriptObjectMirror JsonApi;
 	
 	private ScriptObjectMirror ClientHandlers;
 	private ScriptObjectMirror AdminHandlers;
@@ -62,8 +62,7 @@ public class ScriptEngineContext {
 	{
 		makeNashornEngine();
 		
-		ScriptObjectMirror jsonAPI = (ScriptObjectMirror)Engine.get("JSON");
-		JsonDecoder = (ScriptObjectMirror)jsonAPI.get("parse");
+		JsonApi = (ScriptObjectMirror)Engine.get("JSON");
 		
 		try
 		{
@@ -74,7 +73,7 @@ public class ScriptEngineContext {
 			throw new ScriptLoadException("engine.js", e);
 		}
 		
-		Engine.put("api", new AgentScriptAPI());
+		Engine.put("api", new AgentScriptAPI(this));
 		
 		for(ScriptData script : userScripts)
 		{
@@ -139,6 +138,32 @@ public class ScriptEngineContext {
     {
 		return Engine.invokeFunction(name, args);
     }
+	
+	public Object decodeJSON(String json) throws ScriptException
+	{
+		try
+		{
+			return Engine.invokeMethod(JsonApi, "parse", json);
+		}
+		catch(NoSuchMethodException e)
+		{
+			l.error("No parse method on JSON object, what the what?");
+			return null;
+		}
+	}
+	
+	public String encodeJSON(Object value) throws ScriptException
+	{
+		try
+		{
+			return (String)Engine.invokeMethod(JsonApi, "stringify", value);
+		}
+		catch(NoSuchMethodException e)
+		{
+			l.error("No stringify method on JSON object, what the what?");
+			return null;
+		}
+	}
 
 	public String[] getClientHandlerList()
 	{
@@ -149,9 +174,9 @@ public class ScriptEngineContext {
 	}
 	
 
-	public Object invokeClientHandler(String apiId, String jsonInput, ServervilleUser user) throws NoSuchMethodException, ScriptException
+	public Object invokeClientHandler(String apiId, String jsonInput, UserInfoReply user) throws NoSuchMethodException, ScriptException
 	{
-		Object decodedInput = JsonDecoder.call(null, jsonInput);
+		Object decodedInput = decodeJSON(jsonInput);
 		
 		try
 		{
@@ -177,7 +202,7 @@ public class ScriptEngineContext {
 
 	public Object invokeAdminHandler(String apiId, String jsonInput, ServervilleUser user) throws Exception
 	{
-		Object decodedInput = JsonDecoder.call(null, jsonInput);
+		Object decodedInput = decodeJSON(jsonInput);
 		
 		try
 		{
@@ -203,7 +228,7 @@ public class ScriptEngineContext {
 
 	public Object invokeAgentHandler(String apiId, String jsonInput) throws Exception
 	{
-		Object decodedInput = JsonDecoder.call(null, jsonInput);
+		Object decodedInput = decodeJSON(jsonInput);
 		
 		try
 		{

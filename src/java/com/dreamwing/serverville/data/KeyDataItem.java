@@ -1,19 +1,24 @@
 package com.dreamwing.serverville.data;
 
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.db.KeyDataManager.StringFlavor;
 import com.dreamwing.serverville.serialize.ByteDecoder;
 import com.dreamwing.serverville.serialize.ByteEncoder;
+import com.dreamwing.serverville.util.JSON;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 
 public class KeyDataItem
 {
+	
 	public String key;
 	public Object value;
 	public byte[] data;
@@ -54,6 +59,7 @@ public class KeyDataItem
 		created = rs.getLong(5);
 		modified = rs.getLong(6);
 		deleted = (Boolean)rs.getObject(7);
+		
 		decode();
 	}
 	
@@ -82,7 +88,19 @@ public class KeyDataItem
 		dirty = true;
 	}
 	
-	public Object asObject() { return value; }
+	public Object asObject()
+	{
+		return value;
+	}
+	
+	public Object asDecodedObject() throws JsonProcessingException, IOException
+	{
+		if(datatype == KeyDataTypes.JSON)
+		{
+			return asJsonObject();
+		}
+		return value;
+	}
 	
 	public void setDeleted(boolean del)
 	{
@@ -277,6 +295,29 @@ public class KeyDataItem
 		else
 			datatype = KeyDataTypes.BYTES;
 		dirty = true;
+	}
+	
+	public void setJsonObject(Object val) throws JsonProcessingException
+	{
+		if(val == null)
+		{
+			value = null;
+			datatype = KeyDataTypes.NULL;
+		}
+		else
+		{
+			value = JSON.serializeToString(val);
+			datatype = KeyDataTypes.JSON;
+		}
+		dirty = true;
+	}
+	
+	public Object asJsonObject() throws JsonProcessingException, IOException
+	{
+		if(value == null)
+			return null;
+		
+		return JSON.deserialize((String)value);
 	}
 	
 	public byte[] asBytes()

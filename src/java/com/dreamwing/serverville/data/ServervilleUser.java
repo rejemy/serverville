@@ -462,4 +462,42 @@ public class ServervilleUser {
 		return DatabaseManager.ServervilleUserDao.queryBuilder().where().isNull("username").and().lt("sessionid", sessionId).query();
 	}
 	
+	public static int parseAdminLevel(String adminLevelStr)
+	{
+		switch(adminLevelStr)
+		{
+		case "user":
+			return ServervilleUser.AdminLevel_User;
+		case "readOnlyAgent":
+			return ServervilleUser.AdminLevel_AgentReadOnly;
+		case "agent":
+			return ServervilleUser.AdminLevel_Agent;
+		case "readOnlyAdmin":
+			return ServervilleUser.AdminLevel_AdminReadOnly;
+		case "admin":
+			return ServervilleUser.AdminLevel_Admin;
+		default:
+			return -1;
+		}
+	}
+	
+	public static String adminLevelToString(int adminLevel)
+	{
+		switch(adminLevel)
+		{
+			case ServervilleUser.AdminLevel_User:
+				return "user";
+			case ServervilleUser.AdminLevel_AgentReadOnly:
+				return "readOnlyAgent";
+			case ServervilleUser.AdminLevel_Agent:
+				return "agent";
+			case ServervilleUser.AdminLevel_AdminReadOnly:
+				return "readOnlyAdmin";
+			case ServervilleUser.AdminLevel_Admin:
+				return "admin";
+			default:
+				return "unknown";
+		}
+	}
+	
 }

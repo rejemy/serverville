@@ -11,8 +11,11 @@ import org.apache.commons.dbutils.QueryRunner;
 
 import com.dreamwing.serverville.data.KeyDataItem;
 
+
 public class ServervilleQueryRunner extends QueryRunner {
 
+	//private static final Logger l = LogManager.getLogger(ServervilleQueryRunner.class);
+	
     /**
      * Constructor for QueryRunner.
      */
@@ -148,7 +151,7 @@ public class ServervilleQueryRunner extends QueryRunner {
 
         } catch (SQLException e) {
             this.rethrow(e, sql, params.toArray());
-        } finally {
+		} finally {
             close(stmt);
             if (closeConn) {
                 close(conn);

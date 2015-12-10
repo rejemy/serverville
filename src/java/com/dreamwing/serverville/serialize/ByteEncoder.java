@@ -127,10 +127,10 @@ public class ByteEncoder {
 		case STRING:
 		case STRING_JSON:
 		case STRING_XML:
+		case JSON:
 			return encode((String)valueObj);
 		case TRUE:
 			return null;
-		
 		}
 		
 		return null;

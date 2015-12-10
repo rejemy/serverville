@@ -7,6 +7,7 @@ import java.util.Date;
 
 import com.dreamwing.serverville.data.KeyDataTypes;
 
+
 public final class ByteDecoder {
 
 	public static Object decode(byte[] data, KeyDataTypes dbType)
@@ -68,6 +69,7 @@ public final class ByteDecoder {
 		case STRING:
 		case STRING_JSON:
 		case STRING_XML:
+		case JSON:
 			return decodeString(data);
 		}
 		
@@ -122,4 +124,5 @@ public final class ByteDecoder {
 		long datetime = buf.getLong();
 		return new Date(datetime);
 	}
+	
 }

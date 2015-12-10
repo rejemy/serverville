@@ -30,14 +30,15 @@ public enum KeyDataTypes {
 	LIST(25),
 	DICT(26),
 	BYTES(27),
-	JAVA_SERIALIZED(28);
+	JAVA_SERIALIZED(28),
+	JSON(29);
 	
 	private int id;
 	private static KeyDataTypes[] ValueLookup;
 	
 	static
 	{
-		ValueLookup = new KeyDataTypes[29];
+		ValueLookup = new KeyDataTypes[30];
 		KeyDataTypes[] values = KeyDataTypes.values();
 		for(KeyDataTypes val : values)
 		{

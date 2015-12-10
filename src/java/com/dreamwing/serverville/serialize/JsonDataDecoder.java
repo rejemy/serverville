@@ -4,10 +4,13 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.db.KeyDataManager.StringFlavor;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class JsonDataDecoder {
 
@@ -23,28 +26,31 @@ public class JsonDataDecoder {
 				if(data != null)
 					throw new Exception("Tried to set non-null data with a null datatype");
 				item.setNull();
-				break;
+				return item;
 			case BOOLEAN:
 				setBoolean(item, data);
-				break;
+				return item;
 			case NUMBER:
 				setNumber(item, data);
-				break;
+				return item;
 			case BYTES:
 				setBytes(item, data);
-				break;
+				return item;
 			case DATETIME:
 				setDatetime(item, data);
-				break;
+				return item;
 			case JSON:
 				setString(item, data, StringFlavor.JSON);
-				break;
+				return item;
 			case STRING:
 				setString(item, data, StringFlavor.TEXT);
-				break;
+				return item;
 			case XML:
 				setString(item, data, StringFlavor.XML);
-				break;
+				return item;
+			case OBJECT:
+				setObject(item, data);
+				return item;
 			}
 		}
 		
@@ -90,6 +96,10 @@ public class JsonDataDecoder {
 		else if(data instanceof Date)
 		{
 			item.set((Date)data);
+		}
+		else if(data instanceof Map || data instanceof List)
+		{
+			item.setJsonObject(data);
 		}
 		else
 		{
@@ -195,4 +205,10 @@ public class JsonDataDecoder {
 			throw new Exception("Couldn't turn "+data+" into a number");
 		}
 	}
+	
+	static void setObject(KeyDataItem item, Object data) throws JsonProcessingException
+	{
+		item.setJsonObject(data);
+	}
+	
 }

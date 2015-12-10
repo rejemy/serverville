@@ -72,4 +72,14 @@ public final class JSON {
 	{
 		return JsonMapper.<T>readValue(json, typeRef);
 	}
+	
+	public static Object deserialize(byte[] bytes) throws JsonProcessingException, IOException
+	{
+		return JsonMapper.readTree(bytes);
+	}
+	
+	public static Object deserialize(String data) throws JsonProcessingException, IOException
+	{
+		return JsonMapper.readTree(data);
+	}
 }
