@@ -1,5 +1,5 @@
 /// <reference path="nashorn.d.ts" />
-/// <reference path="serverville.d.ts" />
+/// <reference path="serverville_int.d.ts" />
 // Javascript to setup a Serverville javascript context
 delete quit;
 delete exit;
@@ -14,8 +14,6 @@ delete Java;
 var client = {};
 // Holder for exposed agent handlers
 var agent = {};
-// Holder for exposed admin handlers
-var admin = {};
 var KeyData = (function () {
     function KeyData(id) {
         if (id == null)

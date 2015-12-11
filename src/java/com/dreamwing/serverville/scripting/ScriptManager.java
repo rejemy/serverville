@@ -27,7 +27,6 @@ public class ScriptManager
 	private static volatile int ScriptVersion=0;
 	
 	private static Set<String> ClientHandlers;
-	private static Set<String> AdminHandlers;
 	private static Set<String> AgentHandlers;
 	
 	public static void init() throws Exception
@@ -149,18 +148,6 @@ public class ScriptManager
 		
 		AgentHandlers = agentHandlers;
 		
-		Set<String> adminHandlers = new HashSet<String>();
-		
-		String[] adminHandlerList = ctx.getAdminHandlerList();
-		if(adminHandlerList != null)
-		{
-			for(String handlerName : adminHandlerList)
-			{
-				adminHandlers.add(handlerName);
-			}
-		}
-		
-		AdminHandlers = adminHandlers;
 	}
 	
 	public static boolean hasClientHandler(String apiType)
@@ -173,9 +160,5 @@ public class ScriptManager
 		return AgentHandlers.contains(apiType);
 	}
 	
-	public static boolean hasAdminHandler(String apiType)
-	{
-		return AdminHandlers.contains(apiType);
-	}
-	
+
 }

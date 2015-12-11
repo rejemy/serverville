@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.dreamwing.serverville.net.ApiNotFoundException;
+import com.dreamwing.serverville.scripting.ScriptEngineContext;
+import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.util.JSON;
 
 import io.netty.buffer.ByteBuf;
@@ -82,8 +84,24 @@ public class AgentDispatcher {
 	{
 		DispatchMethod method = Methods.get(messageType);
 		if(method == null)
-			throw new ApiNotFoundException();
-		
+		{
+			if(ScriptManager.hasAgentHandler(messageType))
+			{
+				ScriptEngineContext context = ScriptManager.getEngine();
+				try
+				{
+					return context.invokeAgentHandler(messageType, messageData);
+				}
+				finally
+				{
+					ScriptManager.returnEngine(context);
+				}
+			}
+			else
+			{
+				throw new ApiNotFoundException();
+			}
+		}
 		
 		Object requestObj = JSON.deserialize(messageData, method.RequestClass);
 		

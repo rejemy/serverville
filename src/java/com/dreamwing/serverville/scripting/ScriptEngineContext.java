@@ -10,7 +10,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.dreamwing.serverville.data.ScriptData;
-import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.agent.AgentScriptAPI;
 
@@ -30,7 +29,6 @@ public class ScriptEngineContext {
 	private ScriptObjectMirror JsonApi;
 	
 	private ScriptObjectMirror ClientHandlers;
-	private ScriptObjectMirror AdminHandlers;
 	private ScriptObjectMirror AgentHandlers;
 	
 	public ScriptEngineContext()
@@ -89,7 +87,6 @@ public class ScriptEngineContext {
 		
 		
 		ClientHandlers = (ScriptObjectMirror) Engine.get("client");
-		AdminHandlers = (ScriptObjectMirror) Engine.get("admin");
 		AgentHandlers = (ScriptObjectMirror) Engine.get("agent");
 		
 		
@@ -190,32 +187,7 @@ public class ScriptEngineContext {
 		}
 		
 	}
-	
-	public String[] getAdminHandlerList()
-	{
-		if(AdminHandlers == null)
-			return null;
-		
-		return AdminHandlers.getOwnKeys(false);
-	}
-	
 
-	public Object invokeAdminHandler(String apiId, String jsonInput, ServervilleUser user) throws Exception
-	{
-		Object decodedInput = decodeJSON(jsonInput);
-		
-		try
-		{
-			Object result = Engine.invokeMethod(AdminHandlers, apiId, decodedInput, user);
-			return ScriptObjectMirror.wrapAsJSONCompatible(result, null);
-		}
-		catch(Exception e)
-		{
-			l.error("Script error calling client API: "+apiId, e);
-			throw e;
-		}
-	}
-	
 	
 	public String[] getAgentHandlerList()
 	{
