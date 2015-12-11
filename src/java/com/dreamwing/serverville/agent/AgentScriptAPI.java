@@ -17,6 +17,7 @@ import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.HttpUtil.JsonApiException;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.serialize.JsonDataDecoder;
+import com.dreamwing.serverville.util.SVID;
 
 public class AgentScriptAPI
 {
@@ -30,9 +31,29 @@ public class AgentScriptAPI
 		Context = context;
 	}
 	
-	public void log(String info)
+	public void log_debug(String msg)
 	{
-		l.info(info);
+		l.debug(msg);
+	}
+	
+	public void log_info(String msg)
+	{
+		l.info(msg);
+	}
+	
+	public void log_warning(String msg)
+	{
+		l.warn(msg);
+	}
+	
+	public void log_error(String msg)
+	{
+		l.error(msg);
+	}
+	
+	public String makeSVID()
+	{
+		return SVID.makeSVID();
 	}
 	
 	public UserInfoReply getUserInfo(Map<String,Object> request) throws JsonApiException, SQLException
@@ -122,7 +143,7 @@ public class AgentScriptAPI
 		
 		List<KeyDataItem> items = KeyDataManager.loadKeysSince(id, keys, (long)since, includeDeleted);
 		if(items == null)
-			throw new JsonApiException("Key not found");
+			items = new ArrayList<KeyDataItem>();
 		
 		Map<String,DataItemReply> reply = new HashMap<String,DataItemReply>();
 		
@@ -152,7 +173,7 @@ public class AgentScriptAPI
 		
 		List<KeyDataItem> items = KeyDataManager.loadAllKeysSince(id, (long)since, includeDeleted);
 		if(items == null)
-			throw new JsonApiException("Key not found");
+			items = new ArrayList<KeyDataItem>();
 		
 		Map<String,DataItemReply> reply = new HashMap<String,DataItemReply>();
 		

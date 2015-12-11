@@ -16,10 +16,10 @@ delete Java;
 
 
 // Holder for exposed client handlers
-var client:{[id:string]:(request:Object, user:UserInfo)=>Object} = {};
+var client:any = {};
 
 // Holder for exposed agent handlers
-var agent:{[id:string]:(request:Object)=>Object} = {};
+var agent:any = {};
 
 
 class KeyData

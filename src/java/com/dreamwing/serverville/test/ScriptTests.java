@@ -6,6 +6,7 @@ import org.junit.Assert;
 
 import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
+import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.util.SVID;
@@ -214,6 +215,11 @@ public class ScriptTests {
 		}
 	}
 	
-
+	@Test(order=1000)
+	public void cleanup() throws Exception
+	{
+		KeyDataManager.deleteAllKeys(TestItemID);
+		KeyDataManager.purgeDeletedKeysFor(TestItemID);
+	}
 	
 }

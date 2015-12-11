@@ -35,12 +35,16 @@ interface DataItemInfo
 
 declare type DataItemInfoMap = {[key:string]:DataItemInfo};
 
-declare var client:{[id:string]:(request:Object, user:UserInfo)=>Object};
-declare var agent:{[id:string]:(request:Object)=>Object};
+declare var client:any;
+declare var agent:any;
 
 declare namespace api
 {
-	function log(info:string):void;
+	function makeSVID():string;
+	function log_debug(msg:string):void;
+	function log_info(msg:string):void;
+	function log_warning(msg:string):void;
+	function log_error(msg:string):void;
 	function getUserInfo(userlookup:UserLookupRequest):UserInfo;
 	function setDataKey(id:string, key:string, value:any):number;
 	function setDataKey(id:string, key:string, value:any, data_type:string):number;
