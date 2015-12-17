@@ -14,6 +14,11 @@ public class ClientMessages {
 
 	}
 	
+	public static class GetUserInfo
+	{
+
+	}
+	
 	public static class CreateAccount
 	{
 		public String username;
@@ -24,6 +29,8 @@ public class ClientMessages {
 	public static class CreateAccountReply
 	{
 		public String user_id;
+		public String username;
+		public String email;
 		public String session_id;
 	}
 
@@ -37,6 +44,8 @@ public class ClientMessages {
 	public static class SignInReply
 	{
 		public String user_id;
+		public String username;
+		public String email;
 		public String session_id;
 	}
 	

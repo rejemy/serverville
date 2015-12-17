@@ -25,7 +25,7 @@ var agent:any = {};
 class KeyData
 {
 	id:string;
-	data:{[key:string]:any};
+	data:any;
 	data_info:{[key:string]:DataItemInfo};
 	local_dirty:{[key:string]:DataItemInfo};
 	most_recent:number;

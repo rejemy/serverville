@@ -47,6 +47,8 @@ public class ClientAPI {
 		
 		info.ConnectionHandler.signedIn(user);
 		
+		reply.username = user.getUsername();
+		reply.email = user.getEmail();
 		reply.user_id = user.getId();
 		reply.session_id = user.getSessionId();
 		
@@ -66,6 +68,8 @@ public class ClientAPI {
 		
 		info.ConnectionHandler.signedIn(user);
 		
+		reply.username = null;
+		reply.email = null;
 		reply.session_id = user.getSessionId();
 		
 		return reply;
@@ -91,6 +95,8 @@ public class ClientAPI {
 		
 		info.ConnectionHandler.signedIn(user);
 		
+		reply.username = user.getUsername();
+		reply.email = user.getEmail();
 		reply.session_id = user.getSessionId();
 		
 		return reply;
@@ -112,6 +118,20 @@ public class ClientAPI {
 		CreateAccountReply reply = new CreateAccountReply();
 		
 		reply.user_id = info.User.getId();
+		reply.username = info.User.getUsername();
+		reply.email = info.User.getEmail();
+		reply.session_id = info.User.getSessionId();
+		
+		return reply;
+	}
+	
+	public static SignInReply GetUserInfo(GetUserInfo request, ClientMessageInfo info) throws Exception
+	{
+		SignInReply reply = new SignInReply();
+		
+		reply.user_id = info.User.getId();
+		reply.username = info.User.getUsername();
+		reply.email = info.User.getEmail();
 		reply.session_id = info.User.getSessionId();
 		
 		return reply;
@@ -156,7 +176,19 @@ public class ClientAPI {
 	
 	private static DataItemReply KeyDataItemToDataItemReply(String id, KeyDataItem item)
 	{
-		DataItemReply data = new DataItemReply();
+		DataItemReply data = null;
+		
+		if(item.isDeleted())
+		{
+			DataItemExtendedReply extData = new DataItemExtendedReply();
+			extData.deleted = true;
+			data = extData;
+		}
+		else
+		{
+			data = new DataItemReply();
+		}
+
 		data.id = id;
 		data.key = item.key;
 		try
@@ -259,9 +291,9 @@ public class ClientAPI {
 				throw new JsonApiException("Private key: "+keyname);
 		}
 		
-		List<KeyDataItem> items = KeyDataManager.loadKeysSince(request.id, request.keys, (long)request.since);
+		List<KeyDataItem> items = KeyDataManager.loadKeysSince(request.id, request.keys, (long)request.since, request.include_deleted);
 		if(items == null)
-			throw new JsonApiException("Key not found");
+			items = new ArrayList<KeyDataItem>();
 		
 		UserDataReply reply = new UserDataReply();
 		
@@ -282,9 +314,9 @@ public class ClientAPI {
 		if(request.id == null || request.id.length() == 0)
 			throw new JsonApiException("Missing id");
 		
-		List<KeyDataItem> items = KeyDataManager.loadAllKeysSince(request.id, (long)request.since);
+		List<KeyDataItem> items = KeyDataManager.loadAllKeysSince(request.id, (long)request.since, request.include_deleted);
 		if(items == null)
-			throw new JsonApiException("Key not found");
+			items = new ArrayList<KeyDataItem>();
 		
 		UserDataReply reply = new UserDataReply();
 		
