@@ -2,8 +2,8 @@ package com.dreamwing.serverville.net;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponseStatus;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -32,20 +32,33 @@ public class HttpDispatcher {
 			{
 				if(!Authenticator.isAuthenticated(req))
 				{
-					return HttpUtil.sendError(req, "Invalid authentication", HttpResponseStatus.FORBIDDEN);
+					return HttpUtil.sendError(req, ApiErrors.BAD_AUTH);
 				}
 			}
 			
 			Object result = null;
 			
 			req.PathRemainder = req.RequestURI.getPath().substring(uriMatched.length());
-			if(HasInput)
+			
+			try
 			{
-				result = InvokeMethod.invoke(Instance, req, null);
-			}
-			else
-			{
-				result = InvokeMethod.invoke(Instance, req);
+				if(HasInput)
+				{
+					result = InvokeMethod.invoke(Instance, req, null);
+				}
+				else
+				{
+					result = InvokeMethod.invoke(Instance, req);
+				}
+			} catch (InvocationTargetException e) {
+				if(e.getCause() != null && e.getCause() instanceof Exception)
+				{
+					throw (Exception)e.getCause();
+				}
+				else
+				{
+					throw e;
+				}
 			}
 			
 			return (ChannelFuture)result;
@@ -57,7 +70,8 @@ public class HttpDispatcher {
 		public String RedirectTo;
 		
 		@Override
-		public ChannelFuture dispatch(String uriMatched, HttpRequestInfo req) throws Exception {
+		public ChannelFuture dispatch(String uriMatched, HttpRequestInfo req)
+		{
 			return HttpUtil.sendRedirect(req, RedirectTo);
 		}
 		
@@ -278,7 +292,7 @@ public class HttpDispatcher {
 		}
 		
 		if(table == null)
-			return HttpUtil.sendError(req, "Method not allowed", HttpResponseStatus.METHOD_NOT_ALLOWED);
+			return HttpUtil.sendError(req, ApiErrors.BAD_HTTP_METHOD);
 		
 		String path = req.RequestURI.getPath();
 		
@@ -295,6 +309,6 @@ public class HttpDispatcher {
 				return entry.getValue().dispatch(entry.getKey(), req);
 			}
 		}
-		return HttpUtil.sendError(req, "File not found", HttpResponseStatus.NOT_FOUND);
+		return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
 	}
 }

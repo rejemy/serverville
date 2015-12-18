@@ -6,7 +6,8 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.dreamwing.serverville.net.ApiNotFoundException;
+import com.dreamwing.serverville.net.ApiErrors;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.util.JSON;
@@ -99,7 +100,7 @@ public class AgentDispatcher {
 			}
 			else
 			{
-				throw new ApiNotFoundException();
+				throw new JsonApiException(ApiErrors.UNKNOWN_API);
 			}
 		}
 		

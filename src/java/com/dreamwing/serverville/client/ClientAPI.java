@@ -14,7 +14,8 @@ import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.db.KeyDataManager;
-import com.dreamwing.serverville.net.HttpUtil.JsonApiException;
+import com.dreamwing.serverville.net.ApiErrors;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.serialize.JsonDataDecoder;
 import com.dreamwing.serverville.util.PasswordUtil;
 
@@ -23,10 +24,11 @@ public class ClientAPI {
 	private static final Logger l = LogManager.getLogger(ClientAPI.class);
 	
 	@ClientHandlerOptions(auth=false)
-	public static SignInReply SignIn(SignIn request, ClientMessageInfo info) throws JsonApiException, Exception
+	public static SignInReply SignIn(SignIn request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(info.User != null)
-			throw new JsonApiException("Already signed in");
+			throw new JsonApiException(ApiErrors.ALREADY_SIGNED_IN);
+		
 		SignInReply reply = new SignInReply();
 		
 		ServervilleUser user = null;
@@ -42,7 +44,7 @@ public class ClientAPI {
 		
 		if(user == null || !user.checkPassword(request.password))
 		{
-			throw new JsonApiException("Invalid user/password");
+			throw new JsonApiException(ApiErrors.BAD_AUTH, "Password does not match");
 		}
 		
 		info.ConnectionHandler.signedIn(user);
@@ -56,10 +58,35 @@ public class ClientAPI {
 	}
 	
 	@ClientHandlerOptions(auth=false)
-	public static CreateAccountReply CreateAnonymousAccount(CreateAnonymousAccount request, ClientMessageInfo info) throws JsonApiException, Exception
+	public static SignInReply ValidateSession(ValidateSessionRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(info.User != null)
-			throw new JsonApiException("Already signed in");
+			throw new JsonApiException(ApiErrors.ALREADY_SIGNED_IN);
+		
+		SignInReply reply = new SignInReply();
+		
+		ServervilleUser user = ServervilleUser.findBySessionId(request.session_id);
+		
+		if(user == null)
+		{
+			throw new JsonApiException(ApiErrors.BAD_AUTH, "Invalid session id");
+		}
+		
+		info.ConnectionHandler.signedIn(user);
+		
+		reply.username = user.getUsername();
+		reply.email = user.getEmail();
+		reply.user_id = user.getId();
+		reply.session_id = user.getSessionId();
+		
+		return reply;
+	}
+	
+	@ClientHandlerOptions(auth=false)
+	public static CreateAccountReply CreateAnonymousAccount(CreateAnonymousAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		if(info.User != null)
+			throw new JsonApiException(ApiErrors.ALREADY_SIGNED_IN);
 		
 		ServervilleUser user = ServervilleUser.create(null, null, null, ServervilleUser.AdminLevel_User);
 		
@@ -76,16 +103,16 @@ public class ClientAPI {
 	}
 	
 	@ClientHandlerOptions(auth=false)
-	public static CreateAccountReply CreateAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, Exception
+	public static CreateAccountReply CreateAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(info.User != null)
-			throw new JsonApiException("Already signed in");
+			throw new JsonApiException(ApiErrors.ALREADY_SIGNED_IN);
 		
 		if(request.username == null || request.email == null)
-			throw new JsonApiException("Must set a username and email to create an account");
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must set a username and email to create an account");
 		
 		if(!PasswordUtil.validatePassword(request.password))
-			throw new JsonApiException("Invalid password!");
+			throw new JsonApiException(ApiErrors.INVALID_INPUT, "Invalid password");
 		
 		ServervilleUser user = ServervilleUser.create(request.password, request.username, request.email, ServervilleUser.AdminLevel_User);
 		
@@ -102,16 +129,16 @@ public class ClientAPI {
 		return reply;
 	}
 	
-	public static CreateAccountReply ConvertToFullAccount(CreateAccount request, ClientMessageInfo info) throws Exception
+	public static CreateAccountReply ConvertToFullAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(info.User.getUsername() != null)
-			throw new JsonApiException("Account is already converted");
+			throw new JsonApiException(ApiErrors.ALREADY_SIGNED_IN, "Account is already converted");
 		
 		if(request.username == null || request.email == null)
-			throw new JsonApiException("Must set a username and email to create an account");
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must set a username and email to create an account");
 		
 		if(!PasswordUtil.validatePassword(request.password))
-			throw new JsonApiException("Invalid password!");
+			throw new JsonApiException(ApiErrors.INVALID_INPUT, "Invalid password");
 		
 		info.User.register(request.password, request.username, request.email);
 		
@@ -125,7 +152,7 @@ public class ClientAPI {
 		return reply;
 	}
 	
-	public static SignInReply GetUserInfo(GetUserInfo request, ClientMessageInfo info) throws Exception
+	public static SignInReply GetUserInfo(GetUserInfo request, ClientMessageInfo info)
 	{
 		SignInReply reply = new SignInReply();
 		
@@ -137,12 +164,12 @@ public class ClientAPI {
 		return reply;
 	}
 	
-	public static SetDataReply SetUserKey(SetUserDataRequest request, ClientMessageInfo info) throws JsonApiException, SQLException, Exception
+	public static SetDataReply SetUserKey(SetUserDataRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		SetDataReply reply = new SetDataReply();
 		
 		if(!KeyDataItem.isValidKeyname(request.key))
-			throw new JsonApiException("Invalid key name: "+request.key);
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
 		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(request.key, request.data_type, request.value);
 		long updateTime = KeyDataManager.saveKey(info.User.getId(), item);
@@ -151,7 +178,7 @@ public class ClientAPI {
 		return reply;
 	}
 	
-	public static SetDataReply SetUserKeys(UserDataRequestList request, ClientMessageInfo info) throws JsonApiException, SQLException, Exception
+	public static SetDataReply SetUserKeys(UserDataRequestList request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		SetDataReply reply = new SetDataReply();
 		
@@ -160,7 +187,7 @@ public class ClientAPI {
 		for(SetUserDataRequest data : request.values)
 		{
 			if(!KeyDataItem.isValidKeyname(data.key))
-				throw new JsonApiException("Invalid key name: "+data.key);
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
 			
 			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
 			itemList.add(item);
@@ -209,11 +236,11 @@ public class ClientAPI {
 	public static DataItemReply GetUserKey(KeyRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(!KeyDataItem.isValidKeyname(request.key))
-			throw new JsonApiException("Invalid key name: "+request.key);
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
 		KeyDataItem item = KeyDataManager.loadKey(info.User.getId(), request.key);
 		if(item == null)
-			throw new JsonApiException("Key not found");
+			throw new JsonApiException(ApiErrors.NOT_FOUND);
 		
 		return KeyDataItemToDataItemReply(info.User.getId(), item);
 	}
@@ -222,7 +249,7 @@ public class ClientAPI {
 	{
 		List<KeyDataItem> items = KeyDataManager.loadKeysSince(info.User.getId(), request.keys, (long)request.since);
 		if(items == null)
-			throw new JsonApiException("Key not found");
+			throw new JsonApiException(ApiErrors.NOT_FOUND);
 		
 		UserDataReply reply = new UserDataReply();
 		
@@ -241,7 +268,7 @@ public class ClientAPI {
 	{
 		List<KeyDataItem> items = KeyDataManager.loadAllKeysSince(info.User.getId(), (long)request.since);
 		if(items == null)
-			throw new JsonApiException("Key not found");
+			throw new JsonApiException(ApiErrors.NOT_FOUND);
 		
 		UserDataReply reply = new UserDataReply();
 		
@@ -259,20 +286,20 @@ public class ClientAPI {
 	public static DataItemReply GetDataKey(GlobalKeyRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(request.id == null || request.id.length() == 0)
-			throw new JsonApiException("Missing id");
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 
 		if(!KeyDataItem.isValidKeyname(request.key))
-			throw new JsonApiException("Invalid key name: "+request.key);
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
 		// If it's not our data, we can't see it
 		if(!request.id.equals(info.User.getId()) && KeyDataItem.isPrivateKeyname(request.key))
 		{
-			throw new JsonApiException("Private key: "+request.key);
+			throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
 		}
 		
 		KeyDataItem item = KeyDataManager.loadKey(request.id, request.key);
 		if(item == null)
-			throw new JsonApiException("Key not found");
+			throw new JsonApiException(ApiErrors.NOT_FOUND);
 		
 		return KeyDataItemToDataItemReply(request.id, item);
 	}
@@ -281,14 +308,14 @@ public class ClientAPI {
 	public static UserDataReply GetDataKeys(GlobalKeysRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(request.id == null || request.id.length() == 0)
-			throw new JsonApiException("Missing id");
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		boolean isMe = request.id.equals(info.User.getId());
 		
 		for(String keyname : request.keys)
 		{
 			if(!isMe && KeyDataItem.isPrivateKeyname(keyname))
-				throw new JsonApiException("Private key: "+keyname);
+				throw new JsonApiException(ApiErrors.PRIVATE_DATA, keyname);
 		}
 		
 		List<KeyDataItem> items = KeyDataManager.loadKeysSince(request.id, request.keys, (long)request.since, request.include_deleted);
@@ -312,7 +339,7 @@ public class ClientAPI {
 	public static UserDataReply GetAllDataKeys(AllGlobalKeysRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(request.id == null || request.id.length() == 0)
-			throw new JsonApiException("Missing id");
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		List<KeyDataItem> items = KeyDataManager.loadAllKeysSince(request.id, (long)request.since, request.include_deleted);
 		if(items == null)

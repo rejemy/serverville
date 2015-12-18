@@ -12,7 +12,8 @@ import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataTypes;
 import com.dreamwing.serverville.data.ServervilleUser;
-import com.dreamwing.serverville.net.HttpUtil.JsonApiException;
+import com.dreamwing.serverville.net.ApiErrors;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 
 // Stuff that can be shared between the network and local script agent APIs
@@ -29,7 +30,7 @@ public class AgentShared
 		else if(username != null)
 			user = ServervilleUser.findByUsername(username);
 		else
-			throw new JsonApiException("Must speicify either id or username");
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply either a username or email");
 		
 		return userToUserInfo(user);
 	}

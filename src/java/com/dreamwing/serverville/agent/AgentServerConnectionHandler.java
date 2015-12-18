@@ -10,12 +10,11 @@ import org.apache.logging.log4j.Logger;
 
 import com.dreamwing.serverville.data.AgentKey;
 import com.dreamwing.serverville.log.SVLog;
-import com.dreamwing.serverville.net.ApiNotFoundException;
 import com.dreamwing.serverville.net.HttpRequestInfo;
 import com.dreamwing.serverville.net.HttpUtil;
-import com.dreamwing.serverville.net.NotAuthenticatedException;
+import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpConnectionInfo;
-import com.dreamwing.serverville.net.HttpUtil.JsonApiException;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.util.JSON;
 import com.dreamwing.serverville.util.SVID;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -140,27 +139,32 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 		return true;
 	}
 	
-	private ChannelFuture handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request) throws URISyntaxException, JsonProcessingException
+	private ChannelFuture handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request)
 	{
 		if(request.getMethod() == HttpMethod.OPTIONS)
     	{
     		return HttpUtil.sendPreflightApproval(ctx);
     	}
 		
-		URI uri = new URI(request.getUri());
-    	
 		HttpRequestInfo CurrRequest = new HttpRequestInfo();
-    	CurrRequest.init(Info, request, SVID.makeSVID());
+		
+    	try {
+    		CurrRequest.init(Info, request, SVID.makeSVID());
+		} catch (URISyntaxException e1) {
+			return HttpUtil.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
+		}
+    	
+		URI uri = CurrRequest.RequestURI;
     	
     	l.debug(new SVLog("Agent HTTP request", CurrRequest));
     	
 		if (!request.getDecoderResult().isSuccess()) {
-            return HttpUtil.sendError(CurrRequest, "Couldn't decode request", HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
         }
 		
 		if(!authenticate(request))
 		{
-			return HttpUtil.sendError(CurrRequest, "Auth not accepted", HttpResponseStatus.FORBIDDEN);
+			return HttpUtil.sendError(CurrRequest, ApiErrors.BAD_AUTH);
 		}
 		
 		String uriPath = uri.getPath();
@@ -197,25 +201,21 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 			{
 				reply = Dispatcher.dispatch(messageType, messageBody);
 			}
-			catch(ApiNotFoundException e)
-			{
-				return HttpUtil.sendError(CurrRequest, "Thing not found", HttpResponseStatus.NOT_FOUND);
-			}
-			catch(NotAuthenticatedException e)
-			{
-				return HttpUtil.sendError(CurrRequest, "Not authenticated", HttpResponseStatus.FORBIDDEN);
-			}
 			catch(JsonProcessingException e)
 			{
-				return HttpUtil.sendError(CurrRequest, "Invalid JSON: "+e.getMessage(), HttpResponseStatus.BAD_REQUEST);
+				return HttpUtil.sendError(CurrRequest, ApiErrors.JSON_ERROR, e.getMessage());
+			}
+			catch(SQLException e)
+			{
+				return HttpUtil.sendError(CurrRequest, ApiErrors.DB_ERROR, e.getMessage());
 			}
 			catch(JsonApiException e)
 			{
-				return HttpUtil.sendErrorJson(CurrRequest, e.Error, HttpResponseStatus.BAD_REQUEST);
+				return HttpUtil.sendErrorJson(CurrRequest, e.Error, e.HttpStatus);
 			}
 			catch(Exception e)
 			{
-				return HttpUtil.sendError(CurrRequest, "Um", HttpResponseStatus.INTERNAL_SERVER_ERROR);
+				return HttpUtil.sendError(CurrRequest, ApiErrors.INTERNAL_SERVER_ERROR, e.getMessage());
 			}
 			
 
@@ -233,7 +233,7 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 			return ctx.writeAndFlush(response);
 		}
 		
-		return HttpUtil.sendError(CurrRequest, "Thing not found", HttpResponseStatus.NOT_FOUND);
+		return HttpUtil.sendError(CurrRequest, ApiErrors.NOT_FOUND);
 	}
 	
 	private ChannelFuture handleWebSocketFrame(ChannelHandlerContext ctx, WebSocketFrame frame)
@@ -282,9 +282,6 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 			{
 				reply = Dispatcher.dispatch(messageType, messageNum, messageBody);
 			}
-		} catch (ApiNotFoundException e) {
-			l.error("Unknown message type: "+messageType, e);
-			return null;
 		} catch (Exception e) {
 			l.error("Error in message handler: "+messageType, e);
 			return null;

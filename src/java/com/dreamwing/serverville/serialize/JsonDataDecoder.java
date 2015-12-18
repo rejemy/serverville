@@ -1,6 +1,7 @@
 package com.dreamwing.serverville.serialize;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
@@ -10,11 +11,13 @@ import java.util.Map;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.db.KeyDataManager.StringFlavor;
+import com.dreamwing.serverville.net.ApiErrors;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class JsonDataDecoder {
 
-	public static KeyDataItem MakeKeyDataFromJson(String keyname, JsonDataType userSuppliedType, Object data) throws Exception
+	public static KeyDataItem MakeKeyDataFromJson(String keyname, JsonDataType userSuppliedType, Object data) throws JsonApiException
 	{
 		KeyDataItem item = new KeyDataItem(keyname);
 		
@@ -24,7 +27,7 @@ public class JsonDataDecoder {
 			{
 			case NULL:
 				if(data != null)
-					throw new Exception("Tried to set non-null data with a null datatype");
+					throw new JsonApiException(ApiErrors.DATA_CONVERSION, "Tried to set non-null data with a null datatype");
 				item.setNull();
 				return item;
 			case BOOLEAN:
@@ -99,17 +102,21 @@ public class JsonDataDecoder {
 		}
 		else if(data instanceof Map || data instanceof List)
 		{
-			item.setJsonObject(data);
+			try {
+				item.setJsonObject(data);
+			} catch (JsonProcessingException e) {
+				throw new JsonApiException(ApiErrors.DATA_CONVERSION, e.getMessage());
+			}
 		}
 		else
 		{
-			throw new Exception("Unknown data type from JSON decoder: "+data);
+			throw new JsonApiException(ApiErrors.DATA_CONVERSION, "Unknown data type from JSON decoder: "+data);
 		}
 		
 		return item;
 	}
 	
-	static void setBoolean(KeyDataItem item, Object data) throws Exception
+	static void setBoolean(KeyDataItem item, Object data) throws JsonApiException
 	{
 		Class<?> objType = data.getClass();
 		
@@ -118,20 +125,20 @@ public class JsonDataDecoder {
 		else if(objType == String.class)
 			item.set(Boolean.parseBoolean((String)data));
 		else
-			throw new Exception("Couldn't turn "+data+" into a boolean");
+			throw new JsonApiException(ApiErrors.DATA_CONVERSION, "Couldn't turn "+data+" into a boolean");
 	}
 	
-	static void setBytes(KeyDataItem item, Object data) throws Exception
+	static void setBytes(KeyDataItem item, Object data) throws JsonApiException
 	{
 		Class<?> objType = data.getClass();
 		if(objType != String.class)
-			throw new Exception("Couldn't turn "+data+" into bytes");
+			throw new JsonApiException(ApiErrors.DATA_CONVERSION, "Couldn't turn "+data+" into bytes");
 		
 		byte[] binary = Base64.getDecoder().decode((String)data);
 		item.set(binary);
 	}
 	
-	static void setDatetime(KeyDataItem item, Object data) throws Exception
+	static void setDatetime(KeyDataItem item, Object data) throws JsonApiException
 	{
 		Class<?> objType = data.getClass();
 		
@@ -143,7 +150,11 @@ public class JsonDataDecoder {
 		else if(objType == String.class)
 		{
 			DateFormat JsonDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-			item.set(JsonDateFormat.parse((String)data));
+			try {
+				item.set(JsonDateFormat.parse((String)data));
+			} catch (ParseException e) {
+				throw new JsonApiException(ApiErrors.DATA_CONVERSION, "Couldn't turn "+data+" into a date");
+			}
 		}
 		else if(objType == Double.class)
 		{
@@ -159,7 +170,7 @@ public class JsonDataDecoder {
 		}
 		else
 		{
-			throw new Exception("Couldn't turn "+data+" into a date");
+			throw new JsonApiException(ApiErrors.DATA_CONVERSION, "Couldn't turn "+data+" into a date");
 		}
 	}
 	
@@ -168,7 +179,7 @@ public class JsonDataDecoder {
 		item.set(data.toString(), flavor);
 	}
 	
-	static void setNumber(KeyDataItem item, Object data) throws Exception
+	static void setNumber(KeyDataItem item, Object data) throws JsonApiException
 	{
 		Class<?> objType = data.getClass();
 		
@@ -202,13 +213,17 @@ public class JsonDataDecoder {
 		}
 		else
 		{
-			throw new Exception("Couldn't turn "+data+" into a number");
+			throw new JsonApiException(ApiErrors.DATA_CONVERSION, "Couldn't turn "+data+" into a number");
 		}
 	}
 	
-	static void setObject(KeyDataItem item, Object data) throws JsonProcessingException
+	static void setObject(KeyDataItem item, Object data) throws JsonApiException
 	{
-		item.setJsonObject(data);
+		try {
+			item.setJsonObject(data);
+		} catch (JsonProcessingException e) {
+			throw new JsonApiException(ApiErrors.DATA_CONVERSION, e.getMessage());
+		}
 	}
 	
 }

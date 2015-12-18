@@ -9,13 +9,12 @@ public class Channel extends BaseResident {
 
 	
 	private ConcurrentMap<String,BaseResident> Listeners;
-	//private ConcurrentMap<String,RoomData> State;
 	
 	public Channel(String id)
 	{
 		super(id);
 		Listeners = new ConcurrentHashMap<String,BaseResident>();
-		//State = new ConcurrentHashMap<String,RoomData>();
+		
 	}
 	
 	public void destroy()

@@ -14,7 +14,8 @@ import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.db.KeyDataManager;
-import com.dreamwing.serverville.net.HttpUtil.JsonApiException;
+import com.dreamwing.serverville.net.ApiErrors;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.serialize.JsonDataDecoder;
 import com.dreamwing.serverville.util.SVID;
@@ -69,13 +70,13 @@ public class AgentScriptAPI
 		return setDataKey(id, key, value, null);
 	}
 	
-	public double setDataKey(String id, String key, Object value, String data_type) throws Exception
+	public double setDataKey(String id, String key, Object value, String data_type) throws JsonApiException, SQLException
 	{
 		if(id == null)
-			throw new JsonApiException("Invalid id: "+id);
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		if(!KeyDataItem.isValidKeyname(key))
-			throw new JsonApiException("Invalid key name: "+key);
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 		
 		JsonDataType valueType = JsonDataType.fromString(data_type);
 		
@@ -85,11 +86,11 @@ public class AgentScriptAPI
 		return updateTime;
 	}
 	
-	public double setDataKeys(String id, List<Map<String,Object>> items) throws JsonApiException, SQLException, Exception
+	public double setDataKeys(String id, List<Map<String,Object>> items) throws JsonApiException, SQLException
 	{
 
 		if(id == null)
-			throw new JsonApiException("Invalid id: "+id);
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		List<KeyDataItem> itemList = new ArrayList<KeyDataItem>(items.size());
 		
@@ -100,7 +101,7 @@ public class AgentScriptAPI
 			JsonDataType valueType = JsonDataType.fromString((String)data.getOrDefault("data_type", null));
 			
 			if(!KeyDataItem.isValidKeyname(key))
-				throw new JsonApiException("Invalid key name: "+key);
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 			
 			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, valueType, value);
 			itemList.add(item);
@@ -114,14 +115,14 @@ public class AgentScriptAPI
 	public DataItemReply getDataKey(String id, String key) throws JsonApiException, SQLException
 	{
 		if(id == null || id.length() == 0)
-			throw new JsonApiException("Missing id");
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 
 		if(!KeyDataItem.isValidKeyname(key))
-			throw new JsonApiException("Invalid key name: "+key);
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 		
 		KeyDataItem item = KeyDataManager.loadKey(id, key);
 		if(item == null)
-			throw new JsonApiException("Key not found");
+			throw new JsonApiException(ApiErrors.NOT_FOUND);
 		
 		return AgentShared.KeyDataItemToDataItemReply(id, item, Context);
 	}
@@ -139,7 +140,7 @@ public class AgentScriptAPI
 	public Map<String,DataItemReply> getDataKeys(String id, List<String> keys, double since, boolean includeDeleted) throws JsonApiException, SQLException
 	{
 		if(id == null || id.length() == 0)
-			throw new JsonApiException("Missing id");
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		List<KeyDataItem> items = KeyDataManager.loadKeysSince(id, keys, (long)since, includeDeleted);
 		if(items == null)
@@ -169,7 +170,7 @@ public class AgentScriptAPI
 	public Map<String,DataItemReply> getAllDataKeys(String id, double since, boolean includeDeleted) throws JsonApiException, SQLException
 	{
 		if(id == null || id.length() == 0)
-			throw new JsonApiException("Missing id");
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		List<KeyDataItem> items = KeyDataManager.loadAllKeysSince(id, (long)since, includeDeleted);
 		if(items == null)

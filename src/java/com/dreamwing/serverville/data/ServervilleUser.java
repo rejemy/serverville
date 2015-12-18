@@ -11,6 +11,8 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataManager;
+import com.dreamwing.serverville.net.ApiErrors;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.util.SVID;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
@@ -202,10 +204,10 @@ public class ServervilleUser {
 		return user;
 	}
 	
-	public void register(String password, String username, String email) throws Exception
+	public void register(String password, String username, String email) throws SQLException, JsonApiException
 	{
 		if(Username != null || Email != null)
-			throw new Exception("This account already registered");
+			throw new JsonApiException(ApiErrors.ALREADY_REGISTERED);
 		
 		Username = username;
 		Email = email;
@@ -334,18 +336,18 @@ public class ServervilleUser {
 		return DatabaseManager.ServervilleUserDao.queryForId(lookup.Id);
 	}
 	
-	public void update() throws Exception
+	public void update() throws JsonApiException, SQLException
 	{
 		if(DatabaseManager.ServervilleUserDao.update(this) != 1)
-			throw new Exception("Concurrent modification to user "+Id);
+			throw new JsonApiException(ApiErrors.CONCURRENT_MODIFICATION);
 	}
 	
-	public void startNewSession() throws Exception
+	public void startNewSession() throws SQLException, JsonApiException
 	{
 		setSessionId(SVID.makeSVID());
 	}
 	
-	public void setSessionId(String sessionId) throws Exception
+	public void setSessionId(String sessionId) throws SQLException, JsonApiException
 	{
 		if(Objects.equals(SessionId, sessionId))
 			return;
@@ -370,7 +372,7 @@ public class ServervilleUser {
 	}
 	
 	
-	public void setUsername(String username) throws Exception
+	public void setUsername(String username) throws SQLException, JsonApiException
 	{
 		if(Objects.equals(Username, username))
 			return;
@@ -395,7 +397,7 @@ public class ServervilleUser {
 	}
 	
 
-	public void setEmail(String email) throws Exception
+	public void setEmail(String email) throws SQLException, JsonApiException
 	{
 		if(Objects.equals(Email, email))
 			return;

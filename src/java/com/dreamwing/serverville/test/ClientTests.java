@@ -11,7 +11,7 @@ import com.dreamwing.serverville.client.ClientMessageEnvelope;
 import com.dreamwing.serverville.client.ClientSocketInitializer;
 import com.dreamwing.serverville.net.ApiError;
 import com.dreamwing.serverville.net.HttpUtil;
-import com.dreamwing.serverville.net.HttpUtil.JsonApiException;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.util.SVID;
 import com.fasterxml.jackson.core.type.TypeReference;
 

@@ -14,9 +14,9 @@ import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataTypes;
 import com.dreamwing.serverville.db.KeyDataResultHandlers.*;
-import com.dreamwing.serverville.net.HttpUtil.JsonApiException;
+import com.dreamwing.serverville.net.ApiErrors;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.serialize.ByteEncoder;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class KeyDataManager {
 
@@ -215,7 +215,7 @@ public class KeyDataManager {
 		return time;
 	}
 	
-	public static long saveKey(String id, KeyDataItem key) throws SQLException, JsonProcessingException
+	public static long saveKey(String id, KeyDataItem key) throws SQLException
 	{
 		if(id == null || id.length() == 0)
 		{
@@ -243,7 +243,7 @@ public class KeyDataManager {
 		return time;
 	}
 	
-	public static long saveKeys(String id, Collection<KeyDataItem> keys) throws SQLException, JsonProcessingException
+	public static long saveKeys(String id, Collection<KeyDataItem> keys) throws SQLException
 	{
 		if(id == null || id.length() == 0)
 		{
@@ -367,7 +367,7 @@ public class KeyDataManager {
 		{
 			// The keyname validator should not let anything through that might have damaging SQL escape sequences
 			if(!KeyDataItem.isValidKeyname(key))
-				throw new JsonApiException("Invalid key name: "+key);
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 			
 			if(!first)
 				str.append(",");

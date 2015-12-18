@@ -12,6 +12,11 @@ public class ResidentManager {
 		ActiveResidents = new ConcurrentHashMap<String,BaseResident>();
 	}
 	
+	public static void addResident(BaseResident resident)
+	{
+		ActiveResidents.put(resident.getId(), resident);
+	}
+	
 	public static BaseResident getResident(String resId)
 	{
 		return ActiveResidents.get(resId);

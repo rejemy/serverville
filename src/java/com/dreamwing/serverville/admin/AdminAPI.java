@@ -21,19 +21,19 @@ import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.log.IndexedFileManager.LogSearchHits;
+import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpHandlerOptions;
 import com.dreamwing.serverville.net.HttpRequestInfo;
 import com.dreamwing.serverville.net.HttpUtil;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.scripting.ScriptLoadException;
 import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.test.SelfTest;
 import com.dreamwing.serverville.test.SelfTest.TestStatus;
 import com.dreamwing.serverville.util.PasswordUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.netty.channel.ChannelFuture;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 
 public class AdminAPI {
@@ -47,7 +47,7 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST, auth=false)
-	public static ChannelFuture signIn(HttpRequestInfo req) throws Exception
+	public static ChannelFuture signIn(HttpRequestInfo req) throws JsonApiException, SQLException
 	{
 		String username = req.getOneBody("username", null);
 		String email = req.getOneBody("email", null);
@@ -55,7 +55,7 @@ public class AdminAPI {
 		
 		if(username == null && email == null)
 		{
-			throw new Exception("Must give either a username or a email to sign in");
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply either a username or email");
 		}
 		
 		SignInReply reply = new SignInReply();
@@ -73,8 +73,7 @@ public class AdminAPI {
 		
 		if(admin == null || !admin.checkPassword(password) || admin.AdminLevel < ServervilleUser.AdminLevel_AdminReadOnly)
 		{
-			reply.message = "Invalid user/password";
-			return HttpUtil.sendJson(req, reply);
+			throw new JsonApiException(ApiErrors.BAD_AUTH, "Password does not match");
 		}
 		
 
@@ -99,7 +98,7 @@ public class AdminAPI {
 	
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
-	public static ChannelFuture info(HttpRequestInfo req) throws Exception
+	public static ChannelFuture info(HttpRequestInfo req)
 	{
 		ServerInfo info = new ServerInfo();
 		info.hostname = ServervilleMain.Hostname;
@@ -125,7 +124,7 @@ public class AdminAPI {
 	}
 
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
-	public static ChannelFuture logfiles(HttpRequestInfo req) throws Exception
+	public static ChannelFuture logfiles(HttpRequestInfo req)
 	{
 		File logDir = KeyDataManager.getLogDir();
 		
@@ -165,7 +164,7 @@ public class AdminAPI {
 
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
-	public static ChannelFuture searchLogs(HttpRequestInfo req) throws Exception
+	public static ChannelFuture searchLogs(HttpRequestInfo req)
 	{
 		String query = req.getOneQuery("q", "*:*");
 
@@ -179,7 +178,7 @@ public class AdminAPI {
 		}
 		catch(ParseException e)
 		{
-			return HttpUtil.sendError(req, "Invalid query: "+e.getMessage(), HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.INVALID_QUERY, e.getMessage());
 		}
 		
 		
@@ -249,7 +248,7 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
-	public static ChannelFuture startSelftest(HttpRequestInfo req) throws Exception
+	public static ChannelFuture startSelftest(HttpRequestInfo req)
 	{
 		SelfTest.start(false);
 		
@@ -261,7 +260,7 @@ public class AdminAPI {
 	
 
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
-	public static ChannelFuture selftest(HttpRequestInfo req) throws Exception
+	public static ChannelFuture selftest(HttpRequestInfo req)
 	{
 		int startAt = req.getOneQueryAsInt("first", 0);
 		
@@ -285,7 +284,7 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
-	public static ChannelFuture user(HttpRequestInfo req) throws Exception
+	public static ChannelFuture user(HttpRequestInfo req) throws SQLException
 	{
 		String id = req.getOneQuery("id", null);
 		String email = req.getOneQuery("email", null);
@@ -300,10 +299,10 @@ public class AdminAPI {
 		else if(username != null)
 			user = ServervilleUser.findByUsername(username);
 		else
-			return HttpUtil.sendError(req, "Must query on one of id,email or username", HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.MISSING_INPUT, "Must query on one of id, email or username");
 		
 		if(user == null)
-			return HttpUtil.sendError(req, "User not found", HttpResponseStatus.NOT_FOUND);
+			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
 		
 		UserInfo info = new UserInfo();
 		
@@ -318,19 +317,19 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
-	public static ChannelFuture createUser(HttpRequestInfo req) throws Exception
+	public static ChannelFuture createUser(HttpRequestInfo req) throws SQLException, JsonApiException
 	{
-		String username = req.getOneBody("username", null);
-		String password = req.getOneBody("password", null);
-		String email = req.getOneBody("email", null);
+		String username = req.getOneBody("username");
+		String password = req.getOneBody("password");
+		String email = req.getOneBody("email");
 		
 		String adminLevelStr = req.getOneBody("admin_level", "user");
 		int adminLevel = ServervilleUser.parseAdminLevel(adminLevelStr);
 		if(adminLevel < 0)
-			return HttpUtil.sendError(req, "Invalid user level: "+adminLevelStr, HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.INVALID_INPUT, "admin_level is not a valid value");
 
 		if(!PasswordUtil.validatePassword(password))
-			return HttpUtil.sendError(req, "Invalid password", HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.INVALID_INPUT, "password is not a valid password");
 		
 		ServervilleUser admin = ServervilleUser.create(password, username, email, adminLevel);
 		
@@ -343,19 +342,19 @@ public class AdminAPI {
 
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
-	public static ChannelFuture deleteUser(HttpRequestInfo req) throws Exception
+	public static ChannelFuture deleteUser(HttpRequestInfo req) throws SQLException, JsonApiException
 	{
 		String userId = req.getOneBody("user_id");
 		
 		ServervilleUser user = ServervilleUser.findById(userId);
 		if(user == null)
 		{
-			return HttpUtil.sendError(req, "User not found: "+userId, HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
 		}
 		
 		if(user.getId().equals(req.getUser().getId()))
 		{
-			return HttpUtil.sendError(req, "Don't delete yourself, silly!", HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.INVALID_INPUT, "Don't delete yourself, silly!");
 		}
 		
 		user.delete();
@@ -364,7 +363,7 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
-	public static ChannelFuture setUserPassword(HttpRequestInfo req) throws Exception
+	public static ChannelFuture setUserPassword(HttpRequestInfo req) throws SQLException, JsonApiException
 	{
 		String userId = req.getOneBody("user_id");
 		String password = req.getOneBody("password");
@@ -372,7 +371,7 @@ public class AdminAPI {
 		ServervilleUser user = ServervilleUser.findById(userId);
 		if(user == null)
 		{
-			return HttpUtil.sendError(req, "User not found: "+userId, HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
 		}
 		
 		user.setPassword(password);
@@ -381,7 +380,7 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
-	public static ChannelFuture setUserUsername(HttpRequestInfo req) throws Exception
+	public static ChannelFuture setUserUsername(HttpRequestInfo req) throws JsonApiException, SQLException
 	{
 		String userId = req.getOneBody("user_id");
 		String username = req.getOneBody("username");
@@ -389,7 +388,7 @@ public class AdminAPI {
 		ServervilleUser user = ServervilleUser.findById(userId);
 		if(user == null)
 		{
-			return HttpUtil.sendError(req, "User not found: "+userId, HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
 		}
 		
 		user.setUsername(username);
@@ -398,7 +397,7 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
-	public static ChannelFuture setUserEmail(HttpRequestInfo req) throws Exception
+	public static ChannelFuture setUserEmail(HttpRequestInfo req) throws JsonApiException, SQLException
 	{
 		String userId = req.getOneBody("user_id");
 		String email = req.getOneBody("email");
@@ -406,7 +405,7 @@ public class AdminAPI {
 		ServervilleUser user = ServervilleUser.findById(userId);
 		if(user == null)
 		{
-			return HttpUtil.sendError(req, "User not found: "+userId, HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
 		}
 		
 		user.setEmail(email);
@@ -415,7 +414,7 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
-	public static ChannelFuture setUserAdminLevel(HttpRequestInfo req) throws Exception
+	public static ChannelFuture setUserAdminLevel(HttpRequestInfo req) throws JsonApiException, SQLException
 	{
 		String userId = req.getOneBody("user_id");
 		String adminLevelStr = req.getOneBody("admin_level");
@@ -423,12 +422,12 @@ public class AdminAPI {
 		ServervilleUser user = ServervilleUser.findById(userId);
 		if(user == null)
 		{
-			return HttpUtil.sendError(req, "User not found: "+userId, HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
 		}
 		
 		int adminLevel = ServervilleUser.parseAdminLevel(adminLevelStr);
 		if(adminLevel < 0)
-			return HttpUtil.sendError(req, "Invalid user level: "+adminLevelStr, HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.INVALID_INPUT, "invalid admin_level");
 		
 		user.AdminLevel = adminLevel;
 		user.update();
@@ -450,7 +449,7 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
-	public static ChannelFuture agentKeys(HttpRequestInfo req) throws Exception
+	public static ChannelFuture agentKeys(HttpRequestInfo req) throws SQLException
 	{
 		AgentKeyInfoList result = new AgentKeyInfoList();
 		result.keys = new LinkedList<AgentKeyInfo>();
@@ -475,7 +474,7 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
-	public static ChannelFuture createAgentKey(HttpRequestInfo req) throws Exception
+	public static ChannelFuture createAgentKey(HttpRequestInfo req) throws SQLException
 	{
 		String comment = req.getOneBody("comment", null);
 		String iprange = req.getOneBody("iprange", null);
@@ -501,11 +500,9 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
-	public static ChannelFuture editAgentKey(HttpRequestInfo req) throws Exception
+	public static ChannelFuture editAgentKey(HttpRequestInfo req) throws JsonApiException, SQLException
 	{
-		String key = req.getOneBody("key", null);
-		if(key == null)
-			throw new Exception("Must supply a key id");
+		String key = req.getOneBody("key");
 		
 		String comment = req.getOneBody("comment", null);
 		String iprange = req.getOneBody("iprange", null);
@@ -513,7 +510,7 @@ public class AdminAPI {
 		
 		AgentKey editKey = AgentKey.load(key);
 		if(editKey == null)
-			throw new Exception("Key not found");
+			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
 		
 		if(comment != null)
 			editKey.Comment = comment;
@@ -544,15 +541,13 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
-	public static ChannelFuture deleteAgentKey(HttpRequestInfo req) throws Exception
+	public static ChannelFuture deleteAgentKey(HttpRequestInfo req) throws SQLException, JsonApiException
 	{
-		String key = req.getOneBody("key", null);
-		if(key == null)
-			throw new Exception("Must supply a key id");
+		String key = req.getOneBody("key");
 		
 		AgentKey editKey = AgentKey.load(key);
 		if(editKey == null)
-			throw new Exception("Key not found");
+			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
 		
 		editKey.delete();
 		
@@ -573,15 +568,13 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
-	public static ChannelFuture scriptInfo(HttpRequestInfo req) throws SQLException, JsonProcessingException
+	public static ChannelFuture scriptInfo(HttpRequestInfo req) throws SQLException, JsonApiException
 	{
-		String id = req.getOneQuery("id", null);
-		if(id == null)
-			return HttpUtil.sendError(req, "Must supply a script id", HttpResponseStatus.BAD_REQUEST);
-		
+		String id = req.getOneQuery("id");
+
 		ScriptData script = ScriptData.findById(id);
 		if(script == null)
-			return HttpUtil.sendError(req, "Script not found: "+id, HttpResponseStatus.NOT_FOUND);
+			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
 		
 		ScriptDataInfo info = new ScriptDataInfo();
 		
@@ -594,22 +587,19 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
-	public static ChannelFuture script(HttpRequestInfo req) throws SQLException, JsonProcessingException
+	public static ChannelFuture script(HttpRequestInfo req) throws SQLException, JsonApiException
 	{
-		String id = req.getOneQuery("id", null);
-		if(id == null)
-			return HttpUtil.sendError(req, "Must supply a script id", HttpResponseStatus.BAD_REQUEST);
-		
+		String id = req.getOneQuery("id");
+
 		ScriptData script = ScriptData.findById(id);
 		if(script == null)
-			return HttpUtil.sendError(req, "Script not found: "+id, HttpResponseStatus.NOT_FOUND);
+			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
 		
-
 		return HttpUtil.sendText(req, script.ScriptSource, "application/javascript");
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
-	public static ChannelFuture scripts(HttpRequestInfo req) throws SQLException, JsonProcessingException
+	public static ChannelFuture scripts(HttpRequestInfo req) throws SQLException
 	{
 		List<ScriptData> scripts = ScriptData.loadAll();
 		
@@ -632,19 +622,17 @@ public class AdminAPI {
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
-	public static ChannelFuture addScript(HttpRequestInfo req) throws SQLException, JsonProcessingException
+	public static ChannelFuture addScript(HttpRequestInfo req) throws SQLException, JsonApiException
 	{
-		String id = req.getOneQuery("id", null);
-		if(id == null)
-			return HttpUtil.sendError(req, "Must supply a script id", HttpResponseStatus.BAD_REQUEST);
-		
+		String id = req.getOneQuery("id");
+
 		String contentType = req.Request.headers().get(Names.CONTENT_TYPE);
 		if(contentType == null || !contentType.equals("application/javascript"))
-			return HttpUtil.sendError(req, "Script must be of type application/javascript", HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.INVALID_CONTENT, "Script must be of type application/javascript");
 		
 		String scriptData = req.getBody();
 		if(scriptData == null || scriptData.length() == 0)
-			return HttpUtil.sendError(req, "Must include a script body", HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.INVALID_CONTENT, "Must include a script body");
 		
 		List<ScriptData> scripts = ScriptData.loadAll();
 
@@ -680,7 +668,7 @@ public class AdminAPI {
 		} catch (ScriptLoadException e) {
 			String errorMessage = e.getCause().getMessage();
 			errorMessage = errorMessage.replaceAll("\\<eval\\>", e.ScriptId);
-			return HttpUtil.sendError(req, "Javascript error: "+errorMessage, HttpResponseStatus.BAD_REQUEST);
+			return HttpUtil.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
 		}
 		
 		if(found)

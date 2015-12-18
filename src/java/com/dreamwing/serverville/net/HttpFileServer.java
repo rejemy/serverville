@@ -114,7 +114,7 @@ public class HttpFileServer
         Path filePath = BasePath.resolve(req.PathRemainder).normalize();
         if(!filePath.startsWith(BasePath))
         {
-        	return HttpUtil.sendError(req, "Forbidden", HttpResponseStatus.FORBIDDEN);
+        	return HttpUtil.sendError(req, ApiErrors.FORBIDDEN);
         }
         
         File file = filePath.toFile();
@@ -129,11 +129,11 @@ public class HttpFileServer
         
         
         if (file.isHidden() || !file.exists()) {
-            return HttpUtil.sendError(req, "Not found", HttpResponseStatus.NOT_FOUND);
+            return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
         }
         
         if (!file.canRead() || !file.isFile()) {
-        	return HttpUtil.sendError(req, "Forbidden", HttpResponseStatus.FORBIDDEN);
+        	return HttpUtil.sendError(req, ApiErrors.FORBIDDEN);
         }
         
         long fileModifiedAt = file.lastModified();
@@ -230,7 +230,7 @@ public class HttpFileServer
 	        try {
 	            raf = new RandomAccessFile(file, "r");
 	        } catch (FileNotFoundException ignore) {
-	        	return HttpUtil.sendError(req, "Not found", HttpResponseStatus.NOT_FOUND);
+	        	return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
 	        }
 	
 	        HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);

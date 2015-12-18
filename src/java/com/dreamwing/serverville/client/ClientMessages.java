@@ -34,6 +34,11 @@ public class ClientMessages {
 		public String session_id;
 	}
 
+	public static class ValidateSessionRequest
+	{
+		public String session_id;
+	}
+	
 	public static class SignIn
 	{
 		public String username;

@@ -1,5 +1,7 @@
 package com.dreamwing.serverville.admin;
 
+import java.net.URISyntaxException;
+import java.sql.SQLException;
 import java.util.Date;
 
 import org.apache.logging.log4j.LogManager;
@@ -12,7 +14,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.timeout.IdleStateEvent;
 
 import com.dreamwing.serverville.data.AdminActionLog;
@@ -20,6 +21,8 @@ import com.dreamwing.serverville.log.SVLog;
 import com.dreamwing.serverville.net.HttpDispatcher;
 import com.dreamwing.serverville.net.HttpRequestInfo;
 import com.dreamwing.serverville.net.HttpUtil;
+import com.dreamwing.serverville.net.JsonApiException;
+import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpConnectionInfo;
 import com.dreamwing.serverville.util.SVID;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -73,7 +76,7 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
         }
     }
 
-    private ChannelFuture HandleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception
+    private ChannelFuture HandleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request)
     {
     	if(request.getMethod() == HttpMethod.OPTIONS)
     	{
@@ -81,16 +84,38 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
     	}
     	
     	CurrRequest = new HttpRequestInfo();
-    	CurrRequest.init(Info, request, SVID.makeSVID());
-    	
+    	try {
+    		CurrRequest.init(Info, request, SVID.makeSVID());
+		} catch (URISyntaxException e1) {
+			return HttpUtil.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
+		}
     	
     	l.debug(new SVLog("Adming HTTP request", CurrRequest));
     	
     	if (!request.getDecoderResult().isSuccess()) {
-            return HttpUtil.sendError(CurrRequest, "Couldn't decode request", HttpResponseStatus.BAD_REQUEST);
+    		return HttpUtil.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
         }
 
-    	ChannelFuture result = Dispatcher.dispatch(CurrRequest);
+    	ChannelFuture result;
+		try {
+			result = Dispatcher.dispatch(CurrRequest);
+		}
+		catch(JsonProcessingException e)
+		{
+			return HttpUtil.sendError(CurrRequest, ApiErrors.JSON_ERROR, e.getMessage());
+		}
+		catch(SQLException e)
+		{
+			return HttpUtil.sendError(CurrRequest, ApiErrors.DB_ERROR, e.getMessage());
+		}
+		catch(JsonApiException e)
+		{
+			return HttpUtil.sendErrorJson(CurrRequest, e.Error, e.HttpStatus);
+		}
+		catch(Exception e)
+		{
+			return HttpUtil.sendError(CurrRequest, ApiErrors.INTERNAL_SERVER_ERROR, e.getMessage());
+		}
 
     	// Log anything other than GETs (and logins, because BORING)
     	if(request.getMethod() != HttpMethod.GET && !CurrRequest.RequestURI.getPath().equals("/api/signIn") && Info.User != null)
@@ -105,7 +130,11 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
     		if(log.Request.length() >= 255)
     			log.Request = log.Request.substring(0, 255);
     		
-    		log.create();
+    		try {
+				log.create();
+			} catch (SQLException e) {
+				l.error("Error creating log item: ", e);
+			}
     	}
     	
     	return result;
@@ -113,10 +142,11 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
     
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws JsonProcessingException {
-        cause.printStackTrace();
-        if (ctx.channel().isActive()) {
+        l.error("Exception in admin handler:", cause);
+        if (ctx.channel().isActive())
+        {
         	// Close connection on internal server error to simplify things
-        	HttpUtil.sendError(CurrRequest, "Internal server error", HttpResponseStatus.INTERNAL_SERVER_ERROR).addListener(ChannelFutureListener.CLOSE);
+        	HttpUtil.sendError(CurrRequest, ApiErrors.INTERNAL_SERVER_ERROR).addListener(ChannelFutureListener.CLOSE);
         }
     }
 

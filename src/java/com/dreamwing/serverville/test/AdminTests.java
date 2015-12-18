@@ -19,11 +19,14 @@ import com.dreamwing.serverville.admin.AdminServerSocketInitializer;
 import com.dreamwing.serverville.log.IndexedFileManager.LogSearchHit;
 import com.dreamwing.serverville.log.IndexedFileManager.LogSearchHits;
 import com.dreamwing.serverville.net.ApiError;
+import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpUtil;
-import com.dreamwing.serverville.net.HttpUtil.JsonApiException;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.util.SVID;
 import com.squareup.okhttp.FormEncodingBuilder;
 import com.squareup.okhttp.RequestBody;
+
+import io.netty.handler.codec.http.HttpResponseStatus;
 
 public class AdminTests {
 
@@ -77,16 +80,23 @@ public class AdminTests {
 	}
 
 	@Test(order=2)
-	public void InvalidSignin() throws IOException, JsonApiException
+	public void InvalidSignin() throws IOException
 	{
 		FormEncodingBuilder body = new FormEncodingBuilder();
 		body.add("username", AdminUsername);
 		body.add("password", "wrongpasswordfool!");
 		
-		SignInReply reply = postAdminApi("api/signIn", body.build(), SignInReply.class);
-		Assert.assertNotNull(reply);
-		Assert.assertNotNull(reply.message);
-		Assert.assertNull(reply.session_id);
+		
+		try {
+			postAdminApi("api/signIn", body.build(), SignInReply.class);
+		} catch (JsonApiException e) {
+			Assert.assertTrue(e.Error.isError);
+			Assert.assertEquals(HttpResponseStatus.FORBIDDEN, e.HttpStatus);
+			Assert.assertEquals(ApiErrors.BAD_AUTH.getCode(), e.Error.errorCode);
+			return;
+		}
+		
+		Assert.fail("Didn't get an auth exception");
 	}
 	
 	@Test(order=3)

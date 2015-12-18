@@ -3,6 +3,9 @@ package com.dreamwing.serverville.net;
 
 import java.io.IOException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.dreamwing.serverville.client.ClientMessageEnvelope;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,6 +32,8 @@ import io.netty.util.CharsetUtil;
 
 public class HttpUtil {
 
+	private static final Logger l = LogManager.getLogger(HttpUtil.class);
+	
 	private static OkHttpClient SharedHttpClient;
 	
 	static
@@ -82,9 +87,15 @@ public class HttpUtil {
 		return req.Connection.Ctx.writeAndFlush(response);
 	}
 	
-	public static ChannelFuture sendJson(HttpRequestInfo req, Object data) throws JsonProcessingException
+	public static ChannelFuture sendJson(HttpRequestInfo req, Object data)
 	{
-		ByteBuf content = JSON.serializeToByteBuf(data);
+		ByteBuf content;
+		try {
+			content = JSON.serializeToByteBuf(data);
+		} catch (JsonProcessingException e) {
+			l.error("Error encoding error reply to json: ", e);
+			content = Unpooled.copiedBuffer("There was an error encoding the server's reply.", CharsetUtil.UTF_8);
+		}
 		
 		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK,
 				content);
@@ -97,17 +108,37 @@ public class HttpUtil {
 		return req.Connection.Ctx.writeAndFlush(response);
 	}
 	
-	public static ChannelFuture sendError(HttpRequestInfo req, String errorText, HttpResponseStatus status) throws JsonProcessingException
+	public static ChannelFuture sendError(HttpRequestInfo req, ApiErrors error)
 	{
-		ApiError err = new ApiError(errorText);
+		ApiError err = new ApiError(error);
 		
-		return sendErrorJson(req, err, status);
+		return sendErrorJson(req, err, error.getHttpStatus());
     }
+	
+	public static ChannelFuture sendError(HttpRequestInfo req, ApiErrors error, String details)
+	{
+		ApiError err = new ApiError(error, details);
+		
+		return sendErrorJson(req, err, error.getHttpStatus());
+    }
+	
 
-	public static ChannelFuture sendErrorJson(HttpRequestInfo req, ApiError data, HttpResponseStatus status) throws JsonProcessingException
+	public static ChannelFuture sendErrorJson(HttpRequestInfo req, ApiError data, HttpResponseStatus status)
+	{
+		return sendErrorJson(req.Connection.Ctx, data, status);
+	}
+	
+	public static ChannelFuture sendErrorJson(ChannelHandlerContext ctx, ApiError data, HttpResponseStatus status)
 	{
 		data.isError = true;
-		ByteBuf content = JSON.serializeToByteBuf(data);
+		ByteBuf content;
+		try {
+			content = JSON.serializeToByteBuf(data);
+		} catch (JsonProcessingException e)
+		{
+			l.error("Error encoding error reply to json: ", e);
+			content = Unpooled.copiedBuffer("There was an error: "+data.errorMessage+". Additionally, there was an error encoding this error. This should never happen.", CharsetUtil.UTF_8);
+		}
 		
 		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status,
 				content);
@@ -117,7 +148,7 @@ public class HttpUtil {
 		
 		response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 		
-		return req.Connection.Ctx.writeAndFlush(response);
+		return ctx.writeAndFlush(response);
 	}
 	
     public static ChannelFuture sendRedirect(HttpRequestInfo req, String newUri) {
@@ -168,24 +199,7 @@ public class HttpUtil {
     	return jsonResponse;
     }
     
-    public static class JsonApiException extends Exception
-    {
-		private static final long serialVersionUID = 1L;
-		
-		public ApiError Error;
-    	
-    	public JsonApiException(ApiError apiError)
-    	{
-    		super(apiError.errorMessage);
-    		Error = apiError;
-    	}
-    	
-    	public JsonApiException(String errorMessage)
-    	{
-    		super(errorMessage);
-    		Error = new ApiError(errorMessage);
-    	}
-    }
+
     
     public static <S> S getJsonApi(String url, String sessionId, Class<S> successClass) throws IOException, JsonApiException
     {
@@ -204,7 +218,7 @@ public class HttpUtil {
     	}
     	
     	ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
-    	throw new JsonApiException(error);
+    	throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
     }
     
     public static String getString(String url) throws IOException
@@ -268,7 +282,7 @@ public class HttpUtil {
     	}
     	
     	ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
-    	throw new JsonApiException(error);
+    	throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
     }
     
     public static <S> S postJsonApi(String url, String sessionId, RequestBody body, Class<S> successClass) throws IOException, JsonApiException
@@ -289,7 +303,7 @@ public class HttpUtil {
     	}
     	
     	ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
-    	throw new JsonApiException(error);
+    	throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
     }
     
     private static final MediaType JSON_CONTENT_TYPE =
@@ -318,7 +332,7 @@ public class HttpUtil {
     	}
     	
     	ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
-    	throw new JsonApiException(error);
+    	throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
     }
     
 

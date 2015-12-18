@@ -60,6 +60,18 @@ public class HttpRequestInfo {
 		return defValue;
 	}
 	
+	public String getOneQuery(String query) throws JsonApiException
+	{
+		if(QueryParams == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, query);
+		
+		List<String> queries = QueryParams.get(query);
+		if(queries == null || queries.size() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, query);
+		
+		return queries.get(0);
+	}
+	
 	public String getOneQuery(String query, String defValue)
 	{
 		if(QueryParams == null)
@@ -143,14 +155,14 @@ public class HttpRequestInfo {
 		return BodyString;
 	}
 	
-	public String getOneBody(String query) throws Exception
+	public String getOneBody(String query) throws JsonApiException
 	{
 		if(FormBody == null)
-			throw new Exception("Missing required argument: "+query);
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, query);
 		
 		List<String> queries = FormBody.get(query);
 		if(queries == null || queries.size() == 0)
-			throw new Exception("Missing required argument: "+query);
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, query);
 		
 		return queries.get(0);
 	}

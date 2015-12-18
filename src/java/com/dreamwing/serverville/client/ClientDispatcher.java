@@ -7,8 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.dreamwing.serverville.agent.AgentShared;
-import com.dreamwing.serverville.net.ApiNotFoundException;
-import com.dreamwing.serverville.net.NotAuthenticatedException;
+import com.dreamwing.serverville.net.ApiErrors;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.util.JSON;
@@ -102,7 +102,7 @@ public class ClientDispatcher {
 		{
 			// All script methods require authentication
 			if(info.User == null)
-				throw new NotAuthenticatedException();
+				throw new JsonApiException(ApiErrors.NOT_AUTHED);
 			
 			ScriptEngineContext context = ScriptManager.getEngine();
 			try
@@ -118,10 +118,10 @@ public class ClientDispatcher {
 		{
 			DispatchMethod method = Methods.get(messageType);
 			if(method == null)
-				throw new ApiNotFoundException();
+				throw new JsonApiException(ApiErrors.UNKNOWN_API);
 			
 			if(method.Authenticate && info.User == null)
-				throw new NotAuthenticatedException();
+				throw new JsonApiException(ApiErrors.NOT_AUTHED);
 			
 			Object requestObj = JSON.deserialize(messageData, method.RequestClass);
 			
