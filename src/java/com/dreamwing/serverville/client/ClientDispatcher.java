@@ -3,20 +3,25 @@ package com.dreamwing.serverville.client;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.dreamwing.serverville.agent.AgentShared;
+import com.dreamwing.serverville.net.ApiError;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.util.JSON;
-
-import io.netty.buffer.ByteBuf;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class ClientDispatcher {
+	
+	private static final Logger l = LogManager.getLogger(ClientDispatcher.class);
 	
 	private class DispatchMethod
 	{
@@ -74,6 +79,7 @@ public class ClientDispatcher {
 		Methods.put(method.getName(), action);
 	}
 	
+	/*
 	public String dispatch(String messageType, String messageNum, String messageData, ClientMessageInfo info) throws Exception
 	{
 		Object reply = invokeMethod(messageType, messageData, info);
@@ -81,7 +87,9 @@ public class ClientDispatcher {
 		if(reply == null)
 			return null;
 		
-		String messageStr = ":"+messageNum+":"+JSON.serializeToString(reply);
+		String isError = reply instanceof ApiError ? "E" : "R";
+		
+		String messageStr = ":"+messageNum+":"+isError+":"+JSON.serializeToString(reply);
 		
 		return messageStr;
 	}
@@ -93,6 +101,32 @@ public class ClientDispatcher {
 		envelope.message = invokeMethod(messageType, messageData, info);
 
 		return JSON.serializeToByteBuf(envelope);
+	}
+	*/
+	
+	public Object dispatch(String messageType, String messageData, ClientMessageInfo info)
+	{
+		try
+		{
+			return invokeMethod(messageType, messageData, info);
+		}
+		catch(JsonProcessingException e)
+		{
+			return new ApiError(ApiErrors.JSON_ERROR, e.getMessage());
+		}
+		catch(SQLException e)
+		{
+			return new ApiError(ApiErrors.DB_ERROR, e.getMessage());
+		}
+		catch(JsonApiException e)
+		{
+			return e.Error;
+		}
+		catch(Exception e)
+		{
+			l.error("Exception in client api method: ", e);
+			return new ApiError(ApiErrors.INTERNAL_SERVER_ERROR, e.getMessage());
+		}
 	}
 	
 	private Object invokeMethod(String messageType, String messageData, ClientMessageInfo info) throws Exception

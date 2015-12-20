@@ -20,6 +20,7 @@ public enum ApiErrors {
 	INVALID_CONTENT(14, "Invalid content in HTTP body"),
 	JAVASCRIPT_ERROR(15, "Error parsing or executing javascript"),
 	DATA_CONVERSION(16, "Can't convert the supplied value to the correct type"),
+	JSON_ENCODE_ERROR(17, "Error encoding JSON. This shouldn't happen."),
 	
 	INVALID_QUERY(100, "Invalid lucene query"),
 	INVALID_KEY_NAME(101, "Invalid key name"),

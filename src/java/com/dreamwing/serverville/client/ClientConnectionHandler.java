@@ -20,20 +20,15 @@ import com.dreamwing.serverville.util.JSON;
 import com.dreamwing.serverville.util.SVID;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
@@ -224,31 +219,30 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			info.ConnectionHandler = this;
 			info.User = Info.User;
 			
-			ByteBuf reply = null;
-			try
+			
+			Object reply = Dispatcher.dispatch(messageType, messageBody, info);
+			if(reply instanceof ApiError)
 			{
-				reply = Dispatcher.dispatch(messageType, messageBody, info);
+				ApiError error = (ApiError)reply;
+				return HttpUtil.sendErrorJson(currRequest, error, error.getHttpStatus());
 			}
-			catch(JsonProcessingException e)
+			else
 			{
-				return HttpUtil.sendError(currRequest, ApiErrors.JSON_ERROR, e.getMessage());
-			}
-			catch(SQLException e)
-			{
-				return HttpUtil.sendError(currRequest, ApiErrors.DB_ERROR, e.getMessage());
-			}
-			catch(JsonApiException e)
-			{
-				return HttpUtil.sendErrorJson(currRequest, e.Error, e.HttpStatus);
-			}
-			catch(Exception e)
-			{
-				return HttpUtil.sendError(currRequest, ApiErrors.INTERNAL_SERVER_ERROR, e.getMessage());
+				ClientMessageEnvelope<Object> envelope = new ClientMessageEnvelope<Object>();
+				envelope.message = reply;
+
+				return HttpUtil.sendJson(currRequest, envelope);
 			}
 			
-			if(reply == null)
-				return null;
 			
+			/*ByteBuf reply;
+			try {
+				reply = JSON.serializeToByteBuf(envelope);
+			} catch (JsonProcessingException e) {
+				l.error("Error JSON encoding reply: ", e);
+				reply = Unpooled.copiedBuffer("There was an error encoding the server's reply.", CharsetUtil.UTF_8);
+			}
+
 			HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK,
 					reply);
 			
@@ -260,7 +254,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 				HttpHeaders.setContentLength(response, reply.readableBytes());
 			}
 			
-			return ctx.writeAndFlush(response);
+			return ctx.writeAndFlush(response);*/
 		}
 		
 		return HttpUtil.sendError(currRequest, ApiErrors.NOT_FOUND);
@@ -307,28 +301,33 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		info.ConnectionHandler = this;
 		info.User = Info.User;
 		
-		String reply = null;
-		try {
-			if(messageType == null)
-			{
-				// It's a reply to a sever message
-				
-			}
-			else
-			{
-				reply = Dispatcher.dispatch(messageType, messageNum, messageBody, info);
-			}
-		} catch (Exception e) {
-			l.error("Error in message handler: "+messageType, e);
+
+		if(messageType == null)
+		{
+			// It's a reply to a sever message
+			
 			return null;
 		}
-		
-		if(reply != null)
+		else
 		{
-			return write(reply);
+			Object replyObj = Dispatcher.dispatch(messageType, messageBody, info);
+			String isError = replyObj instanceof ApiError ? "E" : "R";
+			
+			String replyStr;
+			try {
+				replyStr = JSON.serializeToString(replyObj);
+			} catch (JsonProcessingException e) {
+				replyStr = ApiError.encodingErrorReply;
+				isError = "E";
+			}
+			
+			String messageStr = ":"+messageNum+":"+isError+":"+replyStr;
+			
+			return write(messageStr);
 		}
 		
-		return null;
+		
+		
 	}
 	
 	@Override

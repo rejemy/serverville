@@ -90,17 +90,20 @@ public class HttpUtil {
 	public static ChannelFuture sendJson(HttpRequestInfo req, Object data)
 	{
 		ByteBuf content;
+		HttpResponseStatus status = HttpResponseStatus.OK;
+		String contentType = "application/json";
 		try {
 			content = JSON.serializeToByteBuf(data);
 		} catch (JsonProcessingException e) {
 			l.error("Error encoding error reply to json: ", e);
-			content = Unpooled.copiedBuffer("There was an error encoding the server's reply.", CharsetUtil.UTF_8);
+			content = Unpooled.copiedBuffer(ApiError.encodingErrorReply, CharsetUtil.UTF_8);
+			status = HttpResponseStatus.INTERNAL_SERVER_ERROR;
 		}
 		
-		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK,
+		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status,
 				content);
 		
-		HttpUtil.setContentTypeHeader(response, "application/json");
+		HttpUtil.setContentTypeHeader(response, contentType);
 		HttpHeaders.setContentLength(response, content.readableBytes());
 		
 		response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
@@ -132,18 +135,20 @@ public class HttpUtil {
 	{
 		data.isError = true;
 		ByteBuf content;
+		String contentType = "application/json";
+		
 		try {
 			content = JSON.serializeToByteBuf(data);
 		} catch (JsonProcessingException e)
 		{
 			l.error("Error encoding error reply to json: ", e);
-			content = Unpooled.copiedBuffer("There was an error: "+data.errorMessage+". Additionally, there was an error encoding this error. This should never happen.", CharsetUtil.UTF_8);
+			content = Unpooled.copiedBuffer(ApiError.encodingErrorReply, CharsetUtil.UTF_8);
 		}
 		
 		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status,
 				content);
 		
-		HttpUtil.setContentTypeHeader(response, "application/json");
+		HttpUtil.setContentTypeHeader(response, contentType);
 		HttpHeaders.setContentLength(response, content.readableBytes());
 		
 		response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
