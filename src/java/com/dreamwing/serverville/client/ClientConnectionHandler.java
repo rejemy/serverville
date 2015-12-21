@@ -317,6 +317,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			try {
 				replyStr = JSON.serializeToString(replyObj);
 			} catch (JsonProcessingException e) {
+				l.error("Json encoding error:", e);
 				replyStr = ApiError.encodingErrorReply;
 				isError = "E";
 			}
