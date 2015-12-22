@@ -54,9 +54,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	
 	private volatile boolean WebsocketConnected = false;
 	
-	
-	private int MessageSequence = 0;
-	
+
 	public ClientConnectionHandler(ClientDispatcher dispatcher)
 	{
 		super();
@@ -301,33 +299,22 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		info.ConnectionHandler = this;
 		info.User = Info.User;
 		
+		Object replyObj = Dispatcher.dispatch(messageType, messageBody, info);
+		String sendType = replyObj instanceof ApiError ? "E" : "R";
+		
+		String replyStr;
+		try {
+			replyStr = JSON.serializeToString(replyObj);
+		} catch (JsonProcessingException e) {
+			l.error("Json encoding error:", e);
+			replyStr = ApiError.encodingErrorReply;
+			sendType = "E";
+		}
+		
+		String messageStr = sendType+":"+messageNum+":"+replyStr;
+		
+		return write(messageStr);
 
-		if(messageType == null)
-		{
-			// It's a reply to a sever message
-			
-			return null;
-		}
-		else
-		{
-			Object replyObj = Dispatcher.dispatch(messageType, messageBody, info);
-			String isError = replyObj instanceof ApiError ? "E" : "R";
-			
-			String replyStr;
-			try {
-				replyStr = JSON.serializeToString(replyObj);
-			} catch (JsonProcessingException e) {
-				l.error("Json encoding error:", e);
-				replyStr = ApiError.encodingErrorReply;
-				isError = "E";
-			}
-			
-			String messageStr = ":"+messageNum+":"+isError+":"+replyStr;
-			
-			return write(messageStr);
-		}
-		
-		
 		
 	}
 	
@@ -348,23 +335,16 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
         }
     }
 	
-	private synchronized int getNextMessageNum()
-	{
-		return MessageSequence++;
-	}
-	
 	public ChannelFuture sendMessage(String messageType, Object messageBody) throws Exception
 	{
-		int messageNum = getNextMessageNum();
-		String messageStr = messageType+":"+messageNum+":"+JSON.serializeToString(messageBody);
+		String messageStr = "M:"+messageType+":"+JSON.serializeToString(messageBody);
 		
 		return write(messageStr);
 	}
 	
 	public ChannelFuture sendMessage(String messageType, String serializedMessageBody)
 	{
-		int messageNum = getNextMessageNum();
-		String messageStr = messageType+":"+messageNum+":"+serializedMessageBody;
+		String messageStr = "M:"+messageType+":"+serializedMessageBody;
 		
 		return write(messageStr);
 	}
