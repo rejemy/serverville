@@ -27,6 +27,7 @@ public enum ApiErrors {
 	ALREADY_REGISTERED(102, "Account already registered"),
 	ALREADY_SIGNED_IN(103, "Account already signed in"),
 	PRIVATE_DATA(104, "This data cannot be read by the current user"),
+	CHANNEL_ID_TAKEN(105, "This channel ID is already taken by something other than a channel"),
 	
 	UNKNOWN(Integer.MAX_VALUE, "Unknown error");
 	

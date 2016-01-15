@@ -15,6 +15,8 @@ import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
+import com.dreamwing.serverville.residents.BaseResident;
+import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.serialize.JsonDataDecoder;
 
 
@@ -89,6 +91,94 @@ public class AgentAPI
 	{
 		UserDataReply reply = new UserDataReply();
 		reply.values = ApiInst.getAllDataKeys(request.id, request.since, request.include_deleted);
+		return reply;
+	}
+	
+	
+	public static CreateChannelReply CreateChannel(CreateChannelRequest request) throws JsonApiException
+	{
+		CreateChannelReply reply = new CreateChannelReply();
+		reply.id = ApiInst.createChannel(request.id);
+		return reply;
+	}
+	
+	public static EmptyReply DeleteChannel(DeleteChannelRequest request) throws JsonApiException
+	{
+		ApiInst.deleteChannel(request.id);
+		
+		EmptyReply reply = new EmptyReply();
+		return reply;
+	}
+	
+	public static EmptyReply AddListener(ListenerRequest request) throws JsonApiException
+	{
+		ApiInst.addListener(request.source, request.listener, request.two_way);
+		
+		EmptyReply reply = new EmptyReply();
+		return reply;
+	}
+	
+	public static EmptyReply RemoveListener(ListenerRequest request) throws JsonApiException
+	{
+		ApiInst.removeListener(request.source, request.listener, request.two_way);
+		
+		EmptyReply reply = new EmptyReply();
+		return reply;
+	}
+	
+
+	public static EmptyReply SetTransientState(SetGlobalDataRequest request) throws JsonApiException
+	{
+		ApiInst.setTransientState(request.id, request.key, request.value, request.data_type.value());
+		
+		EmptyReply reply = new EmptyReply();
+		return reply;
+	}
+	
+	public static EmptyReply SetTransientStates(SetGlobalDataListRequest request) throws JsonApiException
+	{
+		EmptyReply reply = new EmptyReply();
+		
+		if(request.id == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
+		
+		BaseResident res = ResidentManager.getResident(request.id);
+		if(res == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
+		
+		List<KeyDataItem> stateValues = new ArrayList<KeyDataItem>(request.values.size());
+		
+		for(SetGlobalDataItemRequest data : request.values)
+		{
+			if(!KeyDataItem.isValidKeyname(data.key))
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
+			
+			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
+			stateValues.add(item);
+		}
+		
+		res.setTransientState(stateValues);
+		
+		return reply;
+	}
+	
+	public static DataItemReply GetTransientState(GetTransientStateRequest request) throws JsonApiException
+	{
+		return ApiInst.getTransientState(request.id, request.key);
+	}
+	
+
+	public static UserDataReply GetTransientStates(GetTransientStatesRequest request) throws JsonApiException
+	{
+		UserDataReply reply = new UserDataReply();
+		reply.values = ApiInst.getTransientStates(request.id, request.keys);
+		return reply;
+	}
+	
+	public static UserDataReply getAllTransientStates(GetAllTransientStatesRequest request) throws JsonApiException
+	{
+		UserDataReply reply = new UserDataReply();
+		reply.values = ApiInst.getAllTransientStates(request.id);
 		return reply;
 	}
 }

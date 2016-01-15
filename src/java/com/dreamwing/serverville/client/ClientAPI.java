@@ -358,7 +358,7 @@ public class ClientAPI {
 				continue;
 			}
 			
-			DataItemReply data = KeyDataItemToDataItemReply(info.User.getId(), item);
+			DataItemReply data = KeyDataItemToDataItemReply(request.id, item);
 			reply.values.put(data.key, data);
 		}
 		

@@ -14,12 +14,17 @@ public class ResidentManager {
 	
 	public static void addResident(BaseResident resident)
 	{
-		ActiveResidents.put(resident.getId(), resident);
+		ActiveResidents.putIfAbsent(resident.getId(), resident);
 	}
 	
 	public static BaseResident getResident(String resId)
 	{
 		return ActiveResidents.get(resId);
+	}
+	
+	public static void removeResident(BaseResident resident)
+	{
+		ActiveResidents.remove(resident.getId());
 	}
 	
 }

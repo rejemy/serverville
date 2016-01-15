@@ -113,7 +113,7 @@ public class ServervilleUser {
 		user.AdminLevel = adminLevel;
 		
 		if(password != null)
-			user.setPassword(password);
+			user.setPasswordHash(password);
 		
 		UsernameLookup usernamelookup = null;
 		EmailLookup emailLookup = null;
@@ -421,9 +421,16 @@ public class ServervilleUser {
 		update();
 	}
 	
-	public void setPassword(String cleartext)
+	private void setPasswordHash(String cleartext)
 	{
 		PasswordHash = BCrypt.hashpw(cleartext, BCrypt.gensalt(12));
+	}
+	
+	public void setPassword(String cleartext) throws JsonApiException, SQLException
+	{
+		setPasswordHash(cleartext);
+		
+		update();
 	}
 	
 	public boolean checkPassword(String cleartext)

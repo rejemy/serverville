@@ -30,6 +30,7 @@ import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.launcher.Launcher;
 import com.dreamwing.serverville.log.IndexedFileAppender;
 import com.dreamwing.serverville.log.IndexedFileManager;
+import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.test.SelfTest;
 import com.dreamwing.serverville.util.JSON;
@@ -181,6 +182,7 @@ public class ServervilleMain {
     	KeyDataManager.init();
     	ScriptManager.init();
     	
+    	ResidentManager.init();
     	UserManager.init();
     	
     	SelfTest.init();

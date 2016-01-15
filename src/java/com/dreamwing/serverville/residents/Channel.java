@@ -1,36 +1,21 @@
 package com.dreamwing.serverville.residents;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 
 
 public class Channel extends BaseResident {
 
 	
-	private ConcurrentMap<String,BaseResident> Listeners;
+	
 	
 	public Channel(String id)
 	{
 		super(id);
-		Listeners = new ConcurrentHashMap<String,BaseResident>();
+		
 		
 	}
 	
-	public void destroy()
-	{
-		Listeners = null;
-	}
+
 	
-	public void addListener(BaseResident resident)
-	{
-		Listeners.put(resident.getId(), resident);
-	}
-	
-	public void removeListener(BaseResident resident)
-	{
-		Listeners.remove(resident.getId());
-	}
 	
 	/*
 	public void join(OnlineUser user)

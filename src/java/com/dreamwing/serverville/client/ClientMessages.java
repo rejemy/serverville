@@ -129,6 +129,11 @@ public class ClientMessages {
 		public boolean include_deleted;
 	}
 	
+	public static class TransientStateChangeMessage
+	{
+		public Map<String,Object> values;
+	}
+	
 	/*
 	
 	public static class UserInfo

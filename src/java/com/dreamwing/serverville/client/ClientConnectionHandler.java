@@ -16,6 +16,8 @@ import com.dreamwing.serverville.net.ApiError;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpConnectionInfo;
 import com.dreamwing.serverville.net.JsonApiException;
+import com.dreamwing.serverville.residents.OnlineUser;
+import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.util.JSON;
 import com.dreamwing.serverville.util.SVID;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -48,7 +50,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	
 	private String CurrAuthToken;
 	
-	//private OnlineUser User;
+	private OnlineUser UserPresence;
 	
 	private ClientDispatcher Dispatcher;
 	
@@ -60,6 +62,11 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		super();
 		
 		Dispatcher = dispatcher;
+	}
+	
+	public ServervilleUser getUser()
+	{
+		return Info != null ? Info.User : null;
 	}
 	
 	@Override
@@ -80,9 +87,9 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		WebsocketConnected = false;
 		l.debug(new SVLog("Client HTTP connection closed", Info));
 		
-		/*if(User != null)
+		if(UserPresence != null)
 		{
-			//OnlineUserManager.removeUser(User.UserId);
+			/*OnlineUserManager.removeUser(User.UserId);
 			
 			UserLeft leftMsg = new UserLeft();
 			leftMsg.user_id = User.UserId;
@@ -92,10 +99,12 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 				OnlineUserManager.sendBroadcast("UserLeft", leftMsg, User);
 			} catch (Exception e) {
 				e.printStackTrace();
-			}
+			}*/
 			
-			User = null;
-		}*/
+			UserPresence.destroy();
+			
+			UserPresence = null;
+		}
     }
 	
 	@Override
@@ -335,16 +344,16 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
         }
     }
 	
-	public ChannelFuture sendMessage(String messageType, Object messageBody) throws Exception
+	public ChannelFuture sendMessage(String messageType, Object messageBody, String from) throws Exception
 	{
-		String messageStr = "M:"+messageType+":"+JSON.serializeToString(messageBody);
+		String messageStr = "M:"+messageType+":"+from+":"+JSON.serializeToString(messageBody);
 		
 		return write(messageStr);
 	}
 	
-	public ChannelFuture sendMessage(String messageType, String serializedMessageBody)
+	public ChannelFuture sendMessage(String messageType, String serializedMessageBody, String from)
 	{
-		String messageStr = "M:"+messageType+":"+serializedMessageBody;
+		String messageStr = "M:"+messageType+":"+from+":"+serializedMessageBody;
 		
 		return write(messageStr);
 	}
@@ -364,6 +373,12 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		user.startNewSession();
 		Info.User = user;
 		CurrAuthToken = user.getSessionId();
+		
+		if(WebsocketConnected)
+		{
+			UserPresence = new OnlineUser(this);
+			ResidentManager.addResident(UserPresence);
+		}
 		
 		//User = new OnlineUser();
 		//User.DisplayName = username;

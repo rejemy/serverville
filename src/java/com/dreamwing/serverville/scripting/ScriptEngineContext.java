@@ -62,6 +62,8 @@ public class ScriptEngineContext {
 		
 		JsonApi = (ScriptObjectMirror)Engine.get("JSON");
 		
+		Engine.put("api", new AgentScriptAPI(this));
+		
 		try
 		{
 			Engine.eval(ScriptManager.EngineBaseSource);
@@ -70,8 +72,6 @@ public class ScriptEngineContext {
 			l.error("Couldn't setup javascript engine due to exception in engine.js", e);
 			throw new ScriptLoadException("engine.js", e);
 		}
-		
-		Engine.put("api", new AgentScriptAPI(this));
 		
 		for(ScriptData script : userScripts)
 		{
