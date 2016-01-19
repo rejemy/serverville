@@ -118,9 +118,9 @@ public class AgentAPI
 		return reply;
 	}
 	
-	public static EmptyReply RemoveListener(ListenerRequest request) throws JsonApiException
+	public static EmptyReply RemoveListener(EndListenerRequest request) throws JsonApiException
 	{
-		ApiInst.removeListener(request.source, request.listener, request.two_way);
+		ApiInst.removeListener(request.source, request.listener);
 		
 		EmptyReply reply = new EmptyReply();
 		return reply;

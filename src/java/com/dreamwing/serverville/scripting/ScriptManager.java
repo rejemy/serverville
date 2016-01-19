@@ -1,7 +1,9 @@
 package com.dreamwing.serverville.scripting;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 
@@ -26,7 +28,7 @@ public class ScriptManager
 	
 	private static volatile int ScriptVersion=0;
 	
-	private static Set<String> ClientHandlers;
+	private static Map<String,Boolean> ClientHandlers;
 	private static Set<String> AgentHandlers;
 	
 	public static void init() throws Exception
@@ -121,14 +123,24 @@ public class ScriptManager
 			return;
 		}
 		
-		Set<String> clientHandlers = new HashSet<String>();
+		Map<String,Boolean> clientHandlers = new HashMap<String,Boolean>();
 
 		String[] clientHandlerList = ctx.getClientHandlerList();
 		if(clientHandlerList != null)
 		{
 			for(String handlerName : clientHandlerList)
 			{
-				clientHandlers.add(handlerName);
+				Object handler = ctx.getClientHandler(handlerName);
+				if(handler == null)
+				{
+					// Nulled out API, so it can't be called by clients
+					clientHandlers.put(handlerName, false);
+				}
+				else
+				{
+					clientHandlers.put(handlerName, true);
+				}
+				
 			}
 		}
 		
@@ -150,9 +162,9 @@ public class ScriptManager
 		
 	}
 	
-	public static boolean hasClientHandler(String apiType)
+	public static Boolean hasClientHandler(String apiType)
 	{
-		return ClientHandlers.contains(apiType);
+		return ClientHandlers.get(apiType);
 	}
 	
 	public static boolean hasAgentHandler(String apiType)

@@ -258,13 +258,8 @@ public class AgentScriptAPI
 
 	}
 	
+
 	public void removeListener(String sourceId, String listenerId) throws JsonApiException
-	{
-		removeListener(sourceId, listenerId, false);
-	}
-	
-	
-	public void removeListener(String sourceId, String listenerId, boolean twoWay) throws JsonApiException
 	{
 		if(sourceId == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, sourceId);
@@ -284,8 +279,7 @@ public class AgentScriptAPI
 		}
 		
 		source.removeListener(listener);
-		if(twoWay)
-			listener.removeListener(source);
+		listener.removeListener(source);
 
 	}
 	

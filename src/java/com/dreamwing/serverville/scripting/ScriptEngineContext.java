@@ -130,6 +130,11 @@ public class ScriptEngineContext {
 		return Engine.get(key);
 	}
 	
+	public Object getClientHandler(String api)
+	{
+		return ClientHandlers.get(api);
+	}
+	
 	public Object invokeFunction(String name, Object... args)
 	        throws ScriptException, NoSuchMethodException
     {

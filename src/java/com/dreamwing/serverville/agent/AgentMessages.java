@@ -68,6 +68,12 @@ public class AgentMessages
 		boolean two_way;
 	}
 	
+	public static class EndListenerRequest
+	{
+		public String source;
+		public String listener;
+	}
+	
 	public static class GetTransientStateRequest
 	{
 		public String id;

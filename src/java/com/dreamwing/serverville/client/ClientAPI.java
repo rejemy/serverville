@@ -3,6 +3,7 @@ package com.dreamwing.serverville.client;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
@@ -16,6 +17,9 @@ import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
+import com.dreamwing.serverville.residents.BaseResident;
+import com.dreamwing.serverville.residents.Channel;
+import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.serialize.JsonDataDecoder;
 import com.dreamwing.serverville.util.PasswordUtil;
 
@@ -365,81 +369,65 @@ public class ClientAPI {
 		return reply;
 	}
 	
-	/*
-	public static JoinRoomReply JoinRoom(JoinRoom request, ClientMessageInfo info)
+	private static ChannelInfo GetChannelInfo(Channel channel)
 	{
-		JoinRoomReply reply = new JoinRoomReply();
+		ChannelInfo info = new ChannelInfo();
+		info.id = channel.getId();
 		
-		Channel room = null;
-		if(request.create)
-		{
-			room = ResidentManager.getOrCreateRoom(request.room_id);
-		}
-		else
-		{
-			room = ResidentManager.getRoom(request.room_id);
-		}
+		Collection<String> members = channel.getListeningTo();
 		
-		if(room != null)
-		{
-			reply.room_id = room.getRoomId();
-			room.join(info.User);
-		}
-		return reply;
+		info.members = new ArrayList<String>(members);
+		
+		return info;
 	}
 	
-	public static LeaveRoomReply LeaveRoom(LeaveRoom request, ClientMessageInfo info)
+	public static ChannelInfo ListenToChannel(ListenToChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		LeaveRoomReply reply = new LeaveRoomReply();
+		if(request.id == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
 		
-		Channel room = ResidentManager.getRoom(request.room_id);
 		
-		if(room != null)
+		BaseResident listener = ResidentManager.getResident(info.User.getId());
+		if(listener == null)
 		{
-			room.leave(info.User);
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
 		}
-		return reply;
+		
+		BaseResident source = ResidentManager.getResident(request.id);
+		if(source == null || !(source instanceof Channel))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
+		}
+		
+		source.addListener(listener);
+		if(request.two_way)
+			listener.addListener(source);
+
+		return GetChannelInfo((Channel)source);
 	}
 	
-	public static GetUserListReply GetUserList(GetUserList request, ClientMessageInfo info)
+	public static EmptyClientReply EndListenToChannel(EndListenToChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		GetUserListReply reply = new GetUserListReply();
+		if(request.id == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
 		
-		Channel room = ResidentManager.getRoom(request.room_id);
-		if(room == null)
-			return null;
 		
-		Collection<OnlineUser> onlineUsers = room.getAllUsers();
-		
-		List<UserInfo> users = new ArrayList<UserInfo>(onlineUsers.size());
-		
-		for(OnlineUser onlineUser : onlineUsers)
+		BaseResident listener = ResidentManager.getResident(info.User.getId());
+		if(listener == null)
 		{
-			UserInfo user = new UserInfo();
-			user.display_name = onlineUser.DisplayName;
-			user.user_id = onlineUser.UserId;
-			users.add(user);
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
 		}
 		
-		reply.users = users;
+		BaseResident source = ResidentManager.getResident(request.id);
+		if(source == null || !(source instanceof Channel))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
+		}
 		
-		return reply;
+		source.removeListener(listener);
+		listener.removeListener(source);
+
+		return new EmptyClientReply();
 	}
 	
-	public static void SendBroadcast(Broadcast broadcast, ClientMessageInfo info)
-	{
-		BroadcastSent sent = new BroadcastSent();
-		sent.message = broadcast.message;
-		sent.user_id = info.User.UserId;
-		sent.display_name = info.User.DisplayName;
-		
-		Channel room = ResidentManager.getRoom(broadcast.room_id);
-		
-		if(room != null)
-		{
-			room.sendBroadcast("Broadcast", sent, info.User, broadcast.send_to_self);
-		}
-		
-	}
-	*/
 }

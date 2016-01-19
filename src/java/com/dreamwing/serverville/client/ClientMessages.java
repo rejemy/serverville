@@ -8,6 +8,10 @@ import com.dreamwing.serverville.data.JsonDataType;
 
 public class ClientMessages {
 
+	public static class EmptyClientReply
+	{
+
+	}
 	
 	public static class CreateAnonymousAccount
 	{
@@ -134,107 +138,26 @@ public class ClientMessages {
 		public Map<String,Object> values;
 	}
 	
-	/*
-	
-	public static class UserInfo
+	public static class ResidentIntroductionMessage
 	{
-		public String display_name;
-		public String user_id;
+		public List<String> ids;
 	}
 	
-	public static class JoinRoom
+	public static class ListenToChannelRequest
 	{
-		public String room_id;
-		public boolean create;
+		String id;
+		boolean two_way;
 	}
 	
-	public static class JoinRoomReply
+	public static class EndListenToChannelRequest
 	{
-		public String room_id;
+		String id;
 	}
 	
-	public static class LeaveRoom
+	public static class ChannelInfo
 	{
-		public String room_id;
+		String id;
+		public List<String> members;
 	}
-	
-	public static class LeaveRoomReply
-	{
-		public String room_id;
-	}
-	
-	public static class GetUserList
-	{
-		public String room_id;
-	}
-
-	public static class GetUserListReply
-	{
-		public String room_id;
-		public List<UserInfo> users;
-	}
-	
-	public static class Broadcast
-	{
-		public String room_id;
-		public String message;
-		public boolean send_to_self;
-	}
-	
-	public static class SetRoomData
-	{
-		public String room_id;
-		public String key;
-		public String value;
-		public boolean broadcast;
-	}
-	
-	public static class RoomData
-	{
-		public String key;
-		public String value;
-	}
-	
-	public static class GetRoomData
-	{
-		public String room_id;
-		public List<String> keys;
-	}
-	
-	public static class GetRoomDataReply
-	{
-		public String room_id;
-		public List<RoomData> data;
-	}
-	
-	// Server initiated messages
-	
-	public static class UserJoined
-	{
-		public String room_id;
-		public UserInfo user_info;
-	}
-	
-	public static class UserLeft
-	{
-		public String room_id;
-		public String display_name;
-		public String user_id;
-	}
-	
-	public static class BroadcastSent
-	{
-		public String room_id;
-		public String display_name;
-		public String user_id;
-		public String message;
-	}
-	
-	public static class RoomDataSet
-	{
-		public String user_id;
-		public String room_id;
-		public RoomData data;
-	}*/
 
 }

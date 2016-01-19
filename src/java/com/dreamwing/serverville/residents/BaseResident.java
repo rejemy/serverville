@@ -133,13 +133,32 @@ public abstract class BaseResident
 	public void addListener(BaseResident resident)
 	{
 		Listeners.put(resident.getId(), resident);
-		resident.ListeningTo.put(Id, this);
+		resident.listenTo(this);
+	}
+	
+	protected void listenTo(BaseResident resident)
+	{
+		ListeningTo.put(resident.getId(), resident);
 	}
 	
 	public void removeListener(BaseResident resident)
 	{
 		Listeners.remove(resident.getId());
-		resident.ListeningTo.remove(Id);
+		resident.stopListenTo(this);
 	}
 	
+	protected void stopListenTo(BaseResident resident)
+	{
+		ListeningTo.remove(resident.getId());
+	}
+	
+	public Collection<String> getListeners()
+	{
+		return Listeners.keySet();
+	}
+	
+	public Collection<String> getListeningTo()
+	{
+		return ListeningTo.keySet();
+	}
 }

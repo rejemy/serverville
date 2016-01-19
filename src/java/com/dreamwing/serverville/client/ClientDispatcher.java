@@ -132,24 +132,10 @@ public class ClientDispatcher {
 	private Object invokeMethod(String messageType, String messageData, ClientMessageInfo info) throws Exception
 	{
 		// Check if we have an override for it in a script
-		if(ScriptManager.hasClientHandler(messageType))
+		Boolean hasScript = ScriptManager.hasClientHandler(messageType);
+		if(hasScript == null)
 		{
-			// All script methods require authentication
-			if(info.User == null)
-				throw new JsonApiException(ApiErrors.NOT_AUTHED);
-			
-			ScriptEngineContext context = ScriptManager.getEngine();
-			try
-			{
-				return context.invokeClientHandler(messageType, messageData, AgentShared.userToUserInfo(info.User));
-			}
-			finally
-			{
-				ScriptManager.returnEngine(context);
-			}
-		}
-		else
-		{
+			// Not defined in script
 			DispatchMethod method = Methods.get(messageType);
 			if(method == null)
 				throw new JsonApiException(ApiErrors.UNKNOWN_API);
@@ -178,6 +164,28 @@ public class ClientDispatcher {
 			}
 			
 			return reply;
+		}
+		else if(hasScript == true)
+		{
+			// Defined and there is a script
+			// All script methods require authentication
+			if(info.User == null)
+				throw new JsonApiException(ApiErrors.NOT_AUTHED);
+			
+			ScriptEngineContext context = ScriptManager.getEngine();
+			try
+			{
+				return context.invokeClientHandler(messageType, messageData, AgentShared.userToUserInfo(info.User));
+			}
+			finally
+			{
+				ScriptManager.returnEngine(context);
+			}
+		}
+		else
+		{
+			// Defined but it's a null script
+			throw new JsonApiException(ApiErrors.UNKNOWN_API);
 		}
 	}
 }
