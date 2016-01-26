@@ -74,19 +74,19 @@ public class AgentMessages
 		public String listener;
 	}
 	
-	public static class GetTransientStateRequest
+	public static class GetTransientValueRequest
 	{
 		public String id;
 		public String key;
 	}
 	
-	public static class GetTransientStatesRequest
+	public static class GetTransientValuesRequest
 	{
 		public String id;
 		public List<String> keys;
 	}
 	
-	public static class GetAllTransientStatesRequest
+	public static class GetAllTransientValuesRequest
 	{
 		public String id;
 	}

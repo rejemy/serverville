@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -369,23 +370,146 @@ public class ClientAPI {
 		return reply;
 	}
 	
-	private static ChannelInfo GetChannelInfo(Channel channel)
+
+	public static EmptyClientReply SetTransientValue(SetTransientValueRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		ChannelInfo info = new ChannelInfo();
-		info.id = channel.getId();
+		BaseResident resident = ResidentManager.getResident(info.User.getId());
+		if(resident == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
+		}
 		
-		Collection<String> members = channel.getListeningTo();
+		if(!KeyDataItem.isValidKeyname(request.key))
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
-		info.members = new ArrayList<String>(members);
+		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(request.key, request.data_type, request.value);
+		resident.setTransientValue(item);
 		
-		return info;
+		EmptyClientReply reply = new EmptyClientReply();
+		return reply;
 	}
 	
-	public static ChannelInfo ListenToChannel(ListenToChannelRequest request, ClientMessageInfo info) throws JsonApiException
+	public static EmptyClientReply SetTransientValues(SetTransientValuesRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		BaseResident resident = ResidentManager.getResident(info.User.getId());
+		if(resident == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
+		}
+		
+		List<KeyDataItem> stateValues = new ArrayList<KeyDataItem>(request.values.size());
+		
+		for(SetTransientValueRequest data : request.values)
+		{
+			if(!KeyDataItem.isValidKeyname(data.key))
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
+			
+			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
+			stateValues.add(item);
+		}
+		
+		resident.setTransientValues(stateValues);
+		
+		EmptyClientReply reply = new EmptyClientReply();
+		return reply;
+	}
+	
+	public static DataItemReply GetTransientValue(GetTransientValueRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		String id = request.id != null ? request.id : info.User.getId();
+		
+		BaseResident resident = ResidentManager.getResident(id);
+		if(resident == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, id);
+		}
+		
+		if(!KeyDataItem.isValidKeyname(request.key))
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
+		
+		KeyDataItem item = resident.getTransientValue(request.key);
+		if(item == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND);
+		
+		return KeyDataItemToDataItemReply(id, item);
+	}
+	
+
+	public static UserDataReply GetTransientValues(GetTransientValuesRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		String id = request.id != null ? request.id : info.User.getId();
+		
+		BaseResident resident = ResidentManager.getResident(id);
+		if(resident == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, id);
+		}
+		
+		Map<String,DataItemReply> values = new HashMap<String,DataItemReply>();
+		
+		for(String key : request.keys)
+		{
+			KeyDataItem item = resident.getTransientValue(key);
+			if(item != null)
+			{
+				DataItemReply data = KeyDataItemToDataItemReply(id, item);
+				values.put(data.key, data);
+			}
+		}
+
+		UserDataReply reply = new UserDataReply();
+		reply.values = values;
+		return reply;
+	}
+	
+	public static UserDataReply getAllTransientValues(GetAllTransientValuesRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		String id = request.id != null ? request.id : info.User.getId();
+		
+		BaseResident resident = ResidentManager.getResident(id);
+		if(resident == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, id);
+		}
+		
+		Map<String,DataItemReply> values = new HashMap<String,DataItemReply>();
+		
+		for(KeyDataItem item : resident.getAllTransientValues())
+		{
+			DataItemReply data = KeyDataItemToDataItemReply(id, item);
+			values.put(data.key, data);
+		}
+		
+		UserDataReply reply = new UserDataReply();
+		reply.values = values;
+		return reply;
+	}
+	
+	public static ChannelInfo GetChannelInfo(JoinChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
 		if(request.id == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
 		
+		BaseResident channel = ResidentManager.getResident(request.id);
+		if(channel == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, request.id);
+		}
+		
+		ChannelInfo cinfo = new ChannelInfo();
+		cinfo.id = channel.getId();
+		
+		Collection<String> members = channel.getListeningTo();
+		
+		cinfo.members = new ArrayList<String>(members);
+		
+		return cinfo;
+	}
+	
+	public static EmptyClientReply JoinChannel(JoinChannelRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(request.id == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
 		
 		BaseResident listener = ResidentManager.getResident(info.User.getId());
 		if(listener == null)
@@ -400,13 +524,14 @@ public class ClientAPI {
 		}
 		
 		source.addListener(listener);
-		if(request.two_way)
+		if(!request.listen_only)
 			listener.addListener(source);
 
-		return GetChannelInfo((Channel)source);
+		EmptyClientReply reply = new EmptyClientReply();
+		return reply;
 	}
 	
-	public static EmptyClientReply EndListenToChannel(EndListenToChannelRequest request, ClientMessageInfo info) throws JsonApiException
+	public static EmptyClientReply LeaveChannel(LeaveChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
 		if(request.id == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
@@ -427,6 +552,27 @@ public class ClientAPI {
 		source.removeListener(listener);
 		listener.removeListener(source);
 
+		return new EmptyClientReply();
+	}
+	
+	public static EmptyClientReply SendClientMessage(TransientMessageRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(request.to == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.to);
+		
+		BaseResident listener = ResidentManager.getResident(request.to);
+		if(listener == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, request.to);
+		}
+		
+		TransientClientMessage message = new TransientClientMessage();
+		message.message_type = request.message_type;
+		message.value = request.value;
+		message.data_type = request.data_type;
+		
+		listener.sendMessage("clientMessage", message);
+		
 		return new EmptyClientReply();
 	}
 	

@@ -133,31 +133,70 @@ public class ClientMessages {
 		public boolean include_deleted;
 	}
 	
-	public static class TransientStateChangeMessage
+	public static class TransientValuesChangeMessage
 	{
 		public Map<String,Object> values;
 	}
 	
-	public static class ResidentIntroductionMessage
-	{
-		public List<String> ids;
-	}
-	
-	public static class ListenToChannelRequest
+	public static class JoinChannelRequest
 	{
 		String id;
-		boolean two_way;
+		boolean listen_only;
 	}
 	
-	public static class EndListenToChannelRequest
+	public static class LeaveChannelRequest
 	{
 		String id;
 	}
+	
 	
 	public static class ChannelInfo
 	{
 		String id;
 		public List<String> members;
 	}
+	
+	public static class SetTransientValueRequest
+	{
+		public String key;
+		public Object value;
+		public JsonDataType data_type;
+	}
+	
+	public static class SetTransientValuesRequest
+	{
+		public List<SetTransientValueRequest> values;
+	}
 
+	public static class GetTransientValueRequest
+	{
+		public String id;
+		public String key;
+	}
+	
+	public static class GetTransientValuesRequest
+	{
+		public String id;
+		public List<String> keys;
+	}
+	
+	public static class GetAllTransientValuesRequest
+	{
+		public String id;
+	}
+	
+	public static class TransientMessageRequest
+	{
+		public String to;
+		public String message_type;
+		public Object value;
+		public JsonDataType data_type;
+	}
+	
+	public static class TransientClientMessage
+	{
+		public String message_type;
+		public Object value;
+		public JsonDataType data_type;
+	}
 }

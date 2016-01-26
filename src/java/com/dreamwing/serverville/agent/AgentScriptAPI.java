@@ -283,12 +283,12 @@ public class AgentScriptAPI
 
 	}
 	
-	public void setTransientState(String id, String key, Object value) throws JsonApiException
+	public void setTransientValue(String id, String key, Object value) throws JsonApiException
 	{
-		setTransientState(id, key, value, null);
+		setTransientValue(id, key, value, null);
 	}
 
-	public void setTransientState(String id, String key, Object value, String data_type) throws JsonApiException
+	public void setTransientValue(String id, String key, Object value, String data_type) throws JsonApiException
 	{
 		if(id == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
@@ -302,11 +302,11 @@ public class AgentScriptAPI
 		
 		JsonDataType valueType = JsonDataType.fromString(data_type);
 		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, valueType, value);
-		res.setTransientState(item);
+		res.setTransientValue(item);
 	
 	}
 	
-	public void setTransientStates(String id, List<Map<String,Object>> items) throws JsonApiException
+	public void setTransientValues(String id, List<Map<String,Object>> items) throws JsonApiException
 	{
 
 		if(id == null)
@@ -331,11 +331,11 @@ public class AgentScriptAPI
 			stateValues.add(item);
 		}
 		
-		res.setTransientState(stateValues);
+		res.setTransientValues(stateValues);
 	}
 	
 
-	public DataItemReply getTransientState(String id, String key) throws JsonApiException
+	public DataItemReply getTransientValue(String id, String key) throws JsonApiException
 	{
 		if(id == null || id.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
@@ -347,7 +347,7 @@ public class AgentScriptAPI
 		if(res == null)
 			throw new JsonApiException(ApiErrors.NOT_FOUND, id);
 		
-		KeyDataItem item = res.getTransientState(key);
+		KeyDataItem item = res.getTransientValue(key);
 		if(item == null)
 			throw new JsonApiException(ApiErrors.NOT_FOUND);
 		
@@ -355,7 +355,7 @@ public class AgentScriptAPI
 	}
 	
 
-	public Map<String,DataItemReply> getTransientStates(String id, List<String> keys) throws JsonApiException
+	public Map<String,DataItemReply> getTransientValues(String id, List<String> keys) throws JsonApiException
 	{
 		if(id == null || id.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
@@ -368,7 +368,7 @@ public class AgentScriptAPI
 		
 		for(String key : keys)
 		{
-			KeyDataItem item = res.getTransientState(key);
+			KeyDataItem item = res.getTransientValue(key);
 			if(item != null)
 			{
 				DataItemReply data = AgentShared.KeyDataItemToDataItemReply(id, item, Context);
@@ -379,7 +379,7 @@ public class AgentScriptAPI
 		return reply;
 	}
 	
-	public Map<String,DataItemReply> getAllTransientStates(String id) throws JsonApiException
+	public Map<String,DataItemReply> getAllTransientValues(String id) throws JsonApiException
 	{
 		if(id == null || id.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
@@ -390,7 +390,7 @@ public class AgentScriptAPI
 		
 		Map<String,DataItemReply> reply = new HashMap<String,DataItemReply>();
 		
-		for(KeyDataItem item : res.getAllTransientStates())
+		for(KeyDataItem item : res.getAllTransientValues())
 		{
 			DataItemReply data = AgentShared.KeyDataItemToDataItemReply(id, item, Context);
 			reply.put(data.key, data);

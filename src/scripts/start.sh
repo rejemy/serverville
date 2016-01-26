@@ -1,5 +1,6 @@
 #!/bin/bash
 
+javabin=java
 pidfile=serverville.pid
 logdir=data/logs
 jarfile=serverville.jar
@@ -16,7 +17,7 @@ sleep 1
 fi
 
 if [ -n "$heap" ]; then
-	javaopts="$javaopts -Xms$heap -Xmx$heap"
+	javaopts="$javaopts -Xms$heap -Xmx`$heap"
 fi
 
 if [ -n "$profileport" ]; then
@@ -35,7 +36,7 @@ fi
 rm -Rf $logdir
 mkdir -p $logdir
 
-finalcommand="/usr/local/java/jdk1.8.0_45/bin/java $javaopts -jar $jarfile"
+finalcommand="$javabin $javaopts -jar $jarfile"
 
 echo "Starting server"
 echo $finalcommand

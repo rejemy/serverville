@@ -1,10 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `serverville` /*!40100 DEFAULT CHARACTER SET utf8 */;
-USE `serverville`;
 -- MySQL dump 10.13  Distrib 5.6.24, for osx10.8 (x86_64)
 --
 -- Host: 127.0.0.1    Database: serverville
 -- ------------------------------------------------------
--- Server version	5.6.26
+-- Server version 5.6.26
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -97,7 +95,6 @@ CREATE TABLE `keydata_item` (
   `datatype` int(11) NOT NULL,
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
-  `visibility` tinyint(4) NOT NULL,
   `deleted` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`id`,`key`),
   KEY `ModifiedTime` (`modified`),
@@ -194,4 +191,4 @@ CREATE TABLE `user_username` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-12-07 11:12:16
+-- Dump completed on 2016-01-25 12:53:26

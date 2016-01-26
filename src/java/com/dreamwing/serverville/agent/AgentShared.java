@@ -35,6 +35,11 @@ public class AgentShared
 		return userToUserInfo(user);
 	}
 	
+	public static DataItemReply KeyDataItemToDataItemReply(String id, KeyDataItem item)
+	{
+		return KeyDataItemToDataItemReply(id, item, null);
+	}
+	
 	public static DataItemReply KeyDataItemToDataItemReply(String id, KeyDataItem item, ScriptEngineContext ctx)
 	{
 		DataItemReply data = null;

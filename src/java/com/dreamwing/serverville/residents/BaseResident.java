@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.dreamwing.serverville.client.ClientMessages.TransientStateChangeMessage;
+import com.dreamwing.serverville.client.ClientMessages.TransientValuesChangeMessage;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -19,14 +19,14 @@ public abstract class BaseResident
 	
 	protected String Id;
 	
-	private ConcurrentMap<String,KeyDataItem> TransientState;
+	private ConcurrentMap<String,KeyDataItem> TransientValues;
 	private ConcurrentMap<String,BaseResident> Listeners;
 	private ConcurrentMap<String,BaseResident> ListeningTo;
 	
 	public BaseResident(String id)
 	{
 		Id = id;
-		TransientState = new ConcurrentHashMap<String,KeyDataItem>();
+		TransientValues = new ConcurrentHashMap<String,KeyDataItem>();
 		Listeners = new ConcurrentHashMap<String,BaseResident>();
 		ListeningTo = new ConcurrentHashMap<String,BaseResident>();
 	}
@@ -80,11 +80,11 @@ public abstract class BaseResident
 		}
 	}
 	
-	public void setTransientState(KeyDataItem value)
+	public void setTransientValue(KeyDataItem value)
 	{
-		TransientState.put(value.key, value);
+		TransientValues.put(value.key, value);
 		
-		TransientStateChangeMessage changeMessage = new TransientStateChangeMessage();
+		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
 		
 		changeMessage.values = new HashMap<String,Object>();
 		try {
@@ -95,14 +95,14 @@ public abstract class BaseResident
 		sendMessage("stateChange", changeMessage);
 	}
 	
-	public void setTransientState(Collection<KeyDataItem> values)
+	public void setTransientValues(Collection<KeyDataItem> values)
 	{
-		TransientStateChangeMessage changeMessage = new TransientStateChangeMessage();
+		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
 		changeMessage.values = new HashMap<String,Object>();
 		
 		for(KeyDataItem value : values)
 		{
-			TransientState.put(value.key, value);
+			TransientValues.put(value.key, value);
 			
 			try {
 				changeMessage.values.put(value.key, value.asDecodedObject());
@@ -115,19 +115,19 @@ public abstract class BaseResident
 	}
 	
 	
-	public KeyDataItem getTransientState(String key)
+	public KeyDataItem getTransientValue(String key)
 	{
-		return TransientState.get(key);
+		return TransientValues.get(key);
 	}
 	
-	public Collection<KeyDataItem> getAllTransientStates()
+	public Collection<KeyDataItem> getAllTransientValues()
 	{
-		return TransientState.values();
+		return TransientValues.values();
 	}
 	
-	public void clearTransientState(String key)
+	public void clearTransientValue(String key)
 	{
-		TransientState.remove(key);
+		TransientValues.remove(key);
 	}
 	
 	public void addListener(BaseResident resident)

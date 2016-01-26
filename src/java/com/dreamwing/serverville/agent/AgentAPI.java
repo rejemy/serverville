@@ -127,15 +127,15 @@ public class AgentAPI
 	}
 	
 
-	public static EmptyReply SetTransientState(SetGlobalDataRequest request) throws JsonApiException
+	public static EmptyReply SetTransientValue(SetGlobalDataRequest request) throws JsonApiException
 	{
-		ApiInst.setTransientState(request.id, request.key, request.value, request.data_type.value());
+		ApiInst.setTransientValue(request.id, request.key, request.value, request.data_type.value());
 		
 		EmptyReply reply = new EmptyReply();
 		return reply;
 	}
 	
-	public static EmptyReply SetTransientStates(SetGlobalDataListRequest request) throws JsonApiException
+	public static EmptyReply SetTransientValues(SetGlobalDataListRequest request) throws JsonApiException
 	{
 		EmptyReply reply = new EmptyReply();
 		
@@ -157,28 +157,28 @@ public class AgentAPI
 			stateValues.add(item);
 		}
 		
-		res.setTransientState(stateValues);
+		res.setTransientValues(stateValues);
 		
 		return reply;
 	}
 	
-	public static DataItemReply GetTransientState(GetTransientStateRequest request) throws JsonApiException
+	public static DataItemReply GetTransientValue(GetTransientValueRequest request) throws JsonApiException
 	{
-		return ApiInst.getTransientState(request.id, request.key);
+		return ApiInst.getTransientValue(request.id, request.key);
 	}
 	
 
-	public static UserDataReply GetTransientStates(GetTransientStatesRequest request) throws JsonApiException
+	public static UserDataReply GetTransientValues(GetTransientValuesRequest request) throws JsonApiException
 	{
 		UserDataReply reply = new UserDataReply();
-		reply.values = ApiInst.getTransientStates(request.id, request.keys);
+		reply.values = ApiInst.getTransientValues(request.id, request.keys);
 		return reply;
 	}
 	
-	public static UserDataReply getAllTransientStates(GetAllTransientStatesRequest request) throws JsonApiException
+	public static UserDataReply getAllTransientValues(GetAllTransientValuesRequest request) throws JsonApiException
 	{
 		UserDataReply reply = new UserDataReply();
-		reply.values = ApiInst.getAllTransientStates(request.id);
+		reply.values = ApiInst.getAllTransientValues(request.id);
 		return reply;
 	}
 }
