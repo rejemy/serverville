@@ -2,6 +2,7 @@ package com.dreamwing.serverville.client;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
@@ -18,10 +19,13 @@ import com.dreamwing.serverville.net.HttpConnectionInfo;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.residents.OnlineUser;
 import com.dreamwing.serverville.residents.ResidentManager;
+import com.dreamwing.serverville.serialize.SerializeUtil;
 import com.dreamwing.serverville.util.JSON;
 import com.dreamwing.serverville.util.SVID;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -55,7 +59,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	private ClientDispatcher Dispatcher;
 	
 	private volatile boolean WebsocketConnected = false;
-	
+	private volatile boolean BinaryConnected = false;
 
 	public ClientConnectionHandler(ClientDispatcher dispatcher)
 	{
@@ -84,7 +88,10 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	@Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		super.channelInactive(ctx);
+		
 		WebsocketConnected = false;
+		BinaryConnected = false;
+		
 		l.debug(new SVLog("Client HTTP connection closed", Info));
 		
 		if(UserPresence != null)
@@ -119,10 +126,19 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			FullHttpRequest request = (FullHttpRequest) msg;
 			keepAlive = HttpHeaders.isKeepAlive(request);
 			lastWrite = handleHttpRequest(ctx, request);
-        } else if (msg instanceof WebSocketFrame)
+        }
+		else if (msg instanceof WebSocketFrame)
         {
         	lastWrite = handleWebSocketFrame(ctx, (WebSocketFrame) msg);
         }
+		else if(msg instanceof ClientJsonMessageWrapper)
+		{
+			lastWrite = handleBinaryMessage(ctx, (ClientJsonMessageWrapper)msg);
+		}
+		else
+		{
+			throw new Exception("Unexpected message type received from client: "+msg.getClass());
+		}
 		
 		if (!keepAlive) {
             // Close the connection when the whole content is written out.
@@ -327,6 +343,54 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 	}
 	
+	private ChannelFuture handleBinaryMessage(ChannelHandlerContext ctx, ClientJsonMessageWrapper message)
+	{
+		if(!BinaryConnected)
+		{
+			BinaryConnected = true; 
+		}
+		
+		ClientMessageInfo info = new ClientMessageInfo();
+		info.MessageId = SVID.makeSVID();
+		info.MessageNum = message.MessageNum;
+		info.ConnectionHandler = this;
+		info.User = Info.User;
+		
+		Object replyObj = Dispatcher.dispatch(message.Api, message.RequestJson, info);
+		char sendType = replyObj instanceof ApiError ? 'E' : 'R';
+		
+		String replyStr;
+		try {
+			replyStr = JSON.serializeToString(replyObj);
+		} catch (JsonProcessingException e) {
+			l.error("Json encoding error:", e);
+			replyStr = ApiError.encodingErrorReply;
+			sendType = 'E';
+		}
+		
+		ByteBuf replyMessage = Unpooled.buffer(256).order(ByteOrder.LITTLE_ENDIAN);
+		replyMessage.writerIndex(2); // Skip over size header
+		replyMessage.writeChar(sendType);
+		
+		try
+		{
+			SerializeUtil.writeUTF(message.MessageNum, replyMessage);
+			SerializeUtil.writeUTF(replyStr, replyMessage);
+		}
+		catch(Exception e)
+		{
+			l.error("Exception encoding message to binary format, probably too long");
+			return null;
+		}
+		
+		int len = replyMessage.writerIndex() - 2;
+		replyMessage.writerIndex(0);
+		replyMessage.writeShort(len);
+		replyMessage.writerIndex(len+2);
+		
+		return write(replyMessage);
+	}
+	
 	@Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
         ctx.flush();
@@ -344,18 +408,60 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
         }
     }
 	
-	public ChannelFuture sendMessage(String messageType, Object messageBody, String from) throws Exception
+	public ChannelFuture sendMessage(String messageType, Object messageBody, String from) throws JsonProcessingException 
 	{
-		String messageStr = "M:"+messageType+":"+from+":"+JSON.serializeToString(messageBody);
-		
-		return write(messageStr);
+		return sendMessage(messageType, JSON.serializeToString(messageBody), from);
 	}
 	
 	public ChannelFuture sendMessage(String messageType, String serializedMessageBody, String from)
 	{
+		if(WebsocketConnected)
+			return sendWSMessage(messageType, serializedMessageBody, from);
+		else if(BinaryConnected)
+			return sendBinaryMessage(messageType, serializedMessageBody, from);
+		else
+			return null;
+	}
+	
+	private ChannelFuture sendWSMessage(String messageType, String serializedMessageBody, String from)
+	{
 		String messageStr = "M:"+messageType+":"+from+":"+serializedMessageBody;
 		
 		return write(messageStr);
+	}
+	
+	private ChannelFuture sendBinaryMessage(String messageType, String serializedMessageBody, String from)
+	{
+		ByteBuf messageBuf = Unpooled.buffer(256).order(ByteOrder.LITTLE_ENDIAN);
+		messageBuf.writerIndex(2); // Skip over size header
+		messageBuf.writeChar('M');
+		
+		try
+		{
+			SerializeUtil.writeUTF(messageType, messageBuf);
+			SerializeUtil.writeUTF(from, messageBuf);
+			SerializeUtil.writeUTF(serializedMessageBody, messageBuf);
+		}
+		catch(Exception e)
+		{
+			l.error("Exception encoding message to binary format, probably too long");
+			return null;
+		}
+		
+		int len = messageBuf.writerIndex() - 2;
+		messageBuf.writerIndex(0);
+		messageBuf.writeShort(len);
+		messageBuf.writerIndex(len+2);
+		
+		return write(messageBuf);
+	}
+	
+	private ChannelFuture write(ByteBuf data)
+	{
+
+		ChannelFuture future = Info.Ctx.channel().write(data);
+		Info.Ctx.channel().flush();
+		return future;
 	}
 	
 	private ChannelFuture write(String data)

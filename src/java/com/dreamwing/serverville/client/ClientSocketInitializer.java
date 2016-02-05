@@ -32,9 +32,10 @@ public class ClientSocketInitializer extends ChannelInitializer<SocketChannel> {
 	{
 		ChannelPipeline pipeline = ch.pipeline();
         
-        pipeline.addLast(new HttpServerCodec());
-        pipeline.addLast(new HttpObjectAggregator(65536));
-        pipeline.addLast(new ChunkedWriteHandler());
+		pipeline.addLast("detector", new ClientProtocolDetector());
+        pipeline.addLast("httpServer", new HttpServerCodec());
+        pipeline.addLast("httpAggregator", new HttpObjectAggregator(65536));
+        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
         pipeline.addLast(new IdleStateHandler(0, 0, 60));
         pipeline.addLast(new ClientConnectionHandler(Dispatcher));
 	}
