@@ -208,17 +208,11 @@ public class ClientAPI {
 	
 	private static DataItemReply KeyDataItemToDataItemReply(String id, KeyDataItem item)
 	{
-		DataItemReply data = null;
+		DataItemReply data = new DataItemReply();
 		
 		if(item.isDeleted())
 		{
-			DataItemExtendedReply extData = new DataItemExtendedReply();
-			extData.deleted = true;
-			data = extData;
-		}
-		else
-		{
-			data = new DataItemReply();
+			data.deleted = true;
 		}
 
 		data.id = id;

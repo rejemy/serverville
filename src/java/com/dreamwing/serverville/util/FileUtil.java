@@ -1,10 +1,14 @@
 package com.dreamwing.serverville.util;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.Charset;
 
 public class FileUtil {
@@ -34,5 +38,18 @@ public class FileUtil {
 	    }
 	    reader.close();
 	    return builder.toString();
+	}
+	
+	public static String readFileToString(String filename, Charset encoding) throws IOException
+	{
+		return readStreamToString(new FileInputStream(filename), encoding);
+	}
+	
+	public static void writeStringToFile(String filename, String contents, Charset encoding) throws IOException
+	{
+		try(Writer out = new OutputStreamWriter(new FileOutputStream(filename), encoding))
+		{
+			out.write(contents);
+		}
 	}
 }

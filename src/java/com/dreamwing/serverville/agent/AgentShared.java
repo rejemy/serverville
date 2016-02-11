@@ -7,7 +7,6 @@ import org.apache.log4j.Logger;
 
 import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
-import com.dreamwing.serverville.client.ClientMessages.DataItemExtendedReply;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataTypes;
@@ -42,17 +41,12 @@ public class AgentShared
 	
 	public static DataItemReply KeyDataItemToDataItemReply(String id, KeyDataItem item, ScriptEngineContext ctx)
 	{
-		DataItemReply data = null;
+		DataItemReply data = new DataItemReply();
 		if(item.isDeleted())
 		{
-			DataItemExtendedReply extData = new DataItemExtendedReply();
-			extData.deleted = true;
-			data = extData;
+			data.deleted = true;
 		}
-		else
-		{
-			data = new DataItemReply();
-		}
+		
 		data.id = id;
 		data.key = item.key;
 		

@@ -88,10 +88,6 @@ public class ClientMessages {
 		public JsonDataType data_type;
 		public double created;
 		public double modified;
-	}
-	
-	public static class DataItemExtendedReply extends DataItemReply
-	{
 		public boolean deleted;
 	}
 	
@@ -140,19 +136,19 @@ public class ClientMessages {
 	
 	public static class JoinChannelRequest
 	{
-		String id;
-		boolean listen_only;
+		public String id;
+		public boolean listen_only;
 	}
 	
 	public static class LeaveChannelRequest
 	{
-		String id;
+		public String id;
 	}
 	
 	
 	public static class ChannelInfo
 	{
-		String id;
+		public String id;
 		public List<String> members;
 	}
 	
