@@ -159,6 +159,16 @@ public class MakeAPIs
 			e.printStackTrace();
 		}
 		
+		try
+		{
+			UnityClient.writeUnityClientApi(apiMethods, apiCustomTypes);
+		}
+		catch(Exception e)
+		{
+			System.err.println("Exception writing Unity client api:");
+			e.printStackTrace();
+		}
+		
 		System.out.println("Done");
 	}
 	

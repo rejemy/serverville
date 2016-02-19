@@ -1,3 +1,6 @@
 [submodule "clients/browser"]
 	path = clients/browser
 	url = https://github.com/rejemy/serverville-client-browser.git
+[submodule "clients/unity"]
+	path = clients/unity
+	url = https://github.com/rejemy/serverville-client-unity.git

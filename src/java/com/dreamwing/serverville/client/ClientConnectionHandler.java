@@ -251,10 +251,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			}
 			else
 			{
-				ClientMessageEnvelope<Object> envelope = new ClientMessageEnvelope<Object>();
-				envelope.message = reply;
-
-				return HttpUtil.sendJson(currRequest, envelope);
+				return HttpUtil.sendJson(currRequest, reply);
 			}
 			
 			

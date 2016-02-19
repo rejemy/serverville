@@ -6,7 +6,6 @@ import java.io.IOException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.dreamwing.serverville.client.ClientMessageEnvelope;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -332,8 +331,7 @@ public class HttpUtil {
     	Response response = SharedHttpClient.newCall(request).execute();
     	if(response.code() == 200)
     	{
-    		ClientMessageEnvelope<S> envelope = JSON.JsonMapper.readValue(response.body().charStream(), valueTypeRef);
-    		return envelope.message;
+    		return JSON.JsonMapper.readValue(response.body().charStream(), valueTypeRef);
     	}
     	
     	ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);

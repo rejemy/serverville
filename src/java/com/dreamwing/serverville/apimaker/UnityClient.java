@@ -14,14 +14,14 @@ import com.dreamwing.serverville.apimaker.MakeAPIs.ApiMessageInfo;
 import com.dreamwing.serverville.apimaker.MakeAPIs.ApiMethodInfo;
 import com.dreamwing.serverville.apimaker.MakeAPIs.PrimitiveTypeInfo;
 
-public class BrowserClient {
+public class UnityClient {
 
-	public static void writeBrowserClientApi(List<ApiMethodInfo> apiMethods, List<ApiCustomTypeInfo> apiTypes) throws Exception
+	public static void writeUnityClientApi(List<ApiMethodInfo> apiMethods, List<ApiCustomTypeInfo> apiTypes) throws Exception
 	{
-		System.out.println("Writing client browser/JS API");
+		System.out.println("Writing Unity client API");
 		
 		
-		Templater messageFile = new Templater("clients/browser/templates/serverville_messages.ts.tmpl");
+		Templater messageFile = new Templater("clients/unity/templates/ServervilleMessages.cs.tmpl");
 		
 		StringBuilder customTypes = new StringBuilder();
 		
@@ -31,17 +31,21 @@ public class BrowserClient {
 			{
 				ApiEnumInfo enumInfo = (ApiEnumInfo)typeInfo;
 				
-				customTypes.append("\texport namespace ");
+				customTypes.append("\t[Serializable]\n\tpublic enum ");
 				customTypes.append(enumInfo.Name);
 				customTypes.append("\n\t{\n");
 				
-				for(ApiEnumMember member : enumInfo.Members)
+				for(int m=0; m<enumInfo.Members.size(); m++)
 				{
-					customTypes.append("\t\texport var ");
-					customTypes.append(member.ID);
-					customTypes.append(" = \"");
+					ApiEnumMember member = enumInfo.Members.get(m);
+					customTypes.append("\t\t[EnumMember(Value = \"");
 					customTypes.append(member.Value);
-					customTypes.append("\";\n");
+					customTypes.append("\")]\n");
+					customTypes.append(member.ID);
+					if(m != enumInfo.Members.size()-1)
+						customTypes.append(",\n");
+					else
+						customTypes.append("\n");
 				}
 				
 				customTypes.append("\t}\n\n");
@@ -50,16 +54,16 @@ public class BrowserClient {
 			{
 				ApiMessageInfo messageInfo = (ApiMessageInfo)typeInfo;
 				
-				customTypes.append("\texport interface ");
+				customTypes.append("\t[Serializable]\n\tpublic class ");
 				customTypes.append(messageInfo.Name);
 				customTypes.append("\n\t{\n");
 				
 				for(ApiMessageField field : messageInfo.Fields)
 				{
-					customTypes.append("\t\t");
+					customTypes.append("\t\tpublic ");
+					customTypes.append(getCsType(field.Type));
+					customTypes.append(" ");
 					customTypes.append(field.Name);
-					customTypes.append(":");
-					customTypes.append(getTsType(field.Type));
 					customTypes.append(";\n");
 				}
 				
@@ -73,31 +77,31 @@ public class BrowserClient {
 		
 		messageFile.set("Types", customTypes.toString());
 		
-		messageFile.writeToFile("clients/browser/src/serverville_messages.ts", StandardCharsets.UTF_8);
+		messageFile.writeToFile("clients/unity/Assets/ServervilleClient/ServervilleMessages.cs", StandardCharsets.UTF_8);
 
 		
 		
-		Templater mainFile = new Templater("clients/browser/templates/serverville.ts.tmpl");
-		Templater apiCall = new Templater("clients/browser/templates/api_call.tmpl");
+		Templater mainFile = new Templater("clients/unity/templates/Serverville.cs.tmpl");
+		Templater apiCall = new Templater("clients/unity/templates/api_call.tmpl");
 		
 		StringBuilder apis = new StringBuilder();
 		
 		for(ApiMethodInfo method : apiMethods)
 		{
-			apiCall.set("MethodName", getMethodName(method.Name));
+			apiCall.set("MethodName", method.Name);
 			apiCall.set("ApiName", method.Name);
 			
 			apiCall.set("ReqType", method.RequestType.Name);
 			apiCall.set("ReplyType", method.ReplyType.Name);
 			
+			apiCall.set("PreCall", "");
+			
 			if(method.ReplyType.Name.equals("SignInReply"))
 			{
-				apiCall.set("PreCall", "var self:Serverville = this;");
-				apiCall.set("SuccessClosure", "function(reply:SignInReply):void { self.setUserInfo(reply); if(onSuccess) { onSuccess(reply);} }");
+				apiCall.set("SuccessClosure", "delegate(SignInReply reply) { SetUserInfo(reply); if(onSuccess != null) { onSuccess(reply); } }");
 			}
 			else
 			{
-				apiCall.set("PreCall", "");
 				apiCall.set("SuccessClosure", "onSuccess");
 			}
 			
@@ -108,14 +112,14 @@ public class BrowserClient {
 			{
 				ApiMessageField param = method.RequestType.Fields.get(f);
 				
+				params.append(getCsType(param.Type));
+				params.append(" ");
 				params.append(param.Name);
-				params.append(":");
-				params.append(getTsType(param.Type));
 				params.append(", ");
 				
-				reqInit.append("\t\t\t\t\t\"");
+				reqInit.append("\t\t\t\t\t");
 				reqInit.append(param.Name);
-				reqInit.append("\":");
+				reqInit.append(" = ");
 				reqInit.append(param.Name);
 				if(f != method.RequestType.Fields.size()-1)
 					reqInit.append(",\n");
@@ -129,15 +133,10 @@ public class BrowserClient {
 		
 		mainFile.set("APIs", apis.toString());
 		
-		mainFile.writeToFile("clients/browser/src/serverville.ts", StandardCharsets.UTF_8);
-	}
-
-	private static String getMethodName(String apiName)
-	{
-		return apiName.substring(0, 1).toLowerCase()+apiName.substring(1);
+		mainFile.writeToFile("clients/unity/Assets/ServervilleClient/Serverville.cs", StandardCharsets.UTF_8);
 	}
 	
-	private static String getTsType(ApiDataType type) throws Exception
+	private static String getCsType(ApiDataType type) throws Exception
 	{
 		if(type instanceof PrimitiveTypeInfo)
 		{
@@ -145,17 +144,23 @@ public class BrowserClient {
 			switch(pType.PrimType)
 			{
 			case BOOLEAN:
-				return "boolean";
+				return "bool";
 			case BYTE:
+				return "byte";
 			case SHORT:
+				return "short";
 			case INT:
+				return "int";
 			case LONG:
+				return "long";
 			case FLOAT:
+				return "float";
 			case DOUBLE:
-				return "number";
+				return "double";
 			case OBJECT:
-				return "any";
+				return "object";
 			case CHAR:
+				return "char";
 			case STRING:
 				return "string";
 			default:
@@ -166,17 +171,19 @@ public class BrowserClient {
 		{
 			ApiListTypeInfo lInfo = (ApiListTypeInfo)type;
 			
-			return "Array<"+getTsType(lInfo.ValueType)+">";
+			return "List<"+getCsType(lInfo.ValueType)+">";
 		}
 		else if(type instanceof ApiMapTypeInfo)
 		{
 			ApiMapTypeInfo mInfo = (ApiMapTypeInfo)type;
 			
-			return "{[key:"+getTsType(mInfo.KeyType)+"]:"+getTsType(mInfo.ValueType)+"}";
+			return "Dictionary<"+getCsType(mInfo.KeyType)+","+getCsType(mInfo.ValueType)+">";
 		}
 		else if(type instanceof ApiEnumInfo)
 		{
-			return "string";
+			ApiEnumInfo cInfo = (ApiEnumInfo)type;
+			
+			return cInfo.Name;
 		}
 		else if(type instanceof ApiMessageInfo)
 		{
