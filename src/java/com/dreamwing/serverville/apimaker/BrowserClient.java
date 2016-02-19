@@ -1,6 +1,10 @@
 package com.dreamwing.serverville.apimaker;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.dreamwing.serverville.apimaker.MakeAPIs.ApiCustomTypeInfo;
@@ -13,13 +17,13 @@ import com.dreamwing.serverville.apimaker.MakeAPIs.ApiMessageField;
 import com.dreamwing.serverville.apimaker.MakeAPIs.ApiMessageInfo;
 import com.dreamwing.serverville.apimaker.MakeAPIs.ApiMethodInfo;
 import com.dreamwing.serverville.apimaker.MakeAPIs.PrimitiveTypeInfo;
+import com.dreamwing.serverville.util.FileUtil;
 
 public class BrowserClient {
 
 	public static void writeBrowserClientApi(List<ApiMethodInfo> apiMethods, List<ApiCustomTypeInfo> apiTypes) throws Exception
 	{
 		System.out.println("Writing client browser/JS API");
-		
 		
 		Templater messageFile = new Templater("clients/browser/templates/serverville_messages.ts.tmpl");
 		
@@ -130,6 +134,8 @@ public class BrowserClient {
 		mainFile.set("APIs", apis.toString());
 		
 		mainFile.writeToFile("clients/browser/src/serverville.ts", StandardCharsets.UTF_8);
+	
+		compile();
 	}
 
 	private static String getMethodName(String apiName)
@@ -187,4 +193,36 @@ public class BrowserClient {
 		
 		throw new Exception("Unknown API type");
 	}
+	
+	private static void compile() throws Exception
+	{
+		System.out.println("Compiling client browser/JS API");
+		
+		String pathString = System.getenv("PATH");
+		List<String> pathList = Arrays.asList(pathString.split(":"));
+		if(!pathList.contains("/usr/local/bin"))
+		{
+			pathList = new ArrayList<String>(pathList);
+			pathList.add("/usr/local/bin");
+			pathString = String.join(":", pathList);
+		}
+		
+		File workingDir = new File(System.getProperty("user.dir"));
+		Path clientDir = workingDir.toPath().resolve("clients/browser");
+		
+		ProcessBuilder pb = new ProcessBuilder(clientDir.resolve("build.sh").toString());
+		
+		pb.environment().put("PATH", pathString);
+		pb.directory(clientDir.toFile());
+		
+		Process p = pb.start();
+		int status = p.waitFor();
+		
+		if(status != 0)
+		{
+			String error = FileUtil.readStreamToString(p.getErrorStream(), StandardCharsets.UTF_8);
+			throw new Exception("Compile failure: "+error);
+		}
+	}
+	
 }
