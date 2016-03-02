@@ -94,25 +94,25 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		l.debug(new SVLog("Client HTTP connection closed", Info));
 		
+		logout();
+    }
+	
+	private void logout()
+	{
+		if(Info.User != null)
+		{
+			Info.User = null;
+		}
+
 		if(UserPresence != null)
 		{
-			/*OnlineUserManager.removeUser(User.UserId);
-			
-			UserLeft leftMsg = new UserLeft();
-			leftMsg.user_id = User.UserId;
-			leftMsg.display_name = User.DisplayName;
-			
-			try {
-				OnlineUserManager.sendBroadcast("UserLeft", leftMsg, User);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}*/
-			
 			UserPresence.destroy();
 			
 			UserPresence = null;
 		}
-    }
+		
+		CurrAuthToken = null;
+	}
 	
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, Object msg)
@@ -473,6 +473,22 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	
 	public void signedIn(ServervilleUser user) throws SQLException, JsonApiException
 	{
+		if(user == null)
+		{
+			logout();
+			return;
+		}
+		if(user.equals(Info.User))
+		{
+			// ALready logged in, just ignore
+			return;
+		}
+		else if(Info.User != null)
+		{
+			// Already logged in as someone else, can happen on a re-used HTTP connection
+			logout();
+		}
+		
 		user.startNewSession();
 		Info.User = user;
 		CurrAuthToken = user.getSessionId();

@@ -509,4 +509,11 @@ public class ServervilleUser {
 		}
 	}
 	
+	public boolean equals(ServervilleUser user)
+	{
+		if(user == null)
+			return false;
+		return this.Id.equals(user.Id);
+	}
+	
 }

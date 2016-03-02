@@ -31,9 +31,6 @@ public class ClientAPI {
 	@ClientHandlerOptions(auth=false)
 	public static SignInReply SignIn(SignIn request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		if(info.User != null)
-			throw new JsonApiException(ApiErrors.ALREADY_SIGNED_IN);
-		
 		SignInReply reply = new SignInReply();
 		
 		ServervilleUser user = null;
@@ -65,9 +62,6 @@ public class ClientAPI {
 	@ClientHandlerOptions(auth=false)
 	public static SignInReply ValidateSession(ValidateSessionRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		if(info.User != null)
-			throw new JsonApiException(ApiErrors.ALREADY_SIGNED_IN);
-		
 		SignInReply reply = new SignInReply();
 		
 		ServervilleUser user = ServervilleUser.findBySessionId(request.session_id);
@@ -90,9 +84,6 @@ public class ClientAPI {
 	@ClientHandlerOptions(auth=false)
 	public static CreateAccountReply CreateAnonymousAccount(CreateAnonymousAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		if(info.User != null)
-			throw new JsonApiException(ApiErrors.ALREADY_SIGNED_IN);
-		
 		ServervilleUser user = ServervilleUser.create(null, null, null, ServervilleUser.AdminLevel_User);
 		
 		CreateAccountReply reply = new CreateAccountReply();
@@ -110,9 +101,6 @@ public class ClientAPI {
 	@ClientHandlerOptions(auth=false)
 	public static CreateAccountReply CreateAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		if(info.User != null)
-			throw new JsonApiException(ApiErrors.ALREADY_SIGNED_IN);
-		
 		if(request.username == null || request.email == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must set a username and email to create an account");
 		
@@ -137,7 +125,7 @@ public class ClientAPI {
 	public static CreateAccountReply ConvertToFullAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(info.User.getUsername() != null)
-			throw new JsonApiException(ApiErrors.ALREADY_SIGNED_IN, "Account is already converted");
+			throw new JsonApiException(ApiErrors.ALREADY_REGISTERED, "Account is already converted");
 		
 		if(request.username == null || request.email == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must set a username and email to create an account");

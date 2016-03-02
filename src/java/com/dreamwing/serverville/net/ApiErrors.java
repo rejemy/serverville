@@ -25,7 +25,7 @@ public enum ApiErrors {
 	INVALID_QUERY(100, "Invalid lucene query"),
 	INVALID_KEY_NAME(101, "Invalid key name"),
 	ALREADY_REGISTERED(102, "Account already registered"),
-	ALREADY_SIGNED_IN(103, "Account already signed in"),
+	TO_USE(103, "Reuse"),
 	PRIVATE_DATA(104, "This data cannot be read by the current user"),
 	CHANNEL_ID_TAKEN(105, "This channel ID is already taken by something other than a channel"),
 	USER_NOT_PRESENT(106, "The user does not have a two-way presence connection to the server"),
