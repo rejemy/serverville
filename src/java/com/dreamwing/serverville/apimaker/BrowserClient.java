@@ -25,57 +25,109 @@ public class BrowserClient {
 	{
 		System.out.println("Writing client browser/JS API");
 		
+		Templater definitionFile = new Templater("clients/browser/templates/serverville.d.ts.tmpl");
+		
 		Templater messageFile = new Templater("clients/browser/templates/serverville_messages.ts.tmpl");
 		
 		StringBuilder customTypes = new StringBuilder();
+		StringBuilder customTypeDefs = new StringBuilder();
 		
 		for(ApiCustomTypeInfo typeInfo : apiTypes)
 		{
 			if(typeInfo instanceof ApiEnumInfo)
 			{
+				StringBuilder typeInit = new StringBuilder();
+				StringBuilder typeDef = new StringBuilder();
+				StringBuilder enumDef = new StringBuilder();
+				
 				ApiEnumInfo enumInfo = (ApiEnumInfo)typeInfo;
 				
-				customTypes.append("\texport namespace ");
-				customTypes.append(enumInfo.Name);
-				customTypes.append("\n\t{\n");
+				String enumType = getEnumMemberName(enumInfo.Name);
 				
-				for(ApiEnumMember member : enumInfo.Members)
+				typeInit.append("\texport namespace ");
+				typeDef.append("\texport namespace ");
+				typeInit.append(enumInfo.Name);
+				typeDef.append(enumInfo.Name);
+				typeInit.append("\n\t{\n");
+				typeDef.append("\n\t{\n");
+				
+				enumDef.append("\texport type ");
+				enumDef.append(enumType);
+				enumDef.append(" =\n");
+				
+				for(int m=0; m<enumInfo.Members.size(); m++)
 				{
-					customTypes.append("\t\texport var ");
-					customTypes.append(member.ID);
-					customTypes.append(" = \"");
-					customTypes.append(member.Value);
-					customTypes.append("\";\n");
+					ApiEnumMember member = enumInfo.Members.get(m);
+					
+					typeInit.append("\t\texport const ");
+					typeInit.append(member.ID);
+					typeInit.append(":");
+					typeInit.append(enumType);
+					typeInit.append(" = \"");
+					typeInit.append(member.Value);
+					typeInit.append("\";\n");
+					
+					typeDef.append("\t\texport const ");
+					typeDef.append(member.ID);
+					typeDef.append(":");
+					typeDef.append(enumType);
+					typeDef.append(";\n");
+					
+					enumDef.append("\t\t\"");
+					enumDef.append(member.Value);
+					if(m == enumInfo.Members.size()-1)
+					{
+						enumDef.append("\";\n\n");
+					}
+					else
+					{
+						enumDef.append("\" |\n");
+					}
 				}
 				
-				customTypes.append("\t}\n\n");
+				typeInit.append("\t}\n\n");
+				typeDef.append("\t}\n\n");
+				
+				customTypes.append(typeInit);
+				customTypes.append(enumDef);
+				
+				customTypeDefs.append(typeDef);
+				customTypeDefs.append(enumDef);
 			}
 			else if(typeInfo instanceof ApiMessageInfo)
 			{
+				StringBuilder typeDef = new StringBuilder();
+				
 				ApiMessageInfo messageInfo = (ApiMessageInfo)typeInfo;
 				
-				customTypes.append("\texport interface ");
-				customTypes.append(messageInfo.Name);
-				customTypes.append("\n\t{\n");
+				typeDef.append("\texport interface ");
+				typeDef.append(messageInfo.Name);
+				typeDef.append("\n\t{\n");
 				
 				for(ApiMessageField field : messageInfo.Fields)
 				{
-					customTypes.append("\t\t");
-					customTypes.append(field.Name);
-					customTypes.append(":");
-					customTypes.append(getTsType(field.Type));
-					customTypes.append(";\n");
+					typeDef.append("\t\t");
+					typeDef.append(field.Name);
+					typeDef.append(":");
+					typeDef.append(getTsType(field.Type));
+					typeDef.append(";\n");
 				}
 				
-				customTypes.append("\t}\n\n");
+				typeDef.append("\t}\n\n");
+				
+				customTypes.append(typeDef);
+				customTypeDefs.append(typeDef);
 			}
 			else
 			{
 				throw new Exception("Unknown custom type: "+typeInfo);
 			}
+			
 		}
 		
 		messageFile.set("Types", customTypes.toString());
+		definitionFile.set("Types", customTypeDefs.toString());
+		
 		
 		messageFile.writeToFile("clients/browser/src/serverville_messages.ts", StandardCharsets.UTF_8);
 
@@ -83,12 +135,17 @@ public class BrowserClient {
 		
 		Templater mainFile = new Templater("clients/browser/templates/serverville.ts.tmpl");
 		Templater apiCall = new Templater("clients/browser/templates/api_call.tmpl");
+		Templater apiDef = new Templater("clients/browser/templates/api_def.tmpl");
 		
 		StringBuilder apis = new StringBuilder();
+		StringBuilder apiDefs = new StringBuilder();
+		
 		
 		for(ApiMethodInfo method : apiMethods)
 		{
-			apiCall.set("MethodName", getMethodName(method.Name));
+			apiCall.clear();
+			String methodName = getMethodName(method.Name);
+			apiCall.set("MethodName", methodName);
 			apiCall.set("ApiName", method.Name);
 			
 			apiCall.set("ReqType", method.RequestType.Name);
@@ -129,18 +186,35 @@ public class BrowserClient {
 			apiCall.set("Params", params.toString());
 			
 			apis.append(apiCall.toString());
+			
+			
+			apiDef.clear();
+			apiDef.set("MethodName", methodName);
+			apiDef.set("ReqType", method.RequestType.Name);
+			apiDef.set("ReplyType", method.ReplyType.Name);
+			apiDef.set("Params", params.toString());
+			
+			apiDefs.append(apiDef.toString());
 		}
 		
 		mainFile.set("APIs", apis.toString());
+		definitionFile.set("APIs", apiDefs.toString());
 		
 		mainFile.writeToFile("clients/browser/src/serverville.ts", StandardCharsets.UTF_8);
 	
+		definitionFile.writeToFile("clients/browser/src/serverville.d.ts", StandardCharsets.UTF_8);
+		
 		compile();
 	}
 
 	private static String getMethodName(String apiName)
 	{
 		return apiName.substring(0, 1).toLowerCase()+apiName.substring(1);
+	}
+	
+	private static String getEnumMemberName(String typeName)
+	{
+		return typeName+"Enum";
 	}
 	
 	private static String getTsType(ApiDataType type) throws Exception
@@ -182,7 +256,9 @@ public class BrowserClient {
 		}
 		else if(type instanceof ApiEnumInfo)
 		{
-			return "string";
+			ApiEnumInfo eInfo = (ApiEnumInfo)type;
+			
+			return getEnumMemberName(eInfo.Name);
 		}
 		else if(type instanceof ApiMessageInfo)
 		{
