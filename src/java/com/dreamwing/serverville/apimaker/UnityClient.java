@@ -128,10 +128,12 @@ public class UnityClient {
 			apiCall.set("ReqInit", reqInit.toString());
 			apiCall.set("Params", params.toString());
 			
-			apis.append(apiCall.toString());
+			String apiCallStr = apiCall.toString();
+			apis.append(apiCallStr);
 		}
 		
-		mainFile.set("APIs", apis.toString());
+		String apisStr = apis.toString();
+		mainFile.set("APIs", apisStr);
 		
 		mainFile.writeToFile("clients/unity/Assets/ServervilleClient/Serverville.cs", StandardCharsets.UTF_8);
 	}
