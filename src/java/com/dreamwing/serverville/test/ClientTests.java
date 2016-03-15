@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.util.Random;
 
 import com.dreamwing.serverville.client.ClientMessages.*;
-import com.dreamwing.serverville.client.ClientMessages.CreateAccountReply;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.client.ClientSocketInitializer;
 import com.dreamwing.serverville.net.ApiError;
@@ -54,7 +53,7 @@ public class ClientTests {
 		request.email = request.username+"@serverville.com";
 		request.password = Long.toHexString(Rand.nextLong())+Long.toHexString(Rand.nextLong());
 		
-		CreateAccountReply reply = makeClientCall(User1, "api/CreateAccount", request, new TypeReference<CreateAccountReply>(){});
+		UserAccountInfo reply = makeClientCall(User1, "api/CreateAccount", request, new TypeReference<UserAccountInfo>(){});
 		Assert.assertNotNull(reply);
 		Assert.assertNotNull(reply.user_id);
 		Assert.assertNotNull(reply.session_id);
@@ -78,7 +77,7 @@ public class ClientTests {
 		boolean gotError = false;
 		try
 		{
-			makeClientCall(User1, "api/SignIn", request, new TypeReference<SignInReply>(){});
+			makeClientCall(User1, "api/SignIn", request, new TypeReference<UserAccountInfo>(){});
 		} catch (JsonApiException e) {
 			gotError = true;
 		}
@@ -94,7 +93,7 @@ public class ClientTests {
 		request.username = User1.Username;
 		request.password = User1.Password;
 		
-		SignInReply reply = makeClientCall(User1, "api/SignIn", request, new TypeReference<SignInReply>(){});
+		UserAccountInfo reply = makeClientCall(User1, "api/SignIn", request, new TypeReference<UserAccountInfo>(){});
 		Assert.assertNotNull(reply);
 		Assert.assertNotNull(reply.user_id);
 		Assert.assertNotNull(reply.session_id);
@@ -109,7 +108,7 @@ public class ClientTests {
 		request.email = User1.Email;
 		request.password = User1.Password;
 		
-		SignInReply reply = makeClientCall(User1, "api/SignIn", request, new TypeReference<SignInReply>(){});
+		UserAccountInfo reply = makeClientCall(User1, "api/SignIn", request, new TypeReference<UserAccountInfo>(){});
 		Assert.assertNotNull(reply);
 		Assert.assertNotNull(reply.user_id);
 		Assert.assertNotNull(reply.session_id);

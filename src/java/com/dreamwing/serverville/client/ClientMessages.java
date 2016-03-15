@@ -29,14 +29,6 @@ public class ClientMessages {
 		public String email;
 		public String password;
 	}
-	
-	public static class CreateAccountReply
-	{
-		public String user_id;
-		public String username;
-		public String email;
-		public String session_id;
-	}
 
 	public static class ValidateSessionRequest
 	{
@@ -50,7 +42,7 @@ public class ClientMessages {
 		public String password;
 	}
 	
-	public static class SignInReply
+	public static class UserAccountInfo
 	{
 		public String user_id;
 		public String username;

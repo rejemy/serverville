@@ -29,9 +29,9 @@ public class ClientAPI {
 	private static final Logger l = LogManager.getLogger(ClientAPI.class);
 	
 	@ClientHandlerOptions(auth=false)
-	public static SignInReply SignIn(SignIn request, ClientMessageInfo info) throws JsonApiException, SQLException
+	public static UserAccountInfo SignIn(SignIn request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		SignInReply reply = new SignInReply();
+		UserAccountInfo reply = new UserAccountInfo();
 		
 		ServervilleUser user = null;
 		
@@ -60,9 +60,9 @@ public class ClientAPI {
 	}
 	
 	@ClientHandlerOptions(auth=false)
-	public static SignInReply ValidateSession(ValidateSessionRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	public static UserAccountInfo ValidateSession(ValidateSessionRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		SignInReply reply = new SignInReply();
+		UserAccountInfo reply = new UserAccountInfo();
 		
 		ServervilleUser user = ServervilleUser.findBySessionId(request.session_id);
 		
@@ -82,11 +82,11 @@ public class ClientAPI {
 	}
 	
 	@ClientHandlerOptions(auth=false)
-	public static CreateAccountReply CreateAnonymousAccount(CreateAnonymousAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
+	public static UserAccountInfo CreateAnonymousAccount(CreateAnonymousAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		ServervilleUser user = ServervilleUser.create(null, null, null, ServervilleUser.AdminLevel_User);
 		
-		CreateAccountReply reply = new CreateAccountReply();
+		UserAccountInfo reply = new UserAccountInfo();
 		reply.user_id = user.getId();
 		
 		info.ConnectionHandler.signedIn(user);
@@ -99,7 +99,7 @@ public class ClientAPI {
 	}
 	
 	@ClientHandlerOptions(auth=false)
-	public static CreateAccountReply CreateAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
+	public static UserAccountInfo CreateAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(request.username == null || request.email == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must set a username and email to create an account");
@@ -110,7 +110,7 @@ public class ClientAPI {
 		ServervilleUser user = ServervilleUser.create(request.password, request.username, request.email, ServervilleUser.AdminLevel_User);
 		
 
-		CreateAccountReply reply = new CreateAccountReply();
+		UserAccountInfo reply = new UserAccountInfo();
 		reply.user_id = user.getId();
 		
 		info.ConnectionHandler.signedIn(user);
@@ -122,7 +122,7 @@ public class ClientAPI {
 		return reply;
 	}
 	
-	public static CreateAccountReply ConvertToFullAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
+	public static UserAccountInfo ConvertToFullAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(info.User.getUsername() != null)
 			throw new JsonApiException(ApiErrors.ALREADY_REGISTERED, "Account is already converted");
@@ -135,7 +135,7 @@ public class ClientAPI {
 		
 		info.User.register(request.password, request.username, request.email);
 		
-		CreateAccountReply reply = new CreateAccountReply();
+		UserAccountInfo reply = new UserAccountInfo();
 		
 		reply.user_id = info.User.getId();
 		reply.username = info.User.getUsername();
@@ -145,9 +145,9 @@ public class ClientAPI {
 		return reply;
 	}
 	
-	public static SignInReply GetUserInfo(GetUserInfo request, ClientMessageInfo info)
+	public static UserAccountInfo GetUserInfo(GetUserInfo request, ClientMessageInfo info)
 	{
-		SignInReply reply = new SignInReply();
+		UserAccountInfo reply = new UserAccountInfo();
 		
 		reply.user_id = info.User.getId();
 		reply.username = info.User.getUsername();

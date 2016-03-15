@@ -96,9 +96,9 @@ public class UnityClient {
 			
 			apiCall.set("PreCall", "");
 			
-			if(method.ReplyType.Name.equals("SignInReply"))
+			if(method.ReplyType.Name.equals("UserAccountInfo"))
 			{
-				apiCall.set("SuccessClosure", "delegate(SignInReply reply) { SetUserInfo(reply); if(onSuccess != null) { onSuccess(reply); } }");
+				apiCall.set("SuccessClosure", "delegate(UserAccountInfo reply) { SetUserInfo(reply); if(onSuccess != null) { onSuccess(reply); } }");
 			}
 			else
 			{
