@@ -4,7 +4,7 @@
 declare class KeyData
 {
 	id:string;
-	data:{[key:string]:any};
+	data:any;
 
 	constructor(id:string);
 	
