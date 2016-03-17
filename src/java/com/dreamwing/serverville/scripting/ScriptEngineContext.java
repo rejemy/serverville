@@ -9,6 +9,7 @@ import javax.script.ScriptException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.agent.AgentScriptAPI;
@@ -63,6 +64,7 @@ public class ScriptEngineContext {
 		JsonApi = (ScriptObjectMirror)Engine.get("JSON");
 		
 		Engine.put("api", new AgentScriptAPI(this));
+		Engine.put("JsonDataType", JsonDataType.class);
 		
 		try
 		{

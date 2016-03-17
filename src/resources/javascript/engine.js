@@ -92,4 +92,4 @@ var KeyData = (function () {
         this.local_dirty = {};
     };
     return KeyData;
-})();
+}());

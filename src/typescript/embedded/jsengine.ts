@@ -83,7 +83,7 @@ class KeyData
 		}
 	}
 	
-	set(key:string, val:any, data_type:string = null):void
+	set(key:string, val:any, data_type:JsonDataTypeItem = null):void
 	{
 		this.data[key] = val;
 		var info:DataItemInfo = this.data_info[key];

@@ -12,6 +12,8 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.script.ScriptException;
+
 import org.apache.lucene.queryparser.classic.ParseException;
 import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.agent.AgentKeyManager;
@@ -680,7 +682,15 @@ public class AdminAPI {
 			newScript.create();
 		}
 		
-		ScriptManager.scriptsUpdated();
+		try {
+			ScriptManager.scriptsUpdated();
+		} catch (InterruptedException e) {
+			String errorMessage = e.getMessage();
+			return HttpUtil.sendError(req, ApiErrors.UNKNOWN, errorMessage);
+		} catch (ScriptException e) {
+			String errorMessage = e.getCause().getMessage();
+			return HttpUtil.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
+		}
 		
 		return HttpUtil.sendSuccess(req);
 	}

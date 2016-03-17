@@ -1,4 +1,18 @@
 
+declare class JsonDataTypeItem {}
+
+declare namespace JsonDataType
+{
+	var NULL:JsonDataTypeItem;
+	var BOOLEAN:JsonDataTypeItem;
+	var NUMBER:JsonDataTypeItem;
+	var STRING:JsonDataTypeItem;
+	var JSON:JsonDataTypeItem;
+	var XML:JsonDataTypeItem;
+	var DATETIME:JsonDataTypeItem;
+	var BYTES:JsonDataTypeItem;
+	var OBJECT:JsonDataTypeItem;
+}
 
 interface UserInfo
 {
@@ -19,7 +33,7 @@ interface DataItem
 {
 	key:string;
 	value:any;
-	data_type?:string;
+	data_type?:JsonDataTypeItem;
 }
 
 interface DataItemInfo
@@ -27,7 +41,7 @@ interface DataItemInfo
 	id:string;
 	key:string;
 	value:any;
-	data_type:string;
+	data_type:JsonDataTypeItem;
 	created:number;
 	modified:number;
 	deleted?:boolean;

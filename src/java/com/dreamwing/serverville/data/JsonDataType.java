@@ -34,6 +34,26 @@ public enum JsonDataType {
 
 	}
 	
+	public static JsonDataType fromObject(Object v)
+	{
+		if(v == null)
+		{
+			return null;
+		}
+		else if(v instanceof JsonDataType)
+		{
+			return (JsonDataType)v;
+		}
+		else if(v instanceof String)
+		{
+			return JsonDataType.valueOf(((String)v).toUpperCase());
+		}
+		else
+		{
+			throw new RuntimeException("Can't case to JsonDataType: "+v);
+		}
+	}
+	
 	public static JsonDataType fromKeyDataType(KeyDataTypes kdType)
 	{
 		switch(kdType)

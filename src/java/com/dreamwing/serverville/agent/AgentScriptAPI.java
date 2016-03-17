@@ -74,7 +74,7 @@ public class AgentScriptAPI
 		return setDataKey(id, key, value, null);
 	}
 	
-	public double setDataKey(String id, String key, Object value, String data_type) throws JsonApiException, SQLException
+	public double setDataKey(String id, String key, Object value, Object data_type) throws JsonApiException, SQLException
 	{
 		if(id == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
@@ -82,7 +82,7 @@ public class AgentScriptAPI
 		if(!KeyDataItem.isValidKeyname(key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 		
-		JsonDataType valueType = JsonDataType.fromString(data_type);
+		JsonDataType valueType = JsonDataType.fromObject(data_type);
 		
 		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, valueType, value);
 		long updateTime = KeyDataManager.saveKey(id, item);
@@ -102,7 +102,7 @@ public class AgentScriptAPI
 		{
 			String key = (String)data.getOrDefault("key", null);
 			Object value = data.getOrDefault("value", null);
-			JsonDataType valueType = JsonDataType.fromString((String)data.getOrDefault("data_type", null));
+			JsonDataType valueType = JsonDataType.fromObject(data.getOrDefault("data_type", null));
 			
 			if(!KeyDataItem.isValidKeyname(key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);

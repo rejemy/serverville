@@ -105,9 +105,16 @@ public class ScriptManager
 		EngineLock.release();
 	}
 	
-	public static void scriptsUpdated()
+	public static void scriptsUpdated() throws InterruptedException, ScriptException
 	{
 		ScriptVersion++;
+		
+		try
+		{
+			getEngine().invokeFunction("globalInit");
+		} catch (NoSuchMethodException e) {
+			// No function, no problem
+		}
 		
 		updateHandlerSets();
 	}
