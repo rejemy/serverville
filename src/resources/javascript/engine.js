@@ -29,6 +29,14 @@ var KeyData = (function () {
         data.loadAll();
         return data;
     };
+    KeyData.prototype.loadKeys = function (keys) {
+        var vals = api.getDataKeys(this.id, keys);
+        for (var key in vals) {
+            var dataInfo = vals[key];
+            this.data_info[key] = dataInfo;
+            this.data[key] = dataInfo.value;
+        }
+    };
     KeyData.prototype.loadAll = function () {
         this.data = {};
         this.local_dirty = {};

@@ -10,11 +10,12 @@ declare class KeyData
 	
 	static load(id:string):KeyData;
 	
+	loadKeys(keys:string[]):void;
 	loadAll():void;
 	
 	refresh():void;
 	
-	set(key:string, val:any, data_type?:string):void;
+	set(key:string, val:any, data_type?:JsonDataTypeItem):void;
 	
 	save():void;
 	

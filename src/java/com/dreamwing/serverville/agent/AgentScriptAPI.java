@@ -84,7 +84,7 @@ public class AgentScriptAPI
 		
 		JsonDataType valueType = JsonDataType.fromObject(data_type);
 		
-		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, valueType, value);
+		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, valueType, value, Context);
 		long updateTime = KeyDataManager.saveKey(id, item);
 		
 		return updateTime;
@@ -107,7 +107,7 @@ public class AgentScriptAPI
 			if(!KeyDataItem.isValidKeyname(key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 			
-			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, valueType, value);
+			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, valueType, value, Context);
 			itemList.add(item);
 		}
 		
@@ -301,7 +301,7 @@ public class AgentScriptAPI
 			throw new JsonApiException(ApiErrors.NOT_FOUND, id);
 		
 		JsonDataType valueType = JsonDataType.fromString(data_type);
-		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, valueType, value);
+		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, valueType, value, Context);
 		res.setTransientValue(item);
 	
 	}
@@ -327,7 +327,7 @@ public class AgentScriptAPI
 			if(!KeyDataItem.isValidKeyname(key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 			
-			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, valueType, value);
+			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, valueType, value, Context);
 			stateValues.add(item);
 		}
 		

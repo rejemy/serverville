@@ -64,7 +64,7 @@ public class ScriptEngineContext {
 		JsonApi = (ScriptObjectMirror)Engine.get("JSON");
 		
 		Engine.put("api", new AgentScriptAPI(this));
-		Engine.put("JsonDataType", JsonDataType.class);
+		addEnum("JsonDataType", JsonDataType.class);
 		
 		try
 		{
@@ -99,6 +99,23 @@ public class ScriptEngineContext {
 		} catch (ScriptException e) {
 			l.error("Error executing script localInit: ", e);
 			throw new ScriptLoadException("<main>", e);
+		}
+	}
+	
+	private void addEnum(String javaName, Class<? extends Enum<?>> enumClass)
+	{
+		ScriptObjectMirror enumHolder = null;
+		try {
+			enumHolder = (ScriptObjectMirror)Engine.eval("var "+javaName+" = {}; "+javaName+";\n");
+		} catch (ScriptException e) {
+			l.error("Error creating enum "+javaName, e);
+			return;
+		}
+		Enum<?>[] consts = enumClass.getEnumConstants();
+		for(Enum<?> enumMember : consts)
+		{
+			String name = enumMember.toString();
+			enumHolder.put(name, enumMember);
 		}
 	}
 	

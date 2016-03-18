@@ -7,9 +7,11 @@ import java.util.Date;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import javax.script.ScriptException;
 
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.db.KeyDataManager.StringFlavor;
+import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.serialize.ByteDecoder;
 import com.dreamwing.serverville.serialize.ByteEncoder;
 import com.dreamwing.serverville.util.JSON;
@@ -297,7 +299,7 @@ public class KeyDataItem
 		dirty = true;
 	}
 	
-	public void setJsonObject(Object val) throws JsonProcessingException
+	public void setJsonObject(Object val, ScriptEngineContext ctx) throws JsonProcessingException, ScriptException
 	{
 		if(val == null)
 		{
@@ -306,7 +308,14 @@ public class KeyDataItem
 		}
 		else
 		{
-			value = JSON.serializeToString(val);
+			if(ctx != null)
+			{
+				value = ctx.encodeJSON(val);
+			}
+			else
+			{
+				value = JSON.serializeToString(val);
+			}
 			datatype = KeyDataTypes.JSON;
 		}
 		dirty = true;

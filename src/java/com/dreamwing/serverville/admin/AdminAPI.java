@@ -688,7 +688,7 @@ public class AdminAPI {
 			String errorMessage = e.getMessage();
 			return HttpUtil.sendError(req, ApiErrors.UNKNOWN, errorMessage);
 		} catch (ScriptException e) {
-			String errorMessage = e.getCause().getMessage();
+			String errorMessage = e.getCause().getMessage()+" at line "+e.getLineNumber();
 			return HttpUtil.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
 		}
 		

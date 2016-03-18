@@ -49,6 +49,17 @@ class KeyData
 		return data;
 	}
 	
+	loadKeys(keys:string[]):void
+	{
+		var vals:{[key:string]:DataItemInfo} = api.getDataKeys(this.id, keys);
+		for(var key in vals)
+		{
+			var dataInfo:DataItemInfo = vals[key];
+			this.data_info[key] = dataInfo;
+			this.data[key] = dataInfo.value;
+		}
+	}
+	
 	loadAll():void
 	{
 		this.data = {};

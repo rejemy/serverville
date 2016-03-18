@@ -8,16 +8,24 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import javax.script.ScriptException;
+
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.db.KeyDataManager.StringFlavor;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
+import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class JsonDataDecoder {
 
 	public static KeyDataItem MakeKeyDataFromJson(String keyname, JsonDataType userSuppliedType, Object data) throws JsonApiException
+	{
+		return MakeKeyDataFromJson(keyname, userSuppliedType, data, null);
+	}
+	
+	public static KeyDataItem MakeKeyDataFromJson(String keyname, JsonDataType userSuppliedType, Object data, ScriptEngineContext ctx) throws JsonApiException
 	{
 		KeyDataItem item = new KeyDataItem(keyname);
 		
@@ -52,7 +60,7 @@ public class JsonDataDecoder {
 				setString(item, data, StringFlavor.XML);
 				return item;
 			case OBJECT:
-				setObject(item, data);
+				setObject(item, data, ctx);
 				return item;
 			}
 		}
@@ -103,8 +111,8 @@ public class JsonDataDecoder {
 		else if(data instanceof Map || data instanceof List)
 		{
 			try {
-				item.setJsonObject(data);
-			} catch (JsonProcessingException e) {
+				item.setJsonObject(data, ctx);
+			} catch (JsonProcessingException | ScriptException e) {
 				throw new JsonApiException(ApiErrors.DATA_CONVERSION, e.getMessage());
 			}
 		}
@@ -217,11 +225,11 @@ public class JsonDataDecoder {
 		}
 	}
 	
-	static void setObject(KeyDataItem item, Object data) throws JsonApiException
+	static void setObject(KeyDataItem item, Object data, ScriptEngineContext ctx) throws JsonApiException
 	{
 		try {
-			item.setJsonObject(data);
-		} catch (JsonProcessingException e) {
+			item.setJsonObject(data, ctx);
+		} catch (JsonProcessingException | ScriptException e) {
 			throw new JsonApiException(ApiErrors.DATA_CONVERSION, e.getMessage());
 		}
 	}
