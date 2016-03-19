@@ -94,6 +94,19 @@ public class AgentAPI
 		return reply;
 	}
 	
+	public static SetDataReply DeleteAllDataKeys(DeleteGlobalKeyDataRequest request) throws JsonApiException, SQLException
+	{
+		SetDataReply reply = new SetDataReply();
+		reply.updated_at = ApiInst.deleteDataKey(request.id, request.key);
+		return reply;
+	}
+	
+	public static SetDataReply DeleteAllDataKeys(DeleteGlobalDataAllRequest request) throws JsonApiException, SQLException
+	{
+		SetDataReply reply = new SetDataReply();
+		reply.updated_at = ApiInst.deleteAllDataKeys(request.id);
+		return reply;
+	}
 	
 	public static CreateChannelReply CreateChannel(CreateChannelRequest request) throws JsonApiException
 	{

@@ -70,4 +70,6 @@ declare namespace api
 	function getAllDataKeys(id:string):DataItemInfoMap;
 	function getAllDataKeys(id:string, since:number):DataItemInfoMap;
 	function getAllDataKeys(id:string, since:number, includeDeleted:boolean):DataItemInfoMap;
+	function deleteDataKey(id:string, key:string):number;
+	function deleteAllDataKeys(id:string):number;
 }

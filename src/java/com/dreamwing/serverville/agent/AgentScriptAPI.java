@@ -190,7 +190,25 @@ public class AgentScriptAPI
 		
 		return reply;
 	}
+
+	public double deleteDataKey(String id, String key) throws SQLException, JsonApiException
+	{
+		if(id == null || id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
+		
+		if(!KeyDataItem.isValidKeyname(key))
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
+		
+		return KeyDataManager.deleteKey(id, key);
+	}
 	
+	public double deleteAllDataKeys(String id) throws SQLException, JsonApiException
+	{
+		if(id == null || id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
+		
+		return KeyDataManager.deleteAllKeys(id);
+	}
 
 	public String createChannel(String id) throws JsonApiException
 	{

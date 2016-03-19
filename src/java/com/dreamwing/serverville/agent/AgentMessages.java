@@ -46,6 +46,17 @@ public class AgentMessages
 		public List<SetGlobalDataItemRequest> values;
 	}
 	
+	public static class DeleteGlobalKeyDataRequest
+	{
+		public String id;
+		public String key;
+	}
+	
+	public static class DeleteGlobalDataAllRequest
+	{
+		public String id;
+	}
+	
 	public static class CreateChannelRequest
 	{
 		public String id;
