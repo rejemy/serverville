@@ -170,7 +170,7 @@ var pg;
                 }
             };
             return ScrollController;
-        })();
+        }());
         function makeScrollPanel(container, opts) {
             if (!opts)
                 opts = {};
@@ -211,7 +211,8 @@ var pg;
             LibraryPalette.style.right = "0px";
             LibraryPalette.style.height = "100%";
             LibraryPalette.style.backgroundColor = "#dddddd";
-            LibraryPalette.innerHTML = "<div style='text-align:center;padding-top:10px;'>Library</div>";
+            LibraryPalette.innerHTML =
+                "<div style='text-align:center;padding-top:10px;'>Library</div>";
             document.body.appendChild(LibraryPalette);
             var scrollContainer = document.createElement("div");
             scrollContainer.classList.add("pgbare");

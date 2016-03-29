@@ -11,7 +11,7 @@
 		<pathelement location="${lib}/c3p0-0.9.5.2.jar"/>
 		<pathelement location="${lib}/commons-dbutils-1.6.jar"/>
 		<pathelement location="${lib}/hamcrest-core-1.3.jar"/>
-		<pathelement location="${lib}/hazelcast-3.5.4.jar"/>
+		<pathelement location="${lib}/hazelcast-3.6.1.jar"/>
 		<pathelement location="${lib}/jackson-annotations-2.6.4.jar"/>
 		<pathelement location="${lib}/jackson-core-2.6.4.jar"/>
 		<pathelement location="${lib}/jackson-databind-2.6.4.jar"/>
@@ -64,6 +64,7 @@
 		
 		<jar destfile="build/serverville.jar">
 			<fileset dir="bin-release"/>
+			<fileset dir="src/resources"/>
             <manifest>
                 <attribute name="Main-Class" value="com.dreamwing.serverville.ServervilleMain"/>
 				<attribute name="Class-Path" value="${manifest.classpath}"/>

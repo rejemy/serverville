@@ -203,6 +203,7 @@ public class AdminAPI {
 		public double time;
 		public int total_tests;
 		public int tests_completed;
+		public int tests_failed;
 		public List<SelfTestResult> results;
 	}
 	
@@ -218,6 +219,7 @@ public class AdminAPI {
 		results.time = SelfTest.getTime();
 		results.total_tests = SelfTest.getNumTests();
 		results.tests_completed = SelfTest.getTestsRun();
+		results.tests_failed = 0;
 		results.results = new LinkedList<SelfTestResult>();
 		
 		for(int i=startAt; i<results.total_tests; i++)
@@ -240,6 +242,8 @@ public class AdminAPI {
 				PrintWriter pw = new PrintWriter(sw);
 				testInfo.Error.printStackTrace(pw);
 				testResult.stack_trace = sw.toString();
+				
+				results.tests_failed += 1;
 			}
 			
 			

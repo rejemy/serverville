@@ -1,6 +1,6 @@
 #!/bin/bash
 
-javabin=java
+javabin=/usr/local/java/jdk1.8.0_71/bin/java
 pidfile=serverville.pid
 logdir=data/logs
 jarfile=serverville.jar
@@ -17,7 +17,7 @@ sleep 1
 fi
 
 if [ -n "$heap" ]; then
-	javaopts="$javaopts -Xms$heap -Xmx`$heap"
+	javaopts="$javaopts -Xms$heap -Xmx$heap"
 fi
 
 if [ -n "$profileport" ]; then
