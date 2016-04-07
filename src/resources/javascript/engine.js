@@ -15,19 +15,42 @@ var client = {};
 // Holder for exposed agent handlers
 var agent = {};
 var KeyData = (function () {
-    function KeyData(id) {
-        if (id == null)
-            throw "Data must have an id";
-        this.id = id;
+    function KeyData(record) {
+        if (record == null)
+            throw "Data must have an database record";
+        this.id = record.Id;
+        this.record = record;
         this.data = {};
         this.data_info = {};
         this.local_dirty = {};
         this.most_recent = 0;
     }
+    KeyData.find = function (id) {
+        var record = api.findKeyDataRecord(id);
+        if (record == null)
+            return null;
+        return new KeyData(record);
+    };
+    KeyData.findOrCreate = function (id, type, owner, parent) {
+        if (parent === void 0) { parent = null; }
+        var record = api.findOrCreateKeyDataRecord(id, type, owner, parent);
+        return new KeyData(record);
+    };
     KeyData.load = function (id) {
-        var data = new KeyData(id);
+        var data = KeyData.find(id);
+        if (data == null)
+            return null;
         data.loadAll();
         return data;
+    };
+    KeyData.prototype.getId = function () { return this.id; };
+    KeyData.prototype.getType = function () { return this.record.Type; };
+    KeyData.prototype.getOwner = function () { return this.record.Owner; };
+    KeyData.prototype.getParent = function () { return this.record.Parent; };
+    KeyData.prototype.getVersion = function () { return this.record.Version; };
+    KeyData.prototype.setVersion = function (version) {
+        this.record.Version = Math.floor(version);
+        api.setKeyDataVersion(this.id, this.record.Version);
     };
     KeyData.prototype.loadKeys = function (keys) {
         var vals = api.getDataKeys(this.id, keys);
@@ -64,12 +87,13 @@ var KeyData = (function () {
     };
     KeyData.prototype.set = function (key, val, data_type) {
         if (data_type === void 0) { data_type = null; }
+        if (this.data[key] == val)
+            return;
         this.data[key] = val;
         var info = this.data_info[key];
         if (info) {
             info.value = val;
-            if (data_type)
-                info.data_type = data_type;
+            info.data_type = data_type;
             if (info.deleted)
                 delete info.deleted;
         }
@@ -98,6 +122,9 @@ var KeyData = (function () {
         }
         api.setDataKeys(this.id, saveSet);
         this.local_dirty = {};
+    };
+    KeyData.prototype.delete = function () {
+        api.deleteKeyData(this.id);
     };
     return KeyData;
 }());

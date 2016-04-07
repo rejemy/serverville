@@ -69,7 +69,7 @@ public class ScriptEngineContext {
 		try
 		{
 			Engine.eval(ScriptManager.EngineBaseSource);
-		} catch (ScriptException e)
+		} catch (Exception e)
 		{
 			l.error("Couldn't setup javascript engine due to exception in engine.js", e);
 			throw new ScriptLoadException("engine.js", e);
@@ -80,7 +80,7 @@ public class ScriptEngineContext {
 			try
 			{
 				Engine.eval(script.ScriptSource);
-			} catch (ScriptException e)
+			} catch (Exception e)
 			{
 				l.error("Couldn't setup javascript engine due to exception in "+script.Id, e);
 				throw new ScriptLoadException(script.Id, e);
@@ -96,7 +96,7 @@ public class ScriptEngineContext {
 			Engine.invokeFunction("localInit");
 		} catch (NoSuchMethodException e) {
 			// No function, no problem
-		} catch (ScriptException e) {
+		} catch (Exception e) {
 			l.error("Error executing script localInit: ", e);
 			throw new ScriptLoadException("<main>", e);
 		}
@@ -107,7 +107,7 @@ public class ScriptEngineContext {
 		ScriptObjectMirror enumHolder = null;
 		try {
 			enumHolder = (ScriptObjectMirror)Engine.eval("var "+javaName+" = {}; "+javaName+";\n");
-		} catch (ScriptException e) {
+		} catch (Exception e) {
 			l.error("Error creating enum "+javaName, e);
 			return;
 		}

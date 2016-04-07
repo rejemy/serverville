@@ -13,6 +13,7 @@ import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
+import com.dreamwing.serverville.util.PasswordUtil;
 import com.dreamwing.serverville.util.SVID;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
@@ -171,6 +172,7 @@ public class ServervilleUser {
 					l.error("Error converting email hold to email lookup, created a ghost account: "+email, e);
 				}
 			}
+			
 		}
 		finally
 		{
@@ -344,7 +346,7 @@ public class ServervilleUser {
 	
 	public void startNewSession() throws SQLException, JsonApiException
 	{
-		setSessionId(SVID.makeSVID());
+		setSessionId(PasswordUtil.makeRandomString(8)+"/"+SVID.makeSVID());
 	}
 	
 	public void setSessionId(String sessionId) throws SQLException, JsonApiException

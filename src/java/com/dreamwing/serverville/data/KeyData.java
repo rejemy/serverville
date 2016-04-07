@@ -1,27 +1,86 @@
 package com.dreamwing.serverville.data;
 
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataManager;
+
 
 public class KeyData {
 	
+	private KeyDataRecord DbRecord;
 	private String Id;
 	private Map<String,KeyDataItem> Keys;
 	private long MostRecent=0;
 	
-	public KeyData(String id)
+	public static KeyData find(String id) throws SQLException
 	{
-		Id = id;
+		KeyDataRecord record = DatabaseManager.KeyDataRecordDao.queryForId(id);
+		if(record == null)
+			return null;
+		
+		return new KeyData(record);
+	}
+	
+	public static KeyData findOrCreate(String id, String type, String owner, String parent) throws SQLException
+	{
+		KeyDataRecord record = DatabaseManager.KeyDataRecordDao.queryForId(id);
+		if(record != null)
+			return new KeyData(record);
+		
+		record = new KeyDataRecord();
+		record.Id = id;
+		record.Type = type;
+		record.Owner = owner;
+		record.Parent = parent;
+		record.Version = 0;
+		record.Created = new Date();
+		record.Modified = record.Created;
+		
+		DatabaseManager.KeyDataRecordDao.createOrUpdate(record);
+		
+		return new KeyData(record);
+	}
+	
+	public static KeyData load(String id) throws SQLException
+	{
+		KeyData data = find(id);
+		if(data == null)
+			return null;
+		
+		data.loadAll();
+		return data;
+	}
+	
+	private KeyData(KeyDataRecord record)
+	{
+		DbRecord = record;
+		Id = DbRecord.Id;
 		Keys = new HashMap<String,KeyDataItem>();
 	}
 	
 	public String getId() { return Id; }
+	public String getType() { return DbRecord.Type; }
+	public int getVersion() { return DbRecord.Version; }
 	
-	public void loadAll() throws Exception
+	public String getOwnerId() { return DbRecord.Owner; }
+	public String getParentId() { return DbRecord.Parent; }
+	
+	public KeyDataRecord GetDBRecord() { return DbRecord; }
+	
+	public void setVersion(int version) throws SQLException
+	{
+		DbRecord.Version = version;
+		DbRecord.Modified = new Date();
+		
+		DatabaseManager.KeyDataRecordDao.update(DbRecord);
+	}
+	
+	public void loadAll() throws SQLException
 	{
 		List<KeyDataItem> data = KeyDataManager.loadAllKeys(Id);
 		Keys.clear();
@@ -243,5 +302,11 @@ public class KeyData {
 				item.dirty = true;
 			}
 		}
+	}
+	
+	public void delete() throws SQLException
+	{
+		KeyDataManager.deleteAllKeys(Id);
+		DatabaseManager.KeyDataRecordDao.delete(DbRecord);
 	}
 }

@@ -170,13 +170,13 @@ public class DataTests {
 		// Start a new ID for a new series of tests
 		TestItemID = SVID.makeSVID();
 		
-		KeyData randomData = new KeyData(TestItemID);
+		KeyData randomData = KeyData.findOrCreate(TestItemID, "test", "test", null);
 		randomData.set("str", "Woohoo!");
 		randomData.set("int", 100);
 		randomData.set("float", 1.0f);
 		randomData.save();
 		
-		KeyData data2 = new KeyData(TestItemID);
+		KeyData data2 = KeyData.findOrCreate(TestItemID, "test", "test", null);
 		data2.loadAll();
 		
 		Assert.assertEquals(randomData.getAsString("str"), data2.getAsString("str"));
@@ -187,7 +187,7 @@ public class DataTests {
 	@Test(order=12)
 	public void KeyDataRefresh() throws Exception
 	{
-		KeyData data = new KeyData(TestItemID);
+		KeyData data = KeyData.findOrCreate(TestItemID, "test", "test", null);
 		data.loadAll();
 		
 		KeyDataManager.saveKeyValue(TestItemID, "str", "yo");
@@ -204,13 +204,9 @@ public class DataTests {
 	@Test(order=13)
 	public void KeyDataDelete() throws Exception
 	{
-		KeyData data = new KeyData(TestItemID);
-		data.loadAll();
-		
-		data.deleteAllKeys();
-		data.save();
-		
-		KeyDataManager.purgeDeletedKeysFor(TestItemID);
+		KeyData data = KeyData.find(TestItemID);
+		data.delete();
+
 		
 	}
 	

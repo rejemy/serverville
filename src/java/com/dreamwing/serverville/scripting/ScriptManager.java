@@ -46,7 +46,7 @@ public class ScriptManager
 			getEngine().invokeFunction("globalInit");
 		} catch (NoSuchMethodException e) {
 			// No function, no problem
-		} catch (ScriptException e) {
+		} catch (Exception e) {
 			l.error("Error executing script globalInit: ", e);
 		}
 	}

@@ -25,16 +25,18 @@ var agent:any = {};
 class KeyData
 {
 	id:string;
+	record:KeyDataRecord;
 	data:any;
 	data_info:{[key:string]:DataItemInfo};
 	local_dirty:{[key:string]:DataItemInfo};
 	most_recent:number;
 	
-	constructor(id:string)
+	constructor(record:KeyDataRecord)
 	{
-		if(id == null)
-			throw "Data must have an id";
-		this.id = id;
+		if(record == null)
+			throw "Data must have an database record";
+		this.id = record.Id;
+		this.record = record;
 		this.data = {};
 		this.data_info = {};
 		this.local_dirty = {};
@@ -42,11 +44,41 @@ class KeyData
 		this.most_recent = 0;
 	}
 	
+	static find(id:string):KeyData
+	{
+		var record:KeyDataRecord = api.findKeyDataRecord(id);
+		if(record == null)
+			return null;
+			
+		return new KeyData(record);
+	}
+	
+	static findOrCreate(id:string, type:string, owner:string, parent:string=null):KeyData
+	{
+		var record:KeyDataRecord = api.findOrCreateKeyDataRecord(id, type, owner, parent);
+		return new KeyData(record);
+	}
+	
 	static load(id:string):KeyData
 	{
-		var data:KeyData = new KeyData(id);
+		var data:KeyData = KeyData.find(id);
+		if(data == null)
+			return null;
+		
 		data.loadAll();
 		return data;
+	}
+	
+	getId():string { return this.id; }
+	getType():string { return this.record.Type; }
+	getOwner():string { return this.record.Owner; }
+	getParent():string { return this.record.Parent; }
+	getVersion():number { return this.record.Version; }
+	
+	setVersion(version:number):void
+	{
+		this.record.Version = Math.floor(version);
+		api.setKeyDataVersion(this.id, this.record.Version);
 	}
 	
 	loadKeys(keys:string[]):void
@@ -96,13 +128,15 @@ class KeyData
 	
 	set(key:string, val:any, data_type:JsonDataTypeItem = null):void
 	{
+		if(this.data[key] == val)
+			return;
+			
 		this.data[key] = val;
 		var info:DataItemInfo = this.data_info[key];
 		if(info)
 		{
 			info.value = val;
-			if(data_type)
-				info.data_type = data_type;
+			info.data_type = data_type;
 			if(info.deleted)
 				delete info.deleted;
 		}
@@ -143,5 +177,8 @@ class KeyData
 		this.local_dirty = {};
 	}
 	
-	
+	delete():void
+	{
+		api.deleteKeyData(this.id);
+	}
 }

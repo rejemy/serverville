@@ -13,7 +13,10 @@ import org.apache.log4j.Logger;
 import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
 import com.dreamwing.serverville.data.JsonDataType;
+import com.dreamwing.serverville.data.KeyData;
 import com.dreamwing.serverville.data.KeyDataItem;
+import com.dreamwing.serverville.data.KeyDataRecord;
+import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
@@ -69,6 +72,28 @@ public class AgentScriptAPI
 		return AgentShared.getUserInfo(id, username);
 	}
 
+	public KeyDataRecord findKeyDataRecord(String id) throws SQLException
+	{
+		return DatabaseManager.KeyDataRecordDao.queryForId(id);
+	}
+	
+	public KeyDataRecord findOrCreateKeyDataRecord(String id, String type, String owner, String parent) throws SQLException
+	{
+		return KeyData.findOrCreate(id, type, owner, parent).GetDBRecord();
+	}
+	
+	public void setKeyDataVersion(String id, int version) throws SQLException
+	{
+		KeyData keyData = KeyData.find(id);
+		keyData.setVersion(version);
+	}
+	
+	public void deleteKeyData(String id) throws SQLException
+	{
+		KeyDataManager.deleteAllKeys(id);
+		DatabaseManager.KeyDataRecordDao.deleteById(id);
+	}
+	
 	public double setDataKey(String id, String key, Object value) throws Exception
 	{
 		return setDataKey(id, key, value, null);

@@ -6,7 +6,7 @@ import org.junit.Assert;
 
 import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
-import com.dreamwing.serverville.db.KeyDataManager;
+import com.dreamwing.serverville.data.KeyData;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.util.SVID;
@@ -184,7 +184,7 @@ public class ScriptTests {
 		
 		try
 		{
-			ctx.eval("var testData = new KeyData(\""+TestItemID+"\");");
+			ctx.eval("var testData = KeyData.findOrCreate(\""+TestItemID+"\", \"test\", \"test\", null);");
 			ctx.eval("testData.set(\"key1\", \"Noooo\");");
 			ctx.eval("testData.save();");
 
@@ -218,8 +218,8 @@ public class ScriptTests {
 	@Test(order=1000)
 	public void cleanup() throws Exception
 	{
-		KeyDataManager.deleteAllKeys(TestItemID);
-		KeyDataManager.purgeDeletedKeysFor(TestItemID);
+		KeyData data = KeyData.find(TestItemID);
+		data.delete();
 	}
 	
 }

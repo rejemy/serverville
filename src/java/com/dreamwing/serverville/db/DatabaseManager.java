@@ -11,6 +11,7 @@ import com.dreamwing.serverville.agent.AgentKeyManager;
 import com.dreamwing.serverville.data.AdminActionLog;
 import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.data.AgentKey;
+import com.dreamwing.serverville.data.KeyDataRecord;
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.j256.ormlite.dao.Dao;
@@ -39,6 +40,8 @@ public class DatabaseManager {
 	public static Dao<ScriptData, String> ScriptDataDao;
 	
 	public static Dao<AgentKey, String> AgentKeyDao;
+	
+	public static Dao<KeyDataRecord, String> KeyDataRecordDao;
 	
 	public static void init() throws Exception
 	{
@@ -76,6 +79,9 @@ public class DatabaseManager {
 				DataSource.setPassword(password);
 		}
 		
+		DataSource.setIdleConnectionTestPeriod(60);
+		DataSource.setTestConnectionOnCheckout(true);
+		
 		SqlServer = new ServervilleQueryRunner(DataSource);
 		
 		DataSourceConnectionSource cs = new DataSourceConnectionSource(DataSource, url);
@@ -93,6 +99,8 @@ public class DatabaseManager {
 		ScriptDataDao = DaoManager.createDao(cs, ScriptData.class);
 		
 		AgentKeyDao = DaoManager.createDao(cs, AgentKey.class);
+		
+		KeyDataRecordDao = DaoManager.createDao(cs, KeyDataRecord.class);
 		
 		initAgentKeyPurger();
 	}

@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.Date;
 
 import com.dreamwing.serverville.db.DatabaseManager;
+import com.dreamwing.serverville.util.PasswordUtil;
 import com.dreamwing.serverville.util.SVID;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
@@ -47,7 +48,7 @@ public class AdminUserSession {
 		}
 		
 		AdminUserSession session = new AdminUserSession();
-		session.Id = SVID.makeSVID();
+		session.Id = PasswordUtil.makeRandomString(8)+"/"+SVID.makeSVID();
 		session.UserId = userId;
 		session.Started = new Date();
 		session.LastActive = session.Started;

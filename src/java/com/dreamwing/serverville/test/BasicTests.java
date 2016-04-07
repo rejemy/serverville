@@ -2,6 +2,7 @@ package com.dreamwing.serverville.test;
 
 import org.junit.Assert;
 
+import com.dreamwing.serverville.util.PasswordUtil;
 import com.dreamwing.serverville.util.SVID;
 import com.dreamwing.serverville.util.SVID.SVIDInfo;
 
@@ -20,5 +21,12 @@ public class BasicTests {
 		Assert.assertNotNull(info);
 	}
 	
+	@Test(order=2)
+	public void TestRandGenerator()
+	{
+		String rand = PasswordUtil.makeRandomString(8);
+		Assert.assertNotNull(rand);
+		Assert.assertTrue(rand.length() > 8);
+	}
 	
 }

@@ -47,6 +47,17 @@ interface DataItemInfo
 	deleted?:boolean;
 }
 
+interface KeyDataRecord
+{
+	Id:string;
+	Type:string;
+	Owner:string;
+	Parent:string;
+	Version:number;
+	Created:number;
+	Modified:number;
+}
+
 declare type DataItemInfoMap = {[key:string]:DataItemInfo};
 
 declare var client:any;
@@ -60,6 +71,12 @@ declare namespace api
 	function log_warning(msg:string):void;
 	function log_error(msg:string):void;
 	function getUserInfo(userlookup:UserLookupRequest):UserInfo;
+	
+	function findKeyDataRecord(id:string):KeyDataRecord;
+	function findOrCreateKeyDataRecord(id:string, type:string, owner:string, parent:string):KeyDataRecord;
+	function setKeyDataVersion(id:string, version:number):void;
+	function deleteKeyData(id:string):void;
+	
 	function setDataKey(id:string, key:string, value:any):number;
 	function setDataKey(id:string, key:string, value:any, data_type:string):number;
 	function setDataKeys(id:string, items:DataItem[]):number;

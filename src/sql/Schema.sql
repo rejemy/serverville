@@ -82,6 +82,28 @@ CREATE TABLE `agent_key` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `keydata`
+--
+
+DROP TABLE IF EXISTS `keydata`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `keydata` (
+  `id` VARCHAR(255) NOT NULL,
+  `type` VARCHAR(255) NOT NULL,
+  `owner` VARCHAR(255) NOT NULL,
+  `parent` VARCHAR(255) NULL,
+  `version` INT NOT NULL,
+  `created` BIGINT(20) NOT NULL,
+  `modified` BIGINT(20) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `Type_index` (`type`),
+  KEY `Parent_index` (`parent`),
+  KEY `Owner_index` (`owner`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `keydata_item`
 --
 

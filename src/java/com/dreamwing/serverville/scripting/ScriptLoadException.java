@@ -1,6 +1,5 @@
 package com.dreamwing.serverville.scripting;
 
-import javax.script.ScriptException;
 
 public class ScriptLoadException extends Exception
 {
@@ -8,7 +7,7 @@ public class ScriptLoadException extends Exception
 	
 	public String ScriptId;
 	
-	public ScriptLoadException(String id, ScriptException cause)
+	public ScriptLoadException(String id, Exception cause)
 	{
 		super("Error loading script "+id);
 		ScriptId = id;
