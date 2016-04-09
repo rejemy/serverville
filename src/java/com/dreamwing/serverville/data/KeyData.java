@@ -8,6 +8,8 @@ import java.util.Map;
 
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataManager;
+import com.dreamwing.serverville.net.ApiErrors;
+import com.dreamwing.serverville.net.JsonApiException;
 
 
 public class KeyData {
@@ -72,12 +74,12 @@ public class KeyData {
 	
 	public KeyDataRecord GetDBRecord() { return DbRecord; }
 	
-	public void setVersion(int version) throws SQLException
+	public void setVersion(int version) throws SQLException, JsonApiException
 	{
 		DbRecord.Version = version;
-		DbRecord.Modified = new Date();
 		
-		DatabaseManager.KeyDataRecordDao.update(DbRecord);
+		if(DatabaseManager.KeyDataRecordDao.update(DbRecord)!= 1)
+			throw new JsonApiException(ApiErrors.CONCURRENT_MODIFICATION);
 	}
 	
 	public void loadAll() throws SQLException

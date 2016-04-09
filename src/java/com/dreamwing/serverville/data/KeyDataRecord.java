@@ -18,7 +18,7 @@ public class KeyDataRecord {
 	@DatabaseField(columnName="owner", canBeNull=false)
 	public String Owner;
 	
-	@DatabaseField(columnName="parent", canBeNull=false)
+	@DatabaseField(columnName="parent", canBeNull=true)
 	public String Parent;
 	
 	@DatabaseField(columnName="version", canBeNull=false)

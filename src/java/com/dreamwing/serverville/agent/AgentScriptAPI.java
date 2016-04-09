@@ -82,7 +82,7 @@ public class AgentScriptAPI
 		return KeyData.findOrCreate(id, type, owner, parent).GetDBRecord();
 	}
 	
-	public void setKeyDataVersion(String id, int version) throws SQLException
+	public void setKeyDataVersion(String id, int version) throws SQLException, JsonApiException
 	{
 		KeyData keyData = KeyData.find(id);
 		keyData.setVersion(version);
