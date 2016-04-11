@@ -2,6 +2,7 @@ package com.dreamwing.serverville.test;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
@@ -9,11 +10,12 @@ import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 
 import com.dreamwing.serverville.ServervilleMain;
-import com.dreamwing.serverville.admin.AdminAPI.CreateUserReply;
+import com.dreamwing.serverville.admin.AdminAPI.AgentKeyInfo;
 import com.dreamwing.serverville.admin.AdminAPI.LogFileListing;
 import com.dreamwing.serverville.admin.AdminAPI.SelfTestStatus;
 import com.dreamwing.serverville.admin.AdminAPI.ServerInfo;
 import com.dreamwing.serverville.admin.AdminAPI.SignInReply;
+import com.dreamwing.serverville.admin.AdminAPI.UserInfo;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.admin.AdminServerSocketInitializer;
 import com.dreamwing.serverville.log.IndexedFileManager.LogSearchHit;
@@ -38,7 +40,10 @@ public class AdminTests {
 	private String AdminPassword;
 	private String AdminUserId;
 	private String AdminSessionId;
+	
 	private String TestUserId;
+	private String TestUserName;
+	private String TestUserEmail;
 	
 	private Random Rand;
 	
@@ -65,6 +70,10 @@ public class AdminTests {
 		LogSearchTerm = SVID.makeSVID();
 		AdminSessionId = null;
 		TestUserId = null;
+		TestUserName = null;
+		TestUserEmail = null;
+		
+		TestAgentKey = null;
 		
 		Rand = new Random();
 		
@@ -216,18 +225,70 @@ public class AdminTests {
 	public void CreateUser() throws IOException, JsonApiException
 	{
 		FormEncodingBuilder body = new FormEncodingBuilder();
-		body.add("username", "test_"+SVID.makeSVID());
+		
+		TestUserName = "test_"+SVID.makeSVID();
+		TestUserEmail = SVID.makeSVID()+"@serverville.com";
+		
+		body.add("username", TestUserName);
 		body.add("password", Long.toHexString(Rand.nextLong())+Long.toHexString(Rand.nextLong()));
-		body.add("email", SVID.makeSVID()+"@serverville.com");
+		body.add("email", TestUserEmail);
 		
-		CreateUserReply reply = postAdminApi("api/createUser", body.build(), CreateUserReply.class);
+		UserInfo reply = postAdminApi("api/createUser", body.build(), UserInfo.class);
 		Assert.assertNotNull(reply);
-		Assert.assertNotNull(reply.user_id);
+		Assert.assertNotNull(reply.id);
+		Assert.assertEquals(reply.username, TestUserName);
+		Assert.assertEquals(reply.email, TestUserEmail);
+		Assert.assertTrue(reply.created > 0);
+		Assert.assertTrue(reply.modified > 0);
+		Assert.assertTrue(reply.admin_level == 0);
 		
-		TestUserId = reply.user_id;
+		TestUserId = reply.id;
+		
 	}
 	
 	@Test(order=15)
+	public void UserById() throws IOException, JsonApiException
+	{
+		String url = "api/user?id="+TestUserId;
+		UserInfo reply = getAdminApi(url, UserInfo.class);
+		Assert.assertNotNull(reply);
+		Assert.assertEquals(reply.id, TestUserId);
+		Assert.assertEquals(reply.username, TestUserName);
+		Assert.assertEquals(reply.email, TestUserEmail);
+		Assert.assertTrue(reply.created > 0);
+		Assert.assertTrue(reply.modified > 0);
+		Assert.assertTrue(reply.admin_level == 0);
+	}
+	
+	@Test(order=16)
+	public void UserByEmail() throws IOException, JsonApiException
+	{
+		String url = "api/user?email="+TestUserEmail;
+		UserInfo reply = getAdminApi(url, UserInfo.class);
+		Assert.assertNotNull(reply);
+		Assert.assertEquals(reply.id, TestUserId);
+		Assert.assertEquals(reply.username, TestUserName);
+		Assert.assertEquals(reply.email, TestUserEmail);
+		Assert.assertTrue(reply.created > 0);
+		Assert.assertTrue(reply.modified > 0);
+		Assert.assertTrue(reply.admin_level == 0);
+	}
+	
+	@Test(order=17)
+	public void UserByUsername() throws IOException, JsonApiException
+	{
+		String url = "api/user?username="+TestUserName;
+		UserInfo reply = getAdminApi(url, UserInfo.class);
+		Assert.assertNotNull(reply);
+		Assert.assertEquals(reply.id, TestUserId);
+		Assert.assertEquals(reply.username, TestUserName);
+		Assert.assertEquals(reply.email, TestUserEmail);
+		Assert.assertTrue(reply.created > 0);
+		Assert.assertTrue(reply.modified > 0);
+		Assert.assertTrue(reply.admin_level == 0);
+	}
+	
+	@Test(order=18)
 	public void SetUserPassword() throws IOException, JsonApiException
 	{
 		FormEncodingBuilder body = new FormEncodingBuilder();
@@ -237,7 +298,7 @@ public class AdminTests {
 		postAdminApi("api/setUserPassword", body.build());
 	}
 	
-	@Test(order=16)
+	@Test(order=19)
 	public void SetUserUsername() throws IOException, JsonApiException
 	{
 		FormEncodingBuilder body = new FormEncodingBuilder();
@@ -247,7 +308,7 @@ public class AdminTests {
 		postAdminApi("api/setUserUsername", body.build());
 	}
 	
-	@Test(order=17)
+	@Test(order=20)
 	public void SetUserEmail() throws IOException, JsonApiException
 	{
 		FormEncodingBuilder body = new FormEncodingBuilder();
@@ -257,7 +318,7 @@ public class AdminTests {
 		postAdminApi("api/setUserEmail", body.build());
 	}
 	
-	@Test(order=18)
+	@Test(order=21)
 	public void SetUserAdminLevel() throws IOException, JsonApiException
 	{
 		FormEncodingBuilder body = new FormEncodingBuilder();
@@ -267,8 +328,19 @@ public class AdminTests {
 		postAdminApi("api/setUserAdminLevel", body.build());
 	}
 	
+	@Test(order=50)
+	public void DeleteUser() throws IOException, JsonApiException
+	{
+		FormEncodingBuilder body = new FormEncodingBuilder();
+		body.add("user_id", TestUserId);
+		
+		postAdminApi("api/deleteUser", body.build());
+	}
+	
+	
+
 	// Search after we added the marker, to increase odds it was flushed normally
-	@Test(order=19)
+	@Test(order=51)
 	public void LogSearch() throws IOException, JsonApiException
 	{
 		ServervilleMain.LogSearcher.flush();
@@ -288,14 +360,54 @@ public class AdminTests {
 		
 	}
 	
-	@Test(order=50)
-	public void DeleteUser() throws IOException, JsonApiException
+	String TestAgentKey;
+	
+	@Test(order=100)
+	public void CreateAgentKey() throws IOException, JsonApiException
 	{
-		FormEncodingBuilder body = new FormEncodingBuilder();
-		body.add("user_id", TestUserId);
+		Date expirationDate = new Date();
+		long expiration = expirationDate.getTime() + 1000*60;
 		
-		postAdminApi("api/deleteUser", body.build());
+		FormEncodingBuilder body = new FormEncodingBuilder();
+		body.add("comment", "Test agent key for selftest");
+		body.add("expiration", Long.toString(expiration));
+		body.add("iprange", "127.0.0.1/8");
+		
+		AgentKeyInfo result = postAdminApi("api/createAgentKey", body.build(), AgentKeyInfo.class);
+		Assert.assertNotNull(result);
+		Assert.assertNotNull(result.key);
+		
+		TestAgentKey = result.key;
 	}
+	
+	@Test(order=101)
+	public void EditAgentKey() throws IOException, JsonApiException
+	{
+
+		FormEncodingBuilder body = new FormEncodingBuilder();
+		body.add("key", TestAgentKey);
+		body.add("comment", "Test agent key for selftest w/ new comment");
+		body.add("expiration", "0");
+		
+		AgentKeyInfo result = postAdminApi("api/editAgentKey", body.build(), AgentKeyInfo.class);
+		Assert.assertNotNull(result);
+		Assert.assertNotNull(result.key);
+		
+	}
+	
+	@Test(order=102)
+	public void DeleteAgentKey() throws IOException, JsonApiException
+	{
+
+		FormEncodingBuilder body = new FormEncodingBuilder();
+		body.add("key", TestAgentKey);
+		
+		postAdminApi("api/deleteAgentKey", body.build());
+	}
+	
+	
+	
+	
 	
 	
 	@Test(order=1000)

@@ -28,6 +28,7 @@ import com.dreamwing.serverville.net.HttpHandlerOptions;
 import com.dreamwing.serverville.net.HttpRequestInfo;
 import com.dreamwing.serverville.net.HttpUtil;
 import com.dreamwing.serverville.net.JsonApiException;
+import com.dreamwing.serverville.net.SubnetMask;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.scripting.ScriptLoadException;
 import com.dreamwing.serverville.scripting.ScriptManager;
@@ -274,11 +275,6 @@ public class AdminAPI {
 		return HttpUtil.sendJson(req, status);
 	}
 	
-	public static class CreateUserReply
-	{
-		public String user_id;
-	}
-	
 	public static class UserInfo
 	{
 		public String id;
@@ -287,6 +283,20 @@ public class AdminAPI {
 		public double created;
 		public double modified;
 		public double admin_level;
+	}
+	
+	private static UserInfo getUserInfo(ServervilleUser user)
+	{
+		UserInfo info = new UserInfo();
+		
+		info.id = user.getId();
+		info.email = user.getEmail();
+		info.username = user.getUsername();
+		info.created = user.Created.getTime();
+		info.modified = user.Modified.getTime();
+		info.admin_level = user.AdminLevel;
+		
+		return info;
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
@@ -310,14 +320,7 @@ public class AdminAPI {
 		if(user == null)
 			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
 		
-		UserInfo info = new UserInfo();
-		
-		info.id = user.getId();
-		info.email = user.getEmail();
-		info.username = user.getUsername();
-		info.created = user.Created.getTime();
-		info.modified = user.Modified.getTime();
-		info.admin_level = user.AdminLevel;
+		UserInfo info = getUserInfo(user);
 		
 		return HttpUtil.sendJson(req, info);
 	}
@@ -337,12 +340,11 @@ public class AdminAPI {
 		if(!PasswordUtil.validatePassword(password))
 			return HttpUtil.sendError(req, ApiErrors.INVALID_INPUT, "password is not a valid password");
 		
-		ServervilleUser admin = ServervilleUser.create(password, username, email, adminLevel);
+		ServervilleUser newuser = ServervilleUser.create(password, username, email, adminLevel);
 		
-		CreateUserReply reply = new CreateUserReply();
-		reply.user_id = admin.getId();
+		UserInfo info = getUserInfo(newuser);
 		
-		return HttpUtil.sendJson(req, reply);
+		return HttpUtil.sendJson(req, info);
 	}
 	
 
@@ -490,6 +492,18 @@ public class AdminAPI {
 		if(expirationLong > 0)
 			expiration = new Date(expirationLong);
 		
+		if(iprange != null)
+		{
+			try
+			{
+				new SubnetMask(iprange);
+			}
+			catch(Exception e)
+			{
+				return HttpUtil.sendError(req, ApiErrors.INVALID_IP_RANGE, iprange);
+			}
+		}
+		
 		AgentKey key = AgentKeyManager.createAgentKey(comment, iprange, expiration);
 		
 		AgentKeyInfo reply = new AgentKeyInfo();
@@ -521,7 +535,17 @@ public class AdminAPI {
 		if(comment != null)
 			editKey.Comment = comment;
 		if(iprange != null)
+		{
+			try
+			{
+				new SubnetMask(iprange);
+			}
+			catch(Exception e)
+			{
+				return HttpUtil.sendError(req, ApiErrors.INVALID_IP_RANGE, iprange);
+			}
 			editKey.IPRange = iprange;
+		}
 		if(expirationStr != null)
 		{
 			long expLong = Long.parseLong(expirationStr);

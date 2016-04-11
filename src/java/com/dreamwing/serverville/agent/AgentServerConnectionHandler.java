@@ -1,5 +1,6 @@
 package com.dreamwing.serverville.agent;
 
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -15,6 +16,7 @@ import com.dreamwing.serverville.net.HttpUtil;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpConnectionInfo;
 import com.dreamwing.serverville.net.JsonApiException;
+import com.dreamwing.serverville.net.SubnetMask;
 import com.dreamwing.serverville.util.JSON;
 import com.dreamwing.serverville.util.SVID;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -51,6 +53,7 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 	private HttpConnectionInfo Info;
 	
 	private AgentDispatcher Dispatcher;
+	private SubnetMask ValidAddrs;
 	
 	private volatile boolean WebsocketConnected = false;
 	
@@ -114,7 +117,7 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
         }
 	}
 	
-	private boolean authenticate(FullHttpRequest request)
+	private boolean authenticate(FullHttpRequest request, InetSocketAddress remoteAddr)
 	{
 		String authToken = request.headers().get(Names.AUTHORIZATION);
 		if(authToken == null)
@@ -123,6 +126,7 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 		}
 		
 		AgentKey key = null;
+		
 		try {
 			key = AgentKey.load(authToken);
 		} catch (SQLException e) {
@@ -135,6 +139,27 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 		
 		if(key.Expiration != null && key.Expiration.getTime() <= System.currentTimeMillis())
 			return false;
+		
+		if(key.IPRange != null)
+		{
+			if(ValidAddrs == null || !ValidAddrs.getAddrString().equals(key.IPRange))
+			{
+				try
+				{
+					ValidAddrs = new SubnetMask(key.IPRange);
+				}
+				catch(Exception e)
+				{
+					// Should not happen
+					l.error("Invalid IPRange in agent key "+authToken+" "+key.IPRange, e);
+					return false;
+				}
+			}
+			
+			
+			if(!ValidAddrs.match(remoteAddr.getAddress()))
+				return false;
+		}
 		
 		return true;
 	}
@@ -162,7 +187,7 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 			return HttpUtil.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
         }
 		
-		if(!authenticate(request))
+		if(!authenticate(request, (InetSocketAddress)ctx.channel().remoteAddress()))
 		{
 			return HttpUtil.sendError(CurrRequest, ApiErrors.BAD_AUTH);
 		}
