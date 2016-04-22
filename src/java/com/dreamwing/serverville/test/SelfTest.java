@@ -22,6 +22,7 @@ public class SelfTest implements Runnable {
 			DataTests.class,
 			ScriptTests.class,
 			AdminTests.class,
+			AgentTests.class,
 			ClientTests.class
 		};
 	

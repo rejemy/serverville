@@ -35,6 +35,7 @@ import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.test.SelfTest;
 import com.dreamwing.serverville.test.SelfTest.TestStatus;
 import com.dreamwing.serverville.util.PasswordUtil;
+import com.squareup.okhttp.MediaType;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.HttpHeaders.Names;
@@ -519,10 +520,14 @@ public class AdminAPI {
 		return HttpUtil.sendJson(req, reply);
 	}
 	
+	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
 	public static ChannelFuture editAgentKey(HttpRequestInfo req) throws JsonApiException, SQLException
 	{
 		String key = req.getOneBody("key");
+		
+		if(key == null || key.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a key");
 		
 		String comment = req.getOneBody("comment", null);
 		String iprange = req.getOneBody("iprange", null);
@@ -575,6 +580,9 @@ public class AdminAPI {
 	{
 		String key = req.getOneBody("key");
 		
+		if(key == null || key.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a key");
+		
 		AgentKey editKey = AgentKey.load(key);
 		if(editKey == null)
 			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
@@ -602,6 +610,9 @@ public class AdminAPI {
 	{
 		String id = req.getOneQuery("id");
 
+		if(id == null || id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a script id");
+		
 		ScriptData script = ScriptData.findById(id);
 		if(script == null)
 			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
@@ -621,6 +632,9 @@ public class AdminAPI {
 	{
 		String id = req.getOneQuery("id");
 
+		if(id == null || id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a script id");
+		
 		ScriptData script = ScriptData.findById(id);
 		if(script == null)
 			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
@@ -656,7 +670,14 @@ public class AdminAPI {
 	{
 		String id = req.getOneQuery("id");
 
+		if(id == null || id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a script id");
+		
 		String contentType = req.Request.headers().get(Names.CONTENT_TYPE);
+		MediaType contentMediaType = MediaType.parse(contentType);
+		
+		contentType = contentMediaType.type()+"/"+contentMediaType.subtype();
+		
 		if(contentType == null || !contentType.equals("application/javascript"))
 			return HttpUtil.sendError(req, ApiErrors.INVALID_CONTENT, "Script must be of type application/javascript");
 		
@@ -724,6 +745,57 @@ public class AdminAPI {
 	}
 
 	
-	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
+	public static ChannelFuture deleteScript(HttpRequestInfo req) throws SQLException, JsonApiException
+	{
+		String id = req.getOneBody("id");
+
+		if(id == null || id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a script id");
+
+		List<ScriptData> scripts = ScriptData.loadAll();
+
+		ScriptData script = null;
+
+		for(int s=0; s<scripts.size(); s++)
+		{
+			ScriptData iter = scripts.get(s);
+			
+			if(iter.Id.equals(id))
+			{
+				scripts.remove(s);
+				script = iter;
+				break;
+			}
+		}
+		
+		if(script == null)
+		{
+			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+		}
+		
+		try {
+			ScriptEngineContext testContext = new ScriptEngineContext();
+			testContext.init(scripts);
+		} catch (ScriptLoadException e) {
+			String errorMessage = e.getCause().getMessage();
+			errorMessage = errorMessage.replaceAll("\\<eval\\>", e.ScriptId);
+			return HttpUtil.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
+		}
+		
+		script.delete();
+		
+		try {
+			ScriptManager.scriptsUpdated();
+		} catch (InterruptedException e) {
+			String errorMessage = e.getMessage();
+			return HttpUtil.sendError(req, ApiErrors.UNKNOWN, errorMessage);
+		} catch (ScriptException e) {
+			String errorMessage = e.getCause().getMessage()+" at line "+e.getLineNumber();
+			return HttpUtil.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
+		}
+		
+		return HttpUtil.sendSuccess(req);
+	}
 	
 }

@@ -235,6 +235,18 @@ public class HttpUtil {
     	return response.body().string();
     }
     
+    public static String getString(String url, String sessionId) throws IOException
+    {
+    	Request.Builder requestBuilder = new Request.Builder().url(url);
+    	
+    	if(sessionId != null)
+    		requestBuilder.addHeader(Names.AUTHORIZATION, sessionId);
+    	
+    	Request request = requestBuilder.build();
+	
+    	Response response = SharedHttpClient.newCall(request).execute();
+    	return response.body().string();
+    }
     
     public static <T> T postJson(String url, RequestBody body, Class<T> replyClass) throws IOException
     {
@@ -310,8 +322,11 @@ public class HttpUtil {
     	throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
     }
     
-    private static final MediaType JSON_CONTENT_TYPE =
+    public static final MediaType JSON_CONTENT_TYPE =
     	      MediaType.parse("application/json");
+    
+    public static final MediaType JAVASCRIPT_CONTENT_TYPE =
+  	      MediaType.parse("application/javascript");
     
     @SuppressWarnings({ "rawtypes" })
     public static <S> S postClientApi(String url, String sessionId, Object body, TypeReference valueTypeRef) throws IOException, JsonApiException

@@ -121,9 +121,6 @@ public class ScriptEngineContext {
 	
 	private void makeNashornEngine()
 	{
-		if(Engine != null)
-			return;
-		
 		ClassLoader loader = ScriptEngineContext.class.getClassLoader();
 		
 		ScriptEngine engine = new NashornScriptEngineFactory().getScriptEngine(new String[] {"--no-syntax-extensions", "--no-java"}, loader, new ScriptClassFilter());

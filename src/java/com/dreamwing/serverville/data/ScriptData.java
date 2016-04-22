@@ -59,6 +59,11 @@ public class ScriptData {
 		DatabaseManager.ScriptDataDao.update(this);
 	}
 	
+	public void delete() throws SQLException
+	{
+		DatabaseManager.ScriptDataDao.delete(this);
+	}
+	
 	public static class ScriptIdComparator implements Comparator<ScriptData>
 	{
 

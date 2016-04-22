@@ -11,7 +11,10 @@ import org.junit.Assert;
 
 import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.admin.AdminAPI.AgentKeyInfo;
+import com.dreamwing.serverville.admin.AdminAPI.AgentKeyInfoList;
 import com.dreamwing.serverville.admin.AdminAPI.LogFileListing;
+import com.dreamwing.serverville.admin.AdminAPI.ScriptDataInfo;
+import com.dreamwing.serverville.admin.AdminAPI.ScriptDataInfoList;
 import com.dreamwing.serverville.admin.AdminAPI.SelfTestStatus;
 import com.dreamwing.serverville.admin.AdminAPI.ServerInfo;
 import com.dreamwing.serverville.admin.AdminAPI.SignInReply;
@@ -26,6 +29,7 @@ import com.dreamwing.serverville.net.HttpUtil;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.util.SVID;
 import com.squareup.okhttp.FormEncodingBuilder;
+import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.RequestBody;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -50,6 +54,11 @@ public class AdminTests {
 	private <S> S getAdminApi(String api, Class<S> successClass) throws IOException, JsonApiException
 	{
 		return HttpUtil.getJsonApi(AdminServerSocketInitializer.URL+api, AdminSessionId, successClass);
+	}
+	
+	private String getAdminApiBody(String api) throws IOException, JsonApiException
+	{
+		return HttpUtil.getString(AdminServerSocketInitializer.URL+api, AdminSessionId);
 	}
 	
 	private void postAdminApi(String api, RequestBody body) throws IOException, JsonApiException
@@ -381,6 +390,33 @@ public class AdminTests {
 	}
 	
 	@Test(order=101)
+	public void AgentKeys() throws IOException, JsonApiException
+	{
+		String url = "api/agentKeys";
+		AgentKeyInfoList reply = getAdminApi(url, AgentKeyInfoList.class);
+		Assert.assertNotNull(reply);
+		Assert.assertNotNull(reply.keys);
+		
+		AgentKeyInfo found = null;
+		for(AgentKeyInfo keyInfo : reply.keys)
+		{
+			if(keyInfo.key.equals(TestAgentKey))
+			{
+				found = keyInfo;
+				break;
+			}
+		}
+		
+		if(found == null)
+			Assert.fail("Didn't find expected agent key in list");
+		
+		Assert.assertNotNull(found.comment);
+		Assert.assertNotNull(found.iprange);
+		Assert.assertTrue(found.expiration > 0);
+	}
+	
+	
+	@Test(order=102)
 	public void EditAgentKey() throws IOException, JsonApiException
 	{
 
@@ -395,7 +431,7 @@ public class AdminTests {
 		
 	}
 	
-	@Test(order=102)
+	@Test(order=103)
 	public void DeleteAgentKey() throws IOException, JsonApiException
 	{
 
@@ -405,9 +441,77 @@ public class AdminTests {
 		postAdminApi("api/deleteAgentKey", body.build());
 	}
 	
+	private String TestScriptId;
+	private static String TestScriptBody = "var _selftest_test_script_object = {};";
 	
+	@Test(order=104)
+	public void AddScript() throws IOException, JsonApiException
+	{
+		TestScriptId = "_test_script_"+SVID.makeSVID();
+		
+		RequestBody body = RequestBody.create(HttpUtil.JAVASCRIPT_CONTENT_TYPE, TestScriptBody);
+		
+		postAdminApi("api/addScript?id="+TestScriptId, body);
+	}
 	
+	@Test(order=105)
+	public void ScriptInfo() throws IOException, JsonApiException
+	{
+		String url = "api/scriptInfo?id="+TestScriptId;
+		ScriptDataInfo reply = getAdminApi(url, ScriptDataInfo.class);
+		Assert.assertNotNull(reply);
+		Assert.assertEquals(TestScriptId, reply.id);
+		Assert.assertEquals(TestScriptBody, reply.source);
+		Assert.assertTrue(reply.created > 0);
+		Assert.assertTrue(reply.modified > 0);
+	}
 	
+	@Test(order=106)
+	public void Script() throws IOException, JsonApiException
+	{
+		String url = "api/script?id="+TestScriptId;
+		String reply = getAdminApiBody(url);
+		Assert.assertNotNull(reply);
+		Assert.assertEquals(TestScriptBody, reply);
+	}
+	
+	@Test(order=107)
+	public void Scripts() throws IOException, JsonApiException
+	{
+		String url = "api/scripts";
+		ScriptDataInfoList reply = getAdminApi(url, ScriptDataInfoList.class);
+		Assert.assertNotNull(reply);
+		Assert.assertNotNull(reply.scripts);
+		
+		ScriptDataInfo scriptInfo = null;
+		for(ScriptDataInfo script : reply.scripts)
+		{
+			if(script.id.equals(TestScriptId))
+			{
+				scriptInfo = script;
+				break;
+			}
+		}
+		
+		if(scriptInfo == null)
+			Assert.fail("Didn't find expected test script in list");
+		
+		Assert.assertEquals(TestScriptBody, scriptInfo.source);
+		Assert.assertTrue(scriptInfo.created > 0);
+		Assert.assertTrue(scriptInfo.modified > 0);
+	}
+	
+	@Test(order=108)
+	public void DeleteScript() throws IOException, JsonApiException
+	{
+		FormEncodingBuilder body = new FormEncodingBuilder();
+		body.add("id", TestScriptId);
+		
+		postAdminApi("api/deleteScript", body.build());
+		
+		TestScriptId = null;
+		TestScriptBody = null;
+	}
 	
 	
 	@Test(order=1000)
