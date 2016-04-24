@@ -90,8 +90,7 @@ public class AgentScriptAPI
 	
 	public void deleteKeyData(String id) throws SQLException
 	{
-		KeyDataManager.deleteAllKeys(id);
-		DatabaseManager.KeyDataRecordDao.deleteById(id);
+		KeyDataRecord.delete(id);
 	}
 	
 	public double setDataKey(String id, String key, Object value) throws Exception

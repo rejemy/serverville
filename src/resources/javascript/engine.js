@@ -125,6 +125,10 @@ var KeyData = (function () {
     };
     KeyData.prototype.delete = function () {
         api.deleteKeyData(this.id);
+        this.data = {};
+        this.data_info = {};
+        this.local_dirty = {};
+        this.most_recent = 0;
     };
     return KeyData;
 }());

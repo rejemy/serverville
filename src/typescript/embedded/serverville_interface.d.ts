@@ -26,5 +26,5 @@ declare class KeyData
 	set(key:string, val:any, data_type?:JsonDataTypeItem):void;
 	
 	save():void;
-	
+	delete():void;
 }

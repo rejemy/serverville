@@ -306,9 +306,10 @@ public class KeyData {
 		}
 	}
 	
+	
 	public void delete() throws SQLException
 	{
-		KeyDataManager.deleteAllKeys(Id);
-		DatabaseManager.KeyDataRecordDao.delete(DbRecord);
+		KeyDataRecord.delete(Id);
+		Keys.clear();
 	}
 }

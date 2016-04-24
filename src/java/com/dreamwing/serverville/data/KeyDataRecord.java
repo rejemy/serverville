@@ -1,9 +1,14 @@
 package com.dreamwing.serverville.data;
 
+import java.sql.SQLException;
 import java.util.Date;
+import java.util.List;
 
+import com.dreamwing.serverville.db.DatabaseManager;
+import com.dreamwing.serverville.db.KeyDataManager;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
+import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.table.DatabaseTable;
 
 @DatabaseTable(tableName = "keydata")
@@ -29,4 +34,37 @@ public class KeyDataRecord {
 	
 	@DatabaseField(columnName="modified", dataType=DataType.DATE_LONG, canBeNull=false, version=true)
 	public Date Modified;
+	
+	public static List<KeyDataRecord> loadChildren(String parentId) throws SQLException
+	{
+		QueryBuilder<KeyDataRecord, String> queryBuilder = DatabaseManager.KeyDataRecordDao.queryBuilder();
+		return queryBuilder.where().eq("parent", parentId).query();
+	}
+	
+	public static List<KeyDataRecord> loadByOwner(String ownerId) throws SQLException
+	{
+		QueryBuilder<KeyDataRecord, String> queryBuilder = DatabaseManager.KeyDataRecordDao.queryBuilder();
+		return queryBuilder.where().eq("owner", ownerId).query();
+	}
+	
+	public static List<KeyDataRecord> loadByType(String typeId) throws SQLException
+	{
+		QueryBuilder<KeyDataRecord, String> queryBuilder = DatabaseManager.KeyDataRecordDao.queryBuilder();
+		return queryBuilder.where().eq("type", typeId).query();
+	}
+	
+	public static void delete(String id) throws SQLException
+	{
+		List<KeyDataRecord> children = KeyDataRecord.loadChildren(id);
+		if(children != null)
+		{
+			for(KeyDataRecord child : children)
+			{
+				delete(child.Id);
+			}
+		}
+		
+		KeyDataManager.deleteAndPurgeAllKeys(id);
+		DatabaseManager.KeyDataRecordDao.deleteById(id);
+	}
 }

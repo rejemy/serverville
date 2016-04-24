@@ -588,6 +588,22 @@ public class KeyDataManager {
 		return time;
 	}
 	
+	public static void deleteAndPurgeAllKeys(String id) throws SQLException
+	{
+		if(id == null || id.length() == 0)
+		{
+			l.error("Data item has invalid id: "+id);
+			throw new IllegalArgumentException("Invalid id");
+		}
+		
+		try {
+			DatabaseManager.getServer().update("DELETE FROM `keydata_item` WHERE `id`=?;", id);
+		} catch (SQLException e) {
+			l.error("Error deleting items", e);
+			throw e;
+		}
+	}
+	
 	public static void purgeStaleDeletedKeys() throws SQLException
 	{
 		long since = System.currentTimeMillis() - DeleteRetentionPeriod;
@@ -602,6 +618,12 @@ public class KeyDataManager {
 	
 	public static void purgeDeletedKeysFor(String id) throws SQLException
 	{
+		if(id == null || id.length() == 0)
+		{
+			l.error("Data item has invalid id: "+id);
+			throw new IllegalArgumentException("Invalid id");
+		}
+		
 		try {
 			DatabaseManager.getServer().update("DELETE FROM `keydata_item` WHERE `id`=? AND `deleted` IS NOT NULL;", id);
 		} catch (SQLException e) {

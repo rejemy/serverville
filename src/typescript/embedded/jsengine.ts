@@ -180,5 +180,10 @@ class KeyData
 	delete():void
 	{
 		api.deleteKeyData(this.id);
+		this.data = {};
+		this.data_info = {};
+		this.local_dirty = {};
+		
+		this.most_recent = 0;
 	}
 }
