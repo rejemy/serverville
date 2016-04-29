@@ -322,6 +322,9 @@ public class HttpUtil {
     	throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
     }
     
+    public static final MediaType TEXT_CONTENT_TYPE =
+  	      MediaType.parse("text/plain");
+    
     public static final MediaType JSON_CONTENT_TYPE =
     	      MediaType.parse("application/json");
     

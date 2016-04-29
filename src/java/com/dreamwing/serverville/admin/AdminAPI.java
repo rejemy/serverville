@@ -1,6 +1,7 @@
 package com.dreamwing.serverville.admin;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -14,11 +15,15 @@ import java.util.List;
 
 import javax.script.ScriptException;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.classic.ParseException;
 import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.agent.AgentKeyManager;
 import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.data.AgentKey;
+import com.dreamwing.serverville.data.JsonDataType;
+import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.db.KeyDataManager;
@@ -32,6 +37,7 @@ import com.dreamwing.serverville.net.SubnetMask;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.scripting.ScriptLoadException;
 import com.dreamwing.serverville.scripting.ScriptManager;
+import com.dreamwing.serverville.serialize.JsonDataDecoder;
 import com.dreamwing.serverville.test.SelfTest;
 import com.dreamwing.serverville.test.SelfTest.TestStatus;
 import com.dreamwing.serverville.util.PasswordUtil;
@@ -42,7 +48,7 @@ import io.netty.handler.codec.http.HttpHeaders.Names;
 
 public class AdminAPI {
 
-	//private static final Logger l = LogManager.getLogger(AdminAPI.class);
+	private static final Logger l = LogManager.getLogger(AdminAPI.class);
 
 	public static class SignInReply
 	{
@@ -798,4 +804,53 @@ public class AdminAPI {
 		return HttpUtil.sendSuccess(req);
 	}
 	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
+	public static ChannelFuture dataKey(HttpRequestInfo req) throws SQLException, JsonApiException
+	{
+		String id = req.getOneQuery("id");
+		String key = req.getOneQuery("key");
+		
+		if(id == null || id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a data id");
+		if(key == null || key.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a data key name");
+		
+		KeyDataItem item = KeyDataManager.loadKey(id, key);
+		if(item == null || item.isDeleted())
+			throw new JsonApiException(ApiErrors.NOT_FOUND);
+		
+		Object value;
+		try {
+			value = item.asDecodedObject();
+		} catch (IOException e) {
+			l.error("Exception decoding json value", e);
+			value = "<error>";
+		}
+		String replyVal = value.toString();
+		
+		return HttpUtil.sendText(req, replyVal, "text/plain");
+	}
+	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
+	public static ChannelFuture setDataKey(HttpRequestInfo req) throws SQLException, JsonApiException
+	{
+		String id = req.getOneQuery("id");
+		String key = req.getOneQuery("key");
+		String dataType = req.getOneQuery("data_type", null);
+
+		if(id == null || id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a data id");
+		if(!KeyDataItem.isValidKeyname(key))
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
+
+		
+		String value = req.getBody();
+		if(value == null || value.length() == 0)
+			return HttpUtil.sendError(req, ApiErrors.INVALID_CONTENT, "Can't set an empty value this way");
+		
+		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, JsonDataType.fromString(dataType), value);
+		KeyDataManager.saveKey(id, item);
+		
+		return HttpUtil.sendSuccess(req);
+	}
 }
