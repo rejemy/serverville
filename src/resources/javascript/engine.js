@@ -23,6 +23,7 @@ var KeyData = (function () {
         this.data = {};
         this.data_info = {};
         this.local_dirty = {};
+        this.dirty = false;
         this.most_recent = 0;
     }
     KeyData.find = function (id) {
@@ -63,6 +64,7 @@ var KeyData = (function () {
     KeyData.prototype.loadAll = function () {
         this.data = {};
         this.local_dirty = {};
+        this.dirty = false;
         this.data_info = api.getAllDataKeys(this.id);
         for (var key in this.data_info) {
             var dataInfo = this.data_info[key];
@@ -108,9 +110,12 @@ var KeyData = (function () {
             };
             this.data_info[key] = info;
         }
+        this.dirty = true;
         this.local_dirty[key] = info;
     };
     KeyData.prototype.save = function () {
+        if (this.dirty == false)
+            return;
         var saveSet = [];
         for (var key in this.local_dirty) {
             var info = this.local_dirty[key];
@@ -120,14 +125,17 @@ var KeyData = (function () {
                 "data_type": info.data_type
             });
         }
-        api.setDataKeys(this.id, saveSet);
+        if (saveSet.length > 0)
+            api.setDataKeys(this.id, saveSet);
         this.local_dirty = {};
+        this.dirty = false;
     };
     KeyData.prototype.delete = function () {
         api.deleteKeyData(this.id);
         this.data = {};
         this.data_info = {};
         this.local_dirty = {};
+        this.dirty = false;
         this.most_recent = 0;
     };
     return KeyData;

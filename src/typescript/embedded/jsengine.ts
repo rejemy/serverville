@@ -30,6 +30,7 @@ class KeyData
 	data_info:{[key:string]:DataItemInfo};
 	local_dirty:{[key:string]:DataItemInfo};
 	most_recent:number;
+	dirty:boolean;
 	
 	constructor(record:KeyDataRecord)
 	{
@@ -40,6 +41,7 @@ class KeyData
 		this.data = {};
 		this.data_info = {};
 		this.local_dirty = {};
+		this.dirty = false;
 		
 		this.most_recent = 0;
 	}
@@ -96,6 +98,8 @@ class KeyData
 	{
 		this.data = {};
 		this.local_dirty = {};
+		this.dirty = false;
+		
 		this.data_info = api.getAllDataKeys(this.id);
 		for(var key in this.data_info)
 		{
@@ -152,11 +156,15 @@ class KeyData
 			};
 			this.data_info[key] = info;
 		}
+		this.dirty = true;
 		this.local_dirty[key] = info;
 	}
 	
 	save():void
 	{
+		if(this.dirty == false)
+			return;
+			
 		var saveSet:DataItem[] = [];
 		
 		for(var key in this.local_dirty)
@@ -172,9 +180,11 @@ class KeyData
 			);
 		}
 		
-		api.setDataKeys(this.id, saveSet);
+		if(saveSet.length > 0)
+			api.setDataKeys(this.id, saveSet);
 		
 		this.local_dirty = {};
+		this.dirty = false;
 	}
 	
 	delete():void
@@ -183,6 +193,7 @@ class KeyData
 		this.data = {};
 		this.data_info = {};
 		this.local_dirty = {};
+		this.dirty = false;
 		
 		this.most_recent = 0;
 	}
