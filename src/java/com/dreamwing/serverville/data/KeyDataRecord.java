@@ -35,6 +35,11 @@ public class KeyDataRecord {
 	@DatabaseField(columnName="modified", dataType=DataType.DATE_LONG, canBeNull=false, version=true)
 	public Date Modified;
 	
+	public static KeyDataRecord load(String id) throws SQLException
+	{
+		return DatabaseManager.KeyDataRecordDao.queryForId(id);
+	}
+	
 	public static List<KeyDataRecord> loadChildren(String parentId) throws SQLException
 	{
 		QueryBuilder<KeyDataRecord, String> queryBuilder = DatabaseManager.KeyDataRecordDao.queryBuilder();

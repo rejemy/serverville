@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 import com.dreamwing.serverville.client.ClientMessages.*;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
+import com.dreamwing.serverville.data.KeyDataRecord;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
@@ -352,7 +353,57 @@ public class ClientAPI {
 		return reply;
 	}
 	
+	public static KeyDataInfo GetKeyDataRecord(KeyDataRecordRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		if(request.id == null || request.id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
+		
+		KeyDataRecord record = KeyDataRecord.load(request.id);
+		if(record == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND);
+		
+		KeyDataInfo keyInfo = new KeyDataInfo();
+		
+		keyInfo.id = record.Id;
+		keyInfo.type = record.Type;
+		keyInfo.owner = record.Owner;
+		keyInfo.parent = record.Parent;
+		keyInfo.version = record.Version;
+		keyInfo.created = record.Created.getTime();
+		keyInfo.modified = record.Modified.getTime();
 
+		return keyInfo;
+	}
+
+	
+	public static SetDataReply SetDataKeys(SetGlobalDataRequest request, ClientMessageInfo info) throws SQLException, JsonApiException
+	{
+		KeyDataRecord record = KeyDataRecord.load(request.id);
+		if(record == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND);
+		
+		if(!record.Owner.equals(info.User.getId()))
+			throw new JsonApiException(ApiErrors.FORBIDDEN);
+		
+		List<KeyDataItem> itemList = new ArrayList<KeyDataItem>(request.values.size());
+		
+		for(SetUserDataRequest data : request.values)
+		{
+			if(!KeyDataItem.isValidKeyname(data.key))
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
+			
+			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
+			itemList.add(item);
+		}
+		
+		long updateTime = KeyDataManager.saveKeys(record.Id, itemList);
+		
+		
+		SetDataReply reply = new SetDataReply();
+		reply.updated_at = updateTime;
+		return reply;
+	}
+	
 	public static EmptyClientReply SetTransientValue(SetTransientValueRequest request, ClientMessageInfo info) throws JsonApiException
 	{
 		BaseResident resident = ResidentManager.getResident(info.User.getId());

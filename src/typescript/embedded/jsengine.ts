@@ -21,6 +21,15 @@ var client:any = {};
 // Holder for exposed agent handlers
 var agent:any = {};
 
+var ValidKeynameRegex:RegExp = new RegExp("^[a-zA-Z_$][0-9a-zA-Z_$]*$");
+
+
+function isValidKeyname(key:string):boolean
+{
+	if(key == null)
+		return false;
+	return ValidKeynameRegex.test(key);
+}
 
 class KeyData
 {
@@ -79,7 +88,11 @@ class KeyData
 	
 	setVersion(version:number):void
 	{
-		this.record.Version = Math.floor(version);
+		var newVer:number = Math.floor(version);
+		if(this.record.Version == newVer)
+			return;
+			
+		this.record.Version = newVer;
 		api.setKeyDataVersion(this.id, this.record.Version);
 	}
 	
@@ -132,6 +145,9 @@ class KeyData
 	
 	set(key:string, val:any, data_type:JsonDataTypeItem = null):void
 	{
+		if(!isValidKeyname(key))
+			throw "Invalid key name: "+key;
+			
 		if(this.data[key] == val)
 			return;
 			
