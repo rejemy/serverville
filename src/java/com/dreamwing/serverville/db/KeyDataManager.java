@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
@@ -25,7 +26,7 @@ public class KeyDataManager {
 	private static ItemResultSetHandler ItemHandler;
 	private static ItemsResultSetHandler ItemListHandler;
 	
-	
+	public static final long TestRetentionPeriod = 1000 * 60 * 60; // 1 hour in milliseconds
 	public static final long DeleteRetentionPeriod = 1000 * 60 * 60 * 24; // 24 hours in milliseconds
 	
 	public static final int MaxItemBytes = 62000;
@@ -35,7 +36,7 @@ public class KeyDataManager {
 	private static final String UpsertWithDeleteStatement = 
 			"INSERT INTO `keydata_item` (`id`,`key`,`data`,`datatype`,`created`,`modified`,`deleted`) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `data`=VALUES(`data`), `datatype`=VALUES(`datatype`), `modified`=VALUES(`modified`), `deleted`=VALUES(`deleted`);";
 	
-	
+	public static String TestIdPrefix = "__sv_test_";
 	
 	public enum StringFlavor
 	{
@@ -49,8 +50,7 @@ public class KeyDataManager {
 		ItemHandler = new ItemResultSetHandler();
 		ItemListHandler = new ItemsResultSetHandler();
 		
-		
-		
+
 		
 		final Runnable deletePurger = new Runnable()
 		{
@@ -64,7 +64,21 @@ public class KeyDataManager {
 			}
 		};
 		
-		ServervilleMain.ServiceScheduler.scheduleAtFixedRate(deletePurger, 1, 1, TimeUnit.HOURS);
+		final Runnable testKeyPurger = new Runnable()
+		{
+			public void run()
+			{
+				try {
+					purgeStaleTestKeys();
+				} catch (SQLException e) {
+					// Not much to do, I think, it's already been logged
+				}
+			}
+		};
+		
+		Random rand = new Random();
+		ServervilleMain.ServiceScheduler.scheduleAtFixedRate(deletePurger, rand.nextInt(60), 60, TimeUnit.MINUTES);
+		ServervilleMain.ServiceScheduler.scheduleAtFixedRate(testKeyPurger, rand.nextInt(60), 60, TimeUnit.MINUTES);
 	}
 
 	
@@ -535,11 +549,34 @@ public class KeyDataManager {
 		try {
 			DatabaseManager.getServer().update("UPDATE `keydata_item` SET `modified`=?, `deleted`=1 WHERE `id`=? AND `key`=?;", time, id, key);
 		} catch (SQLException e) {
-			l.error("Error deleting item "+id+" to database ", e);
+			l.error("Error deleting item "+id+"/"+key+" from database ", e);
 			throw e;
 		}
 		
 		return time;
+	}
+	
+	public static void deleteAndPurgeKey(String id, String key) throws SQLException
+	{
+		if(id == null || id.length() == 0)
+		{
+			l.error("Data item has invalid id: "+id);
+			throw new IllegalArgumentException("Invalid id");
+		}
+		
+		if(key == null || key.length() == 0)
+		{
+			l.error("Data item has invalid key: "+key);
+			throw new IllegalArgumentException("Invalid key");
+		}
+		
+		try {
+			DatabaseManager.getServer().update("DELETE FROM `keydata_item` WHERE `id`=? AND `key`=?;", id, key);
+		} catch (SQLException e) {
+			l.error("Error purging item "+id+"/"+key+" from database ", e);
+			throw e;
+		}
+	
 	}
 	
 	public static long deleteAllKeys(String id) throws SQLException
@@ -632,5 +669,16 @@ public class KeyDataManager {
 		}
 	}
 	
+	public static void purgeStaleTestKeys() throws SQLException
+	{
+		long since = System.currentTimeMillis() - TestRetentionPeriod;
+		
+		try {
+			DatabaseManager.getServer().update("DELETE FROM `keydata_item` WHERE `modified`<? AND `id` LIKE '"+TestIdPrefix+"%'", since);
+		} catch (SQLException e) {
+			l.error("Error purging deleted items", e);
+			throw e;
+		}
+	}
 
 }

@@ -14,6 +14,12 @@ delete Java;
 var client = {};
 // Holder for exposed agent handlers
 var agent = {};
+var ValidKeynameRegex = new RegExp("^[a-zA-Z_$][0-9a-zA-Z_$]*$");
+function isValidKeyname(key) {
+    if (key == null)
+        return false;
+    return ValidKeynameRegex.test(key);
+}
 var KeyData = (function () {
     function KeyData(record) {
         if (record == null)
@@ -23,6 +29,7 @@ var KeyData = (function () {
         this.data = {};
         this.data_info = {};
         this.local_dirty = {};
+        this.dirty = false;
         this.most_recent = 0;
     }
     KeyData.find = function (id) {
@@ -49,7 +56,10 @@ var KeyData = (function () {
     KeyData.prototype.getParent = function () { return this.record.Parent; };
     KeyData.prototype.getVersion = function () { return this.record.Version; };
     KeyData.prototype.setVersion = function (version) {
-        this.record.Version = Math.floor(version);
+        var newVer = Math.floor(version);
+        if (this.record.Version == newVer)
+            return;
+        this.record.Version = newVer;
         api.setKeyDataVersion(this.id, this.record.Version);
     };
     KeyData.prototype.loadKeys = function (keys) {
@@ -63,6 +73,7 @@ var KeyData = (function () {
     KeyData.prototype.loadAll = function () {
         this.data = {};
         this.local_dirty = {};
+        this.dirty = false;
         this.data_info = api.getAllDataKeys(this.id);
         for (var key in this.data_info) {
             var dataInfo = this.data_info[key];
@@ -87,6 +98,8 @@ var KeyData = (function () {
     };
     KeyData.prototype.set = function (key, val, data_type) {
         if (data_type === void 0) { data_type = null; }
+        if (!isValidKeyname(key))
+            throw "Invalid key name: " + key;
         if (this.data[key] == val)
             return;
         this.data[key] = val;
@@ -108,9 +121,12 @@ var KeyData = (function () {
             };
             this.data_info[key] = info;
         }
+        this.dirty = true;
         this.local_dirty[key] = info;
     };
     KeyData.prototype.save = function () {
+        if (this.dirty == false)
+            return;
         var saveSet = [];
         for (var key in this.local_dirty) {
             var info = this.local_dirty[key];
@@ -120,14 +136,17 @@ var KeyData = (function () {
                 "data_type": info.data_type
             });
         }
-        api.setDataKeys(this.id, saveSet);
+        if (saveSet.length > 0)
+            api.setDataKeys(this.id, saveSet);
         this.local_dirty = {};
+        this.dirty = false;
     };
     KeyData.prototype.delete = function () {
         api.deleteKeyData(this.id);
         this.data = {};
         this.data_info = {};
         this.local_dirty = {};
+        this.dirty = false;
         this.most_recent = 0;
     };
     return KeyData;

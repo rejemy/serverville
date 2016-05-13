@@ -20,6 +20,7 @@ import com.dreamwing.serverville.admin.AdminAPI.ServerInfo;
 import com.dreamwing.serverville.admin.AdminAPI.SignInReply;
 import com.dreamwing.serverville.admin.AdminAPI.UserInfo;
 import com.dreamwing.serverville.data.ServervilleUser;
+import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.admin.AdminServerSocketInitializer;
 import com.dreamwing.serverville.log.IndexedFileManager.LogSearchHit;
 import com.dreamwing.serverville.log.IndexedFileManager.LogSearchHits;
@@ -510,6 +511,31 @@ public class AdminTests {
 		
 		TestScriptId = null;
 		TestScriptBody = null;
+	}
+	
+	private String TestKeytId;
+	
+	@Test(order=110)
+	public void SetDataKey() throws IOException, JsonApiException
+	{
+		TestKeytId = KeyDataManager.TestIdPrefix+SVID.makeSVID();
+		
+		RequestBody body = RequestBody.create(HttpUtil.TEXT_CONTENT_TYPE, "testSetString");
+		
+		postAdminApi("api/setDataKey?id="+TestKeytId+"&key=adminKeyTest", body);
+	}
+	
+	@Test(order=111)
+	public void DataKey() throws IOException, JsonApiException, SQLException
+	{
+		String url = "api/dataKey?id="+TestKeytId+"&key=adminKeyTest";
+		String reply = getAdminApiBody(url);
+		Assert.assertNotNull(reply);
+		Assert.assertEquals("testSetString", reply);
+		
+		KeyDataManager.deleteAndPurgeAllKeys(TestKeytId);
+		
+		TestKeytId = null;
 	}
 	
 	

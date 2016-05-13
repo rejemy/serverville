@@ -202,7 +202,7 @@ public class BrowserClient {
 		
 		mainFile.writeToFile("clients/browser/src/serverville.ts", StandardCharsets.UTF_8);
 	
-		definitionFile.writeToFile("clients/browser/src/serverville.d.ts", StandardCharsets.UTF_8);
+		definitionFile.writeToFile("clients/browser/serverville.d.ts", StandardCharsets.UTF_8);
 		
 		compile();
 	}

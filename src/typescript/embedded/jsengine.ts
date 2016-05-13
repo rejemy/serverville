@@ -21,6 +21,15 @@ var client:any = {};
 // Holder for exposed agent handlers
 var agent:any = {};
 
+var ValidKeynameRegex:RegExp = new RegExp("^[a-zA-Z_$][0-9a-zA-Z_$]*$");
+
+
+function isValidKeyname(key:string):boolean
+{
+	if(key == null)
+		return false;
+	return ValidKeynameRegex.test(key);
+}
 
 class KeyData
 {
@@ -30,6 +39,7 @@ class KeyData
 	data_info:{[key:string]:DataItemInfo};
 	local_dirty:{[key:string]:DataItemInfo};
 	most_recent:number;
+	dirty:boolean;
 	
 	constructor(record:KeyDataRecord)
 	{
@@ -40,6 +50,7 @@ class KeyData
 		this.data = {};
 		this.data_info = {};
 		this.local_dirty = {};
+		this.dirty = false;
 		
 		this.most_recent = 0;
 	}
@@ -77,7 +88,11 @@ class KeyData
 	
 	setVersion(version:number):void
 	{
-		this.record.Version = Math.floor(version);
+		var newVer:number = Math.floor(version);
+		if(this.record.Version == newVer)
+			return;
+			
+		this.record.Version = newVer;
 		api.setKeyDataVersion(this.id, this.record.Version);
 	}
 	
@@ -96,6 +111,8 @@ class KeyData
 	{
 		this.data = {};
 		this.local_dirty = {};
+		this.dirty = false;
+		
 		this.data_info = api.getAllDataKeys(this.id);
 		for(var key in this.data_info)
 		{
@@ -128,6 +145,9 @@ class KeyData
 	
 	set(key:string, val:any, data_type:JsonDataTypeItem = null):void
 	{
+		if(!isValidKeyname(key))
+			throw "Invalid key name: "+key;
+			
 		if(this.data[key] == val)
 			return;
 			
@@ -152,11 +172,15 @@ class KeyData
 			};
 			this.data_info[key] = info;
 		}
+		this.dirty = true;
 		this.local_dirty[key] = info;
 	}
 	
 	save():void
 	{
+		if(this.dirty == false)
+			return;
+			
 		var saveSet:DataItem[] = [];
 		
 		for(var key in this.local_dirty)
@@ -172,9 +196,11 @@ class KeyData
 			);
 		}
 		
-		api.setDataKeys(this.id, saveSet);
+		if(saveSet.length > 0)
+			api.setDataKeys(this.id, saveSet);
 		
 		this.local_dirty = {};
+		this.dirty = false;
 	}
 	
 	delete():void
@@ -183,6 +209,7 @@ class KeyData
 		this.data = {};
 		this.data_info = {};
 		this.local_dirty = {};
+		this.dirty = false;
 		
 		this.most_recent = 0;
 	}

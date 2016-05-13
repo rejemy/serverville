@@ -7,6 +7,7 @@ import org.junit.Assert;
 import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
 import com.dreamwing.serverville.data.KeyData;
+import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.util.SVID;
@@ -57,7 +58,7 @@ public class ScriptTests {
 		}
 	}
 	
-	private static String TestItemID = SVID.makeSVID();
+	private static String TestItemID = KeyDataManager.TestIdPrefix+SVID.makeSVID();
 	
 	@Test(order=100)
 	public void GetUserInfo() throws Exception

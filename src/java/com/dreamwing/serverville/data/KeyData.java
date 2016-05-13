@@ -76,6 +76,9 @@ public class KeyData {
 	
 	public void setVersion(int version) throws SQLException, JsonApiException
 	{
+		if(DbRecord.Version == version)
+			return;
+		
 		DbRecord.Version = version;
 		
 		if(DatabaseManager.KeyDataRecordDao.update(DbRecord)!= 1)
@@ -135,8 +138,9 @@ public class KeyData {
 	
 	public KeyDataItem getOrCreateKeyData(String key)
 	{
-		if(key == null)
-			throw new IllegalArgumentException("Null keys not allowd");
+		if(!KeyDataItem.isValidKeyname(key))
+			throw new IllegalArgumentException("Illegal key name");
+		
 		KeyDataItem data = Keys.get(key);
 		if(data != null)
 		{

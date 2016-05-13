@@ -173,6 +173,18 @@ public class ServervilleUser {
 				}
 			}
 			
+			// Create KeyData record
+			KeyDataRecord record = new KeyDataRecord();
+			record.Id = user.Id;
+			record.Type = "user";
+			record.Owner = user.Id;
+			record.Parent = null;
+			record.Version = 0;
+			record.Created = new Date();
+			record.Modified = record.Created;
+			
+			DatabaseManager.KeyDataRecordDao.createOrUpdate(record);
+			
 		}
 		finally
 		{

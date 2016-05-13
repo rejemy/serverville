@@ -109,11 +109,17 @@ public class ScriptManager
 	{
 		ScriptVersion++;
 		
+		ScriptEngineContext eng = null;
 		try
 		{
-			getEngine().invokeFunction("globalInit");
+			eng = getEngine();
+			eng.invokeFunction("globalInit");
 		} catch (NoSuchMethodException e) {
 			// No function, no problem
+		}
+		finally
+		{
+			returnEngine(eng);
 		}
 		
 		updateHandlerSets();

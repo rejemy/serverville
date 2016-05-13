@@ -1,9 +1,11 @@
 package com.dreamwing.serverville.client;
 
+
 import java.util.List;
 import java.util.Map;
 
 import com.dreamwing.serverville.data.JsonDataType;
+
 
 
 public class ClientMessages {
@@ -119,6 +121,28 @@ public class ClientMessages {
 		public String id;
 		public double since;
 		public boolean include_deleted;
+	}
+	
+	public static class KeyDataRecordRequest
+	{
+		public String id;
+	}
+	
+	public static class KeyDataInfo
+	{
+		public String id;
+		public String type;
+		public String owner;
+		public String parent;
+		public double version;
+		public double created;
+		public double modified;
+	}
+	
+	public static class SetGlobalDataRequest
+	{
+		public String id;
+		public List<SetUserDataRequest> values;
 	}
 	
 	public static class TransientValuesChangeMessage

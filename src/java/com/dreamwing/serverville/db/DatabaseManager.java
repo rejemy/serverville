@@ -1,6 +1,7 @@
 package com.dreamwing.serverville.db;
 
 
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
@@ -121,7 +122,8 @@ public class DatabaseManager {
 			}
 		};
 		
-		ServervilleMain.ServiceScheduler.scheduleAtFixedRate(agentPurger, 1, 1, TimeUnit.HOURS);
+		Random rand = new Random();
+		ServervilleMain.ServiceScheduler.scheduleAtFixedRate(agentPurger, rand.nextInt(60), 60, TimeUnit.MINUTES);
 	}
 	
 }
