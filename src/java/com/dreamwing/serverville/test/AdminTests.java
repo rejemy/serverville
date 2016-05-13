@@ -29,7 +29,6 @@ import com.dreamwing.serverville.net.HttpUtil;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.util.SVID;
 import com.squareup.okhttp.FormEncodingBuilder;
-import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.RequestBody;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
