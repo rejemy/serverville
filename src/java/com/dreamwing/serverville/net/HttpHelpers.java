@@ -9,12 +9,12 @@ import org.apache.logging.log4j.Logger;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.squareup.okhttp.ConnectionPool;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
+import okhttp3.ConnectionPool;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -33,17 +33,20 @@ public class HttpHelpers {
 
 	private static final Logger l = LogManager.getLogger(HttpHelpers.class);
 	
+	private static ConnectionPool SharedHttpConnectionPool;
 	private static OkHttpClient SharedHttpClient;
 	
 	static
 	{
-		SharedHttpClient = new OkHttpClient();
-		SharedHttpClient.setConnectionPool(ConnectionPool.getDefault());
+		OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
+		SharedHttpConnectionPool = new ConnectionPool();
+		clientBuilder.connectionPool(SharedHttpConnectionPool);
+		SharedHttpClient = clientBuilder.build();
 	}
 	
 	public static void resetHttpClient()
 	{
-		SharedHttpClient.getConnectionPool().evictAll();
+		SharedHttpConnectionPool.evictAll();
 	}
 	
 	public static ChannelFuture sendPreflightApproval(ChannelHandlerContext ctx)

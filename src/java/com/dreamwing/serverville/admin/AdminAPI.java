@@ -41,7 +41,7 @@ import com.dreamwing.serverville.serialize.JsonDataDecoder;
 import com.dreamwing.serverville.test.SelfTest;
 import com.dreamwing.serverville.test.SelfTest.TestStatus;
 import com.dreamwing.serverville.util.PasswordUtil;
-import com.squareup.okhttp.MediaType;
+import okhttp3.MediaType;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.HttpHeaderNames;

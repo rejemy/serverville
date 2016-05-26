@@ -29,8 +29,9 @@ import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpHelpers;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.util.SVID;
-import com.squareup.okhttp.FormEncodingBuilder;
-import com.squareup.okhttp.RequestBody;
+
+import okhttp3.FormBody;
+import okhttp3.RequestBody;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
@@ -100,7 +101,7 @@ public class AdminTests {
 	@Test(order=2)
 	public void InvalidSignin() throws IOException
 	{
-		FormEncodingBuilder body = new FormEncodingBuilder();
+		FormBody.Builder body = new FormBody.Builder();
 		body.add("username", AdminUsername);
 		body.add("password", "wrongpasswordfool!");
 		
@@ -133,7 +134,7 @@ public class AdminTests {
 	@Test(order=4)
 	public void Signin() throws IOException, JsonApiException
 	{
-		FormEncodingBuilder body = new FormEncodingBuilder();
+		FormBody.Builder body = new FormBody.Builder();
 		body.add("username", AdminUsername);
 		body.add("password", AdminPassword);
 		
@@ -233,7 +234,7 @@ public class AdminTests {
 	@Test(order=14)
 	public void CreateUser() throws IOException, JsonApiException
 	{
-		FormEncodingBuilder body = new FormEncodingBuilder();
+		FormBody.Builder body = new FormBody.Builder();
 		
 		TestUserName = "test_"+SVID.makeSVID();
 		TestUserEmail = SVID.makeSVID()+"@serverville.com";
@@ -300,7 +301,7 @@ public class AdminTests {
 	@Test(order=18)
 	public void SetUserPassword() throws IOException, JsonApiException
 	{
-		FormEncodingBuilder body = new FormEncodingBuilder();
+		FormBody.Builder body = new FormBody.Builder();
 		body.add("user_id", TestUserId);
 		body.add("password", Long.toHexString(Rand.nextLong())+Long.toHexString(Rand.nextLong()));
 		
@@ -310,7 +311,7 @@ public class AdminTests {
 	@Test(order=19)
 	public void SetUserUsername() throws IOException, JsonApiException
 	{
-		FormEncodingBuilder body = new FormEncodingBuilder();
+		FormBody.Builder body = new FormBody.Builder();
 		body.add("user_id", TestUserId);
 		body.add("username", "test_"+SVID.makeSVID());
 		
@@ -320,7 +321,7 @@ public class AdminTests {
 	@Test(order=20)
 	public void SetUserEmail() throws IOException, JsonApiException
 	{
-		FormEncodingBuilder body = new FormEncodingBuilder();
+		FormBody.Builder body = new FormBody.Builder();
 		body.add("user_id", TestUserId);
 		body.add("email", "test_"+SVID.makeSVID()+"@serverville.com");
 		
@@ -330,7 +331,7 @@ public class AdminTests {
 	@Test(order=21)
 	public void SetUserAdminLevel() throws IOException, JsonApiException
 	{
-		FormEncodingBuilder body = new FormEncodingBuilder();
+		FormBody.Builder body = new FormBody.Builder();
 		body.add("user_id", TestUserId);
 		body.add("admin_level", "readOnlyAdmin");
 		
@@ -340,7 +341,7 @@ public class AdminTests {
 	@Test(order=50)
 	public void DeleteUser() throws IOException, JsonApiException
 	{
-		FormEncodingBuilder body = new FormEncodingBuilder();
+		FormBody.Builder body = new FormBody.Builder();
 		body.add("user_id", TestUserId);
 		
 		postAdminApi("api/deleteUser", body.build());
@@ -377,7 +378,7 @@ public class AdminTests {
 		Date expirationDate = new Date();
 		long expiration = expirationDate.getTime() + 1000*60;
 		
-		FormEncodingBuilder body = new FormEncodingBuilder();
+		FormBody.Builder body = new FormBody.Builder();
 		body.add("comment", "Test agent key for selftest");
 		body.add("expiration", Long.toString(expiration));
 		body.add("iprange", "127.0.0.1/8");
@@ -420,7 +421,7 @@ public class AdminTests {
 	public void EditAgentKey() throws IOException, JsonApiException
 	{
 
-		FormEncodingBuilder body = new FormEncodingBuilder();
+		FormBody.Builder body = new FormBody.Builder();
 		body.add("key", TestAgentKey);
 		body.add("comment", "Test agent key for selftest w/ new comment");
 		body.add("expiration", "0");
@@ -435,7 +436,7 @@ public class AdminTests {
 	public void DeleteAgentKey() throws IOException, JsonApiException
 	{
 
-		FormEncodingBuilder body = new FormEncodingBuilder();
+		FormBody.Builder body = new FormBody.Builder();
 		body.add("key", TestAgentKey);
 		
 		postAdminApi("api/deleteAgentKey", body.build());
@@ -504,7 +505,7 @@ public class AdminTests {
 	@Test(order=108)
 	public void DeleteScript() throws IOException, JsonApiException
 	{
-		FormEncodingBuilder body = new FormEncodingBuilder();
+		FormBody.Builder body = new FormBody.Builder();
 		body.add("id", TestScriptId);
 		
 		postAdminApi("api/deleteScript", body.build());
