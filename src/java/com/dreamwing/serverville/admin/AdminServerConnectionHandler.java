@@ -12,15 +12,15 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.timeout.IdleStateEvent;
 
 import com.dreamwing.serverville.data.AdminActionLog;
 import com.dreamwing.serverville.log.SVLog;
 import com.dreamwing.serverville.net.HttpDispatcher;
 import com.dreamwing.serverville.net.HttpRequestInfo;
-import com.dreamwing.serverville.net.HttpUtil;
+import com.dreamwing.serverville.net.HttpHelpers;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpConnectionInfo;
@@ -63,7 +63,7 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
     {
     	ChannelFuture lastWrite = HandleHttpRequest(ctx, request);
     	
-    	if (!HttpHeaders.isKeepAlive(request)) {
+    	if (!HttpUtil.isKeepAlive(request)) {
             // Close the connection when the whole content is written out.
     		if(lastWrite != null)
     		{
@@ -78,22 +78,22 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
 
     private ChannelFuture HandleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request)
     {
-    	if(request.getMethod() == HttpMethod.OPTIONS)
+    	if(request.method() == HttpMethod.OPTIONS)
     	{
-    		return HttpUtil.sendPreflightApproval(ctx);
+    		return HttpHelpers.sendPreflightApproval(ctx);
     	}
     	
     	CurrRequest = new HttpRequestInfo();
     	try {
     		CurrRequest.init(Info, request, SVID.makeSVID());
 		} catch (URISyntaxException e1) {
-			return HttpUtil.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
+			return HttpHelpers.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
 		}
     	
     	l.debug(new SVLog("Adming HTTP request", CurrRequest));
     	
-    	if (!request.getDecoderResult().isSuccess()) {
-    		return HttpUtil.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
+    	if (!request.decoderResult().isSuccess()) {
+    		return HttpHelpers.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
         }
 
     	ChannelFuture result;
@@ -102,23 +102,23 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
 		}
 		catch(JsonProcessingException e)
 		{
-			return HttpUtil.sendError(CurrRequest, ApiErrors.JSON_ERROR, e.getMessage());
+			return HttpHelpers.sendError(CurrRequest, ApiErrors.JSON_ERROR, e.getMessage());
 		}
 		catch(SQLException e)
 		{
-			return HttpUtil.sendError(CurrRequest, ApiErrors.DB_ERROR, e.getMessage());
+			return HttpHelpers.sendError(CurrRequest, ApiErrors.DB_ERROR, e.getMessage());
 		}
 		catch(JsonApiException e)
 		{
-			return HttpUtil.sendErrorJson(CurrRequest, e.Error, e.HttpStatus);
+			return HttpHelpers.sendErrorJson(CurrRequest, e.Error, e.HttpStatus);
 		}
 		catch(Exception e)
 		{
-			return HttpUtil.sendError(CurrRequest, ApiErrors.INTERNAL_SERVER_ERROR, e.getMessage());
+			return HttpHelpers.sendError(CurrRequest, ApiErrors.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 
     	// Log anything other than GETs (and logins, because BORING)
-    	if(request.getMethod() != HttpMethod.GET && !CurrRequest.RequestURI.getPath().equals("/api/signIn") && Info.User != null)
+    	if(request.method() != HttpMethod.GET && !CurrRequest.RequestURI.getPath().equals("/api/signIn") && Info.User != null)
     	{
     		AdminActionLog log = new AdminActionLog();
     		log.RequestId = CurrRequest.RequestId;
@@ -146,7 +146,7 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
         if (ctx.channel().isActive())
         {
         	// Close connection on internal server error to simplify things
-        	HttpUtil.sendError(CurrRequest, ApiErrors.INTERNAL_SERVER_ERROR).addListener(ChannelFutureListener.CLOSE);
+        	HttpHelpers.sendError(CurrRequest, ApiErrors.INTERNAL_SERVER_ERROR).addListener(ChannelFutureListener.CLOSE);
         }
     }
 

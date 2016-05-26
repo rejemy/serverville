@@ -26,7 +26,7 @@ import com.dreamwing.serverville.log.IndexedFileManager.LogSearchHit;
 import com.dreamwing.serverville.log.IndexedFileManager.LogSearchHits;
 import com.dreamwing.serverville.net.ApiError;
 import com.dreamwing.serverville.net.ApiErrors;
-import com.dreamwing.serverville.net.HttpUtil;
+import com.dreamwing.serverville.net.HttpHelpers;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.util.SVID;
 import com.squareup.okhttp.FormEncodingBuilder;
@@ -53,28 +53,28 @@ public class AdminTests {
 	
 	private <S> S getAdminApi(String api, Class<S> successClass) throws IOException, JsonApiException
 	{
-		return HttpUtil.getJsonApi(AdminServerSocketInitializer.URL+api, AdminSessionId, successClass);
+		return HttpHelpers.getJsonApi(AdminServerSocketInitializer.URL+api, AdminSessionId, successClass);
 	}
 	
 	private String getAdminApiBody(String api) throws IOException, JsonApiException
 	{
-		return HttpUtil.getString(AdminServerSocketInitializer.URL+api, AdminSessionId);
+		return HttpHelpers.getString(AdminServerSocketInitializer.URL+api, AdminSessionId);
 	}
 	
 	private void postAdminApi(String api, RequestBody body) throws IOException, JsonApiException
 	{
-		HttpUtil.postJsonApi(AdminServerSocketInitializer.URL+api, AdminSessionId, body);
+		HttpHelpers.postJsonApi(AdminServerSocketInitializer.URL+api, AdminSessionId, body);
 	}
 	
 	private <S> S postAdminApi(String api, RequestBody body, Class<S> successClass) throws IOException, JsonApiException
 	{
-		return HttpUtil.postJsonApi(AdminServerSocketInitializer.URL+api, AdminSessionId, body, successClass);
+		return HttpHelpers.postJsonApi(AdminServerSocketInitializer.URL+api, AdminSessionId, body, successClass);
 	}
 	
 	@Test(order=1)
 	public void LogTestInfo() throws SQLException
 	{
-		HttpUtil.resetHttpClient();
+		HttpHelpers.resetHttpClient();
 		
 		LogSearchTerm = SVID.makeSVID();
 		AdminSessionId = null;
@@ -194,7 +194,7 @@ public class AdminTests {
 		Assert.assertNotNull(result);
 		Assert.assertNotNull(result.files);
 		Assert.assertTrue(result.files.size() > 0);
-		String log = HttpUtil.getString(AdminServerSocketInitializer.URL+"logs/"+result.files.get(0).filename);
+		String log = HttpHelpers.getString(AdminServerSocketInitializer.URL+"logs/"+result.files.get(0).filename);
 		Assert.assertNotNull(log);
 		Assert.assertTrue(log.length() > 0);
 	}
@@ -215,7 +215,7 @@ public class AdminTests {
 	@Test(order=12)
 	public void LogFileMissing() throws IOException, JsonApiException
 	{
-		ApiError result = HttpUtil.getJson(AdminServerSocketInitializer.URL+"logs/sdgadhsfghghg.fgf", ApiError.class);
+		ApiError result = HttpHelpers.getJson(AdminServerSocketInitializer.URL+"logs/sdgadhsfghghg.fgf", ApiError.class);
 		Assert.assertNotNull(result);
 		Assert.assertTrue(result.isError);
 	}
@@ -224,7 +224,7 @@ public class AdminTests {
 	public void InvalidAPI() throws IOException
 	{
 		String url = AdminServerSocketInitializer.URL+"api/lskdjioif";
-		ApiError result = HttpUtil.getJson(url, ApiError.class);
+		ApiError result = HttpHelpers.getJson(url, ApiError.class);
 		Assert.assertNotNull(result);
 		Assert.assertTrue(result.isError);
 	}
@@ -449,7 +449,7 @@ public class AdminTests {
 	{
 		TestScriptId = "_test_script_"+SVID.makeSVID();
 		
-		RequestBody body = RequestBody.create(HttpUtil.JAVASCRIPT_CONTENT_TYPE, TestScriptBody);
+		RequestBody body = RequestBody.create(HttpHelpers.JAVASCRIPT_CONTENT_TYPE, TestScriptBody);
 		
 		postAdminApi("api/addScript?id="+TestScriptId, body);
 	}
@@ -520,7 +520,7 @@ public class AdminTests {
 	{
 		TestKeytId = KeyDataManager.TestIdPrefix+SVID.makeSVID();
 		
-		RequestBody body = RequestBody.create(HttpUtil.TEXT_CONTENT_TYPE, "testSetString");
+		RequestBody body = RequestBody.create(HttpHelpers.TEXT_CONTENT_TYPE, "testSetString");
 		
 		postAdminApi("api/setDataKey?id="+TestKeytId+"&key=adminKeyTest", body);
 	}

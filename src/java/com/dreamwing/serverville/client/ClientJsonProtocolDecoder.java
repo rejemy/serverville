@@ -1,6 +1,5 @@
 package com.dreamwing.serverville.client;
 
-import java.nio.ByteOrder;
 import java.util.List;
 
 import com.dreamwing.serverville.serialize.SerializeUtil;
@@ -15,12 +14,11 @@ public class ClientJsonProtocolDecoder extends ByteToMessageDecoder
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception
 	{
-		in = in.order(ByteOrder.LITTLE_ENDIAN);
-		
+
 		while(in.readableBytes() >= 2)
 		{	
 			in.markReaderIndex();
-			int messageSize = in.readUnsignedShort();
+			int messageSize = in.readUnsignedShortLE();
 			if(in.readableBytes() < messageSize)	
 			{
 				in.resetReaderIndex();

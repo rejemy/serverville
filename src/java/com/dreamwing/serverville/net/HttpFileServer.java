@@ -34,12 +34,13 @@ import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpChunkedInput;
-import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 
@@ -114,7 +115,7 @@ public class HttpFileServer
         Path filePath = BasePath.resolve(req.PathRemainder).normalize();
         if(!filePath.startsWith(BasePath))
         {
-        	return HttpUtil.sendError(req, ApiErrors.FORBIDDEN);
+        	return HttpHelpers.sendError(req, ApiErrors.FORBIDDEN);
         }
         
         File file = filePath.toFile();
@@ -122,24 +123,24 @@ public class HttpFileServer
         if (file.isDirectory()) {
         	if(!req.RequestURI.getPath().endsWith("/"))
         	{
-        		return HttpUtil.sendRedirect(req, uri.getRawPath() + '/');
+        		return HttpHelpers.sendRedirect(req, uri.getRawPath() + '/');
         	}
         	file = filePath.resolve("index.html").toFile();
         }
         
         
         if (file.isHidden() || !file.exists()) {
-            return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+            return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
         }
         
         if (!file.canRead() || !file.isFile()) {
-        	return HttpUtil.sendError(req, ApiErrors.FORBIDDEN);
+        	return HttpHelpers.sendError(req, ApiErrors.FORBIDDEN);
         }
         
         long fileModifiedAt = file.lastModified();
 
         // Cache Validation
-        String ifModifiedSince = request.headers().get(Names.IF_MODIFIED_SINCE);
+        String ifModifiedSince = request.headers().get(HttpHeaderNames.IF_MODIFIED_SINCE);
         if (ifModifiedSince != null && !ifModifiedSince.isEmpty()) {
             SimpleDateFormat dateFormatter = new SimpleDateFormat(HTTP_DATE_FORMAT, Locale.US);
             Date ifModifiedSinceDate = dateFormatter.parse(ifModifiedSince);
@@ -208,13 +209,13 @@ public class HttpFileServer
         	
 
         	HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-            HttpHeaders.setContentLength(response, cached.Contents.readableBytes());
-            HttpUtil.setContentTypeHeader(response, contentType);
+        	HttpUtil.setContentLength(response, cached.Contents.readableBytes());
+            HttpHelpers.setContentTypeHeader(response, contentType);
             setDateAndCacheHeaders(response, file);
             if(cached.Compressed)
-            	response.headers().set(Names.CONTENT_ENCODING, HttpHeaders.Values.GZIP);
-            if (HttpHeaders.isKeepAlive(request)) {
-                response.headers().set(Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+            	response.headers().set(HttpHeaderNames.CONTENT_ENCODING, HttpHeaderValues.GZIP);
+            if (HttpUtil.isKeepAlive(request)) {
+                response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
             }
 
             // Write the initial line and the header.
@@ -230,15 +231,15 @@ public class HttpFileServer
 	        try {
 	            raf = new RandomAccessFile(file, "r");
 	        } catch (FileNotFoundException ignore) {
-	        	return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+	        	return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 	        }
 	
 	        HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-	        HttpHeaders.setContentLength(response, longFileSize);
-	        HttpUtil.setContentTypeHeader(response, contentType);
+	        HttpUtil.setContentLength(response, longFileSize);
+	        HttpHelpers.setContentTypeHeader(response, contentType);
 	        setDateAndCacheHeaders(response, file);
-	        if (HttpHeaders.isKeepAlive(request)) {
-	            response.headers().set(Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+	        if (HttpUtil.isKeepAlive(request)) {
+	            response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
 	        }
 	
 	        // Write the initial line and the header.
@@ -296,7 +297,7 @@ public class HttpFileServer
         dateFormatter.setTimeZone(TimeZone.getTimeZone(HTTP_DATE_GMT_TIMEZONE));
 
         Calendar time = new GregorianCalendar();
-        response.headers().set(Names.DATE, dateFormatter.format(time.getTime()));
+        response.headers().set(HttpHeaderNames.DATE, dateFormatter.format(time.getTime()));
     }
 
 
@@ -306,20 +307,20 @@ public class HttpFileServer
 
         // Date header
         Calendar time = new GregorianCalendar();
-        response.headers().set(Names.DATE, dateFormatter.format(time.getTime()));
+        response.headers().set(HttpHeaderNames.DATE, dateFormatter.format(time.getTime()));
 
         // Add cache headers
         time.add(Calendar.SECOND, HTTP_CACHE_SECONDS);
-        response.headers().set(Names.EXPIRES, dateFormatter.format(time.getTime()));
-        response.headers().set(Names.CACHE_CONTROL, "private, max-age=" + HTTP_CACHE_SECONDS);
+        response.headers().set(HttpHeaderNames.EXPIRES, dateFormatter.format(time.getTime()));
+        response.headers().set(HttpHeaderNames.CACHE_CONTROL, "private, max-age=" + HTTP_CACHE_SECONDS);
         response.headers().set(
-        		Names.LAST_MODIFIED, dateFormatter.format(new Date(fileToCache.lastModified())));
+        		HttpHeaderNames.LAST_MODIFIED, dateFormatter.format(new Date(fileToCache.lastModified())));
     }
 
 
     private static boolean acceptsEncoding(FullHttpRequest request, String encoding) {
     	
-    	String encodings = request.headers().get(Names.ACCEPT_ENCODING);
+    	String encodings = request.headers().get(HttpHeaderNames.ACCEPT_ENCODING);
     	if(encodings == null)
     		return false;
     	

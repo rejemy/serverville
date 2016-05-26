@@ -32,7 +32,7 @@ public class HttpDispatcher {
 			{
 				if(!Authenticator.isAuthenticated(req))
 				{
-					return HttpUtil.sendError(req, ApiErrors.BAD_AUTH);
+					return HttpHelpers.sendError(req, ApiErrors.BAD_AUTH);
 				}
 			}
 			
@@ -72,7 +72,7 @@ public class HttpDispatcher {
 		@Override
 		public ChannelFuture dispatch(String uriMatched, HttpRequestInfo req)
 		{
-			return HttpUtil.sendRedirect(req, RedirectTo);
+			return HttpHelpers.sendRedirect(req, RedirectTo);
 		}
 		
 	}
@@ -270,7 +270,7 @@ public class HttpDispatcher {
 	
 	public ChannelFuture dispatch(HttpRequestInfo req) throws Exception
 	{
-		HttpMethod reqMethod = req.Request.getMethod();
+		HttpMethod reqMethod = req.Request.method();
 		
 		DispatchTable table = null;
 		
@@ -292,7 +292,7 @@ public class HttpDispatcher {
 		}
 		
 		if(table == null)
-			return HttpUtil.sendError(req, ApiErrors.BAD_HTTP_METHOD);
+			return HttpHelpers.sendError(req, ApiErrors.BAD_HTTP_METHOD);
 		
 		String path = req.RequestURI.getPath();
 		
@@ -309,6 +309,6 @@ public class HttpDispatcher {
 				return entry.getValue().dispatch(entry.getKey(), req);
 			}
 		}
-		return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+		return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 	}
 }

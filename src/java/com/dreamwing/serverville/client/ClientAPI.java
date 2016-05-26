@@ -375,7 +375,6 @@ public class ClientAPI {
 		return keyInfo;
 	}
 
-	
 	public static SetDataReply SetDataKeys(SetGlobalDataRequest request, ClientMessageInfo info) throws SQLException, JsonApiException
 	{
 		KeyDataRecord record = KeyDataRecord.load(request.id);

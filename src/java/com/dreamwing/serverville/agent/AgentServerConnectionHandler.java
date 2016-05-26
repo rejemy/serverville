@@ -12,7 +12,7 @@ import org.apache.logging.log4j.Logger;
 import com.dreamwing.serverville.data.AgentKey;
 import com.dreamwing.serverville.log.SVLog;
 import com.dreamwing.serverville.net.HttpRequestInfo;
-import com.dreamwing.serverville.net.HttpUtil;
+import com.dreamwing.serverville.net.HttpHelpers;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpConnectionInfo;
 import com.dreamwing.serverville.net.JsonApiException;
@@ -29,11 +29,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders.Names;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
@@ -97,7 +97,7 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 		if (msg instanceof FullHttpRequest)
 		{
 			FullHttpRequest request = (FullHttpRequest) msg;
-			keepAlive = HttpHeaders.isKeepAlive(request);
+			keepAlive = HttpUtil.isKeepAlive(request);
 			lastWrite = handleHttpRequest(ctx, request);
         } else if (msg instanceof WebSocketFrame)
         {
@@ -119,7 +119,7 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 	
 	private boolean authenticate(FullHttpRequest request, InetSocketAddress remoteAddr)
 	{
-		String authToken = request.headers().get(Names.AUTHORIZATION);
+		String authToken = request.headers().get(HttpHeaderNames.AUTHORIZATION);
 		if(authToken == null)
 		{
 			return false;
@@ -166,9 +166,9 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 	
 	private ChannelFuture handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request)
 	{
-		if(request.getMethod() == HttpMethod.OPTIONS)
+		if(request.method() == HttpMethod.OPTIONS)
     	{
-    		return HttpUtil.sendPreflightApproval(ctx);
+    		return HttpHelpers.sendPreflightApproval(ctx);
     	}
 		
 		HttpRequestInfo CurrRequest = new HttpRequestInfo();
@@ -176,27 +176,27 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
     	try {
     		CurrRequest.init(Info, request, SVID.makeSVID());
 		} catch (URISyntaxException e1) {
-			return HttpUtil.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
+			return HttpHelpers.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
 		}
     	
 		URI uri = CurrRequest.RequestURI;
     	
     	l.debug(new SVLog("Agent HTTP request", CurrRequest));
     	
-		if (!request.getDecoderResult().isSuccess()) {
-			return HttpUtil.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
+		if (!request.decoderResult().isSuccess()) {
+			return HttpHelpers.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
         }
 		
 		if(!authenticate(request, (InetSocketAddress)ctx.channel().remoteAddress()))
 		{
-			return HttpUtil.sendError(CurrRequest, ApiErrors.BAD_AUTH);
+			return HttpHelpers.sendError(CurrRequest, ApiErrors.BAD_AUTH);
 		}
 		
 		String uriPath = uri.getPath();
 		
 		if(uriPath.equals(WEBSOCKET_PATH))
 		{
-			String websockUrl = request.headers().get(Names.HOST) + WEBSOCKET_PATH;
+			String websockUrl = request.headers().get(HttpHeaderNames.HOST) + WEBSOCKET_PATH;
 			WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(
 					websockUrl, null, false);
 			
@@ -215,7 +215,7 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 			
 			String messageType = uriPath.substring(5);
 			String messageBody = null;
-			if(request.getMethod() == HttpMethod.POST && request.content() != null)
+			if(request.method() == HttpMethod.POST && request.content() != null)
 			{
 				messageBody = request.content().toString(StandardCharsets.UTF_8);
 			}
@@ -228,19 +228,19 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 			}
 			catch(JsonProcessingException e)
 			{
-				return HttpUtil.sendError(CurrRequest, ApiErrors.JSON_ERROR, e.getMessage());
+				return HttpHelpers.sendError(CurrRequest, ApiErrors.JSON_ERROR, e.getMessage());
 			}
 			catch(SQLException e)
 			{
-				return HttpUtil.sendError(CurrRequest, ApiErrors.DB_ERROR, e.getMessage());
+				return HttpHelpers.sendError(CurrRequest, ApiErrors.DB_ERROR, e.getMessage());
 			}
 			catch(JsonApiException e)
 			{
-				return HttpUtil.sendErrorJson(CurrRequest, e.Error, e.HttpStatus);
+				return HttpHelpers.sendErrorJson(CurrRequest, e.Error, e.HttpStatus);
 			}
 			catch(Exception e)
 			{
-				return HttpUtil.sendError(CurrRequest, ApiErrors.INTERNAL_SERVER_ERROR, e.getMessage());
+				return HttpHelpers.sendError(CurrRequest, ApiErrors.INTERNAL_SERVER_ERROR, e.getMessage());
 			}
 			
 
@@ -249,16 +249,16 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 			
 			if(reply != null)
 			{
-				HttpUtil.setContentTypeHeader(response, "application/json");
-				HttpHeaders.setContentLength(response, reply.readableBytes());
+				HttpHelpers.setContentTypeHeader(response, "application/json");
+				HttpUtil.setContentLength(response, reply.readableBytes());
 			}
 			
-			response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+			response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 			
 			return ctx.writeAndFlush(response);
 		}
 		
-		return HttpUtil.sendError(CurrRequest, ApiErrors.NOT_FOUND);
+		return HttpHelpers.sendError(CurrRequest, ApiErrors.NOT_FOUND);
 	}
 	
 	private ChannelFuture handleWebSocketFrame(ChannelHandlerContext ctx, WebSocketFrame frame)

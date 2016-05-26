@@ -2,7 +2,6 @@ package com.dreamwing.serverville.client;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
@@ -12,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.log.SVLog;
 import com.dreamwing.serverville.net.HttpRequestInfo;
-import com.dreamwing.serverville.net.HttpUtil;
+import com.dreamwing.serverville.net.HttpHelpers;
 import com.dreamwing.serverville.net.ApiError;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpConnectionInfo;
@@ -31,10 +30,10 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders.Names;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
@@ -124,7 +123,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		if (msg instanceof FullHttpRequest)
 		{
 			FullHttpRequest request = (FullHttpRequest) msg;
-			keepAlive = HttpHeaders.isKeepAlive(request);
+			keepAlive = HttpUtil.isKeepAlive(request);
 			lastWrite = handleHttpRequest(ctx, request);
         }
 		else if (msg instanceof WebSocketFrame)
@@ -155,7 +154,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	
 	private void authenticate(FullHttpRequest request)
 	{
-		String authToken = request.headers().get(Names.AUTHORIZATION);
+		String authToken = request.headers().get(HttpHeaderNames.AUTHORIZATION);
 		if(authToken == null)
 		{
 			Info.User = null;
@@ -185,9 +184,9 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	
 	private ChannelFuture handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request)
 	{
-		if(request.getMethod() == HttpMethod.OPTIONS)
+		if(request.method() == HttpMethod.OPTIONS)
     	{
-    		return HttpUtil.sendPreflightApproval(ctx);
+    		return HttpHelpers.sendPreflightApproval(ctx);
     	}
 		
 		HttpRequestInfo currRequest = new HttpRequestInfo();
@@ -195,15 +194,15 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
     	try {
 			currRequest.init(Info, request, SVID.makeSVID());
 		} catch (URISyntaxException e1) {
-			return HttpUtil.sendError(currRequest, ApiErrors.HTTP_DECODE_ERROR);
+			return HttpHelpers.sendError(currRequest, ApiErrors.HTTP_DECODE_ERROR);
 		}
     	
 		URI uri = currRequest.RequestURI;
     	
     	l.debug(new SVLog("Client HTTP request", currRequest));
     	
-		if (!request.getDecoderResult().isSuccess()) {
-            return HttpUtil.sendError(currRequest, ApiErrors.HTTP_DECODE_ERROR);
+		if (!request.decoderResult().isSuccess()) {
+            return HttpHelpers.sendError(currRequest, ApiErrors.HTTP_DECODE_ERROR);
         }
 		
 		authenticate(request);
@@ -212,7 +211,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		if(uriPath.equals(WEBSOCKET_PATH))
 		{
-			String websockUrl = request.headers().get(Names.HOST) + WEBSOCKET_PATH;
+			String websockUrl = request.headers().get(HttpHeaderNames.HOST) + WEBSOCKET_PATH;
 			WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(
 					websockUrl, null, false);
 			
@@ -231,7 +230,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			
 			String messageType = uriPath.substring(5);
 			String messageBody = null;
-			if(request.getMethod() == HttpMethod.POST && request.content() != null)
+			if(request.method() == HttpMethod.POST && request.content() != null)
 			{
 				messageBody = request.content().toString(StandardCharsets.UTF_8);
 			}
@@ -247,11 +246,11 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			if(reply instanceof ApiError)
 			{
 				ApiError error = (ApiError)reply;
-				return HttpUtil.sendErrorJson(currRequest, error, error.getHttpStatus());
+				return HttpHelpers.sendErrorJson(currRequest, error, error.getHttpStatus());
 			}
 			else
 			{
-				return HttpUtil.sendJson(currRequest, reply);
+				return HttpHelpers.sendJson(currRequest, reply);
 			}
 			
 			
@@ -277,7 +276,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			return ctx.writeAndFlush(response);*/
 		}
 		
-		return HttpUtil.sendError(currRequest, ApiErrors.NOT_FOUND);
+		return HttpHelpers.sendError(currRequest, ApiErrors.NOT_FOUND);
 	}
 	
 	private ChannelFuture handleWebSocketFrame(ChannelHandlerContext ctx, WebSocketFrame frame)
@@ -365,7 +364,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			sendType = 'E';
 		}
 		
-		ByteBuf replyMessage = Unpooled.buffer(256).order(ByteOrder.LITTLE_ENDIAN);
+		ByteBuf replyMessage = ctx.alloc().buffer(256);
 		replyMessage.writerIndex(2); // Skip over size header
 		replyMessage.writeChar(sendType);
 		
@@ -382,7 +381,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		int len = replyMessage.writerIndex() - 2;
 		replyMessage.writerIndex(0);
-		replyMessage.writeShort(len);
+		replyMessage.writeShortLE(len);
 		replyMessage.writerIndex(len+2);
 		
 		return write(replyMessage);
@@ -401,7 +400,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
         {
         	ApiError ise = new ApiError(ApiErrors.INTERNAL_SERVER_ERROR);
         
-        	HttpUtil.sendErrorJson(ctx, ise, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+        	HttpHelpers.sendErrorJson(ctx, ise, HttpResponseStatus.INTERNAL_SERVER_ERROR);
         }
     }
 	
@@ -429,7 +428,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	
 	private ChannelFuture sendBinaryMessage(String messageType, String serializedMessageBody, String from)
 	{
-		ByteBuf messageBuf = Unpooled.buffer(256).order(ByteOrder.LITTLE_ENDIAN);
+		ByteBuf messageBuf = Unpooled.buffer(256);
 		messageBuf.writerIndex(2); // Skip over size header
 		messageBuf.writeChar('M');
 		
@@ -447,7 +446,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		int len = messageBuf.writerIndex() - 2;
 		messageBuf.writerIndex(0);
-		messageBuf.writeShort(len);
+		messageBuf.writeShortLE(len);
 		messageBuf.writerIndex(len+2);
 		
 		return write(messageBuf);

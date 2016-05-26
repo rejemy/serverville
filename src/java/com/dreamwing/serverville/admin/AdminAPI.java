@@ -31,7 +31,7 @@ import com.dreamwing.serverville.log.IndexedFileManager.LogSearchHits;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpHandlerOptions;
 import com.dreamwing.serverville.net.HttpRequestInfo;
-import com.dreamwing.serverville.net.HttpUtil;
+import com.dreamwing.serverville.net.HttpHelpers;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.net.SubnetMask;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
@@ -44,7 +44,7 @@ import com.dreamwing.serverville.util.PasswordUtil;
 import com.squareup.okhttp.MediaType;
 
 import io.netty.channel.ChannelFuture;
-import io.netty.handler.codec.http.HttpHeaders.Names;
+import io.netty.handler.codec.http.HttpHeaderNames;
 
 public class AdminAPI {
 
@@ -93,7 +93,7 @@ public class AdminAPI {
 		
 		req.Connection.User = admin;
 
-		return HttpUtil.sendJson(req, reply);
+		return HttpHelpers.sendJson(req, reply);
 	}
 	
 	
@@ -116,7 +116,7 @@ public class AdminAPI {
 		info.java_version = System.getProperty("java.version")+" ("+System.getProperty("java.vendor")+")";
 		info.os = System.getProperty("os.name")+" "+System.getProperty("os.version");
 		
-		return HttpUtil.sendJson(req, info);
+		return HttpHelpers.sendJson(req, info);
 	}
 	
 	
@@ -168,7 +168,7 @@ public class AdminAPI {
 		}
 		
 		
-		return HttpUtil.sendJson(req, result);
+		return HttpHelpers.sendJson(req, result);
 	}
 	
 
@@ -184,11 +184,11 @@ public class AdminAPI {
 		try
 		{
 			LogSearchHits hits = ServervilleMain.LogSearcher.query(query, from, to);
-			return HttpUtil.sendJson(req, hits);
+			return HttpHelpers.sendJson(req, hits);
 		}
 		catch(ParseException e)
 		{
-			return HttpUtil.sendError(req, ApiErrors.INVALID_QUERY, e.getMessage());
+			return HttpHelpers.sendError(req, ApiErrors.INVALID_QUERY, e.getMessage());
 		}
 		
 		
@@ -269,7 +269,7 @@ public class AdminAPI {
 		SelfTestStarted result = new SelfTestStarted();
 		result.started_at = SelfTest.getStartTime();
 		
-		return HttpUtil.sendJson(req, result);
+		return HttpHelpers.sendJson(req, result);
 	}
 	
 
@@ -279,7 +279,7 @@ public class AdminAPI {
 		int startAt = req.getOneQueryAsInt("first", 0);
 		
 		SelfTestStatus status = getTestStatus(startAt);
-		return HttpUtil.sendJson(req, status);
+		return HttpHelpers.sendJson(req, status);
 	}
 	
 	public static class UserInfo
@@ -322,14 +322,14 @@ public class AdminAPI {
 		else if(username != null)
 			user = ServervilleUser.findByUsername(username);
 		else
-			return HttpUtil.sendError(req, ApiErrors.MISSING_INPUT, "Must query on one of id, email or username");
+			return HttpHelpers.sendError(req, ApiErrors.MISSING_INPUT, "Must query on one of id, email or username");
 		
 		if(user == null)
-			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 		
 		UserInfo info = getUserInfo(user);
 		
-		return HttpUtil.sendJson(req, info);
+		return HttpHelpers.sendJson(req, info);
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
@@ -342,16 +342,16 @@ public class AdminAPI {
 		String adminLevelStr = req.getOneBody("admin_level", "user");
 		int adminLevel = ServervilleUser.parseAdminLevel(adminLevelStr);
 		if(adminLevel < 0)
-			return HttpUtil.sendError(req, ApiErrors.INVALID_INPUT, "admin_level is not a valid value");
+			return HttpHelpers.sendError(req, ApiErrors.INVALID_INPUT, "admin_level is not a valid value");
 
 		if(!PasswordUtil.validatePassword(password))
-			return HttpUtil.sendError(req, ApiErrors.INVALID_INPUT, "password is not a valid password");
+			return HttpHelpers.sendError(req, ApiErrors.INVALID_INPUT, "password is not a valid password");
 		
 		ServervilleUser newuser = ServervilleUser.create(password, username, email, adminLevel);
 		
 		UserInfo info = getUserInfo(newuser);
 		
-		return HttpUtil.sendJson(req, info);
+		return HttpHelpers.sendJson(req, info);
 	}
 	
 
@@ -364,17 +364,17 @@ public class AdminAPI {
 		ServervilleUser user = ServervilleUser.findById(userId);
 		if(user == null)
 		{
-			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 		}
 		
 		if(user.getId().equals(req.getUser().getId()))
 		{
-			return HttpUtil.sendError(req, ApiErrors.INVALID_INPUT, "Don't delete yourself, silly!");
+			return HttpHelpers.sendError(req, ApiErrors.INVALID_INPUT, "Don't delete yourself, silly!");
 		}
 		
 		user.delete();
 		
-		return HttpUtil.sendSuccess(req);
+		return HttpHelpers.sendSuccess(req);
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
@@ -386,12 +386,12 @@ public class AdminAPI {
 		ServervilleUser user = ServervilleUser.findById(userId);
 		if(user == null)
 		{
-			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 		}
 		
 		user.setPassword(password);
 		
-		return HttpUtil.sendSuccess(req);
+		return HttpHelpers.sendSuccess(req);
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
@@ -403,12 +403,12 @@ public class AdminAPI {
 		ServervilleUser user = ServervilleUser.findById(userId);
 		if(user == null)
 		{
-			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 		}
 		
 		user.setUsername(username);
 		
-		return HttpUtil.sendSuccess(req);
+		return HttpHelpers.sendSuccess(req);
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
@@ -420,12 +420,12 @@ public class AdminAPI {
 		ServervilleUser user = ServervilleUser.findById(userId);
 		if(user == null)
 		{
-			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 		}
 		
 		user.setEmail(email);
 		
-		return HttpUtil.sendSuccess(req);
+		return HttpHelpers.sendSuccess(req);
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
@@ -437,17 +437,17 @@ public class AdminAPI {
 		ServervilleUser user = ServervilleUser.findById(userId);
 		if(user == null)
 		{
-			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 		}
 		
 		int adminLevel = ServervilleUser.parseAdminLevel(adminLevelStr);
 		if(adminLevel < 0)
-			return HttpUtil.sendError(req, ApiErrors.INVALID_INPUT, "invalid admin_level");
+			return HttpHelpers.sendError(req, ApiErrors.INVALID_INPUT, "invalid admin_level");
 		
 		user.AdminLevel = adminLevel;
 		user.update();
 		
-		return HttpUtil.sendSuccess(req);
+		return HttpHelpers.sendSuccess(req);
 	}
 	
 	public static class AgentKeyInfo
@@ -485,7 +485,7 @@ public class AdminAPI {
 			result.keys.add(reply);
 		}
 		
-		return HttpUtil.sendJson(req, result);
+		return HttpHelpers.sendJson(req, result);
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
@@ -507,7 +507,7 @@ public class AdminAPI {
 			}
 			catch(Exception e)
 			{
-				return HttpUtil.sendError(req, ApiErrors.INVALID_IP_RANGE, iprange);
+				return HttpHelpers.sendError(req, ApiErrors.INVALID_IP_RANGE, iprange);
 			}
 		}
 		
@@ -523,7 +523,7 @@ public class AdminAPI {
 		else
 			reply.expiration = 0;
 		
-		return HttpUtil.sendJson(req, reply);
+		return HttpHelpers.sendJson(req, reply);
 	}
 	
 	
@@ -541,7 +541,7 @@ public class AdminAPI {
 		
 		AgentKey editKey = AgentKey.load(key);
 		if(editKey == null)
-			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 		
 		if(comment != null)
 			editKey.Comment = comment;
@@ -553,7 +553,7 @@ public class AdminAPI {
 			}
 			catch(Exception e)
 			{
-				return HttpUtil.sendError(req, ApiErrors.INVALID_IP_RANGE, iprange);
+				return HttpHelpers.sendError(req, ApiErrors.INVALID_IP_RANGE, iprange);
 			}
 			editKey.IPRange = iprange;
 		}
@@ -578,7 +578,7 @@ public class AdminAPI {
 		else
 			reply.expiration = 0;
 		
-		return HttpUtil.sendJson(req, reply);
+		return HttpHelpers.sendJson(req, reply);
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
@@ -591,11 +591,11 @@ public class AdminAPI {
 		
 		AgentKey editKey = AgentKey.load(key);
 		if(editKey == null)
-			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 		
 		editKey.delete();
 		
-		return HttpUtil.sendSuccess(req);
+		return HttpHelpers.sendSuccess(req);
 	}
 
 	public static class ScriptDataInfo
@@ -621,7 +621,7 @@ public class AdminAPI {
 		
 		ScriptData script = ScriptData.findById(id);
 		if(script == null)
-			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 		
 		ScriptDataInfo info = new ScriptDataInfo();
 		
@@ -630,7 +630,7 @@ public class AdminAPI {
 		info.created = script.Created.getTime();
 		info.modified = script.Modified.getTime();
 		
-		return HttpUtil.sendJson(req, info);
+		return HttpHelpers.sendJson(req, info);
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
@@ -643,9 +643,9 @@ public class AdminAPI {
 		
 		ScriptData script = ScriptData.findById(id);
 		if(script == null)
-			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 		
-		return HttpUtil.sendText(req, script.ScriptSource, "application/javascript");
+		return HttpHelpers.sendText(req, script.ScriptSource, "application/javascript");
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
@@ -668,7 +668,7 @@ public class AdminAPI {
 			list.scripts.add(info);
 		}
 		
-		return HttpUtil.sendJson(req, list);
+		return HttpHelpers.sendJson(req, list);
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
@@ -679,17 +679,17 @@ public class AdminAPI {
 		if(id == null || id.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a script id");
 		
-		String contentType = req.Request.headers().get(Names.CONTENT_TYPE);
+		String contentType = req.Request.headers().get(HttpHeaderNames.CONTENT_TYPE);
 		MediaType contentMediaType = MediaType.parse(contentType);
 		
 		contentType = contentMediaType.type()+"/"+contentMediaType.subtype();
 		
 		if(contentType == null || !contentType.equals("application/javascript"))
-			return HttpUtil.sendError(req, ApiErrors.INVALID_CONTENT, "Script must be of type application/javascript");
+			return HttpHelpers.sendError(req, ApiErrors.INVALID_CONTENT, "Script must be of type application/javascript");
 		
 		String scriptData = req.getBody();
 		if(scriptData == null || scriptData.length() == 0)
-			return HttpUtil.sendError(req, ApiErrors.INVALID_CONTENT, "Must include a script body");
+			return HttpHelpers.sendError(req, ApiErrors.INVALID_CONTENT, "Must include a script body");
 		
 		List<ScriptData> scripts = ScriptData.loadAll();
 
@@ -725,7 +725,7 @@ public class AdminAPI {
 		} catch (ScriptLoadException e) {
 			String errorMessage = e.getCause().getMessage();
 			errorMessage = errorMessage.replaceAll("\\<eval\\>", e.ScriptId);
-			return HttpUtil.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
+			return HttpHelpers.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
 		}
 		
 		if(found)
@@ -741,13 +741,13 @@ public class AdminAPI {
 			ScriptManager.scriptsUpdated();
 		} catch (InterruptedException e) {
 			String errorMessage = e.getMessage();
-			return HttpUtil.sendError(req, ApiErrors.UNKNOWN, errorMessage);
+			return HttpHelpers.sendError(req, ApiErrors.UNKNOWN, errorMessage);
 		} catch (ScriptException e) {
 			String errorMessage = e.getCause().getMessage()+" at line "+e.getLineNumber();
-			return HttpUtil.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
+			return HttpHelpers.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
 		}
 		
-		return HttpUtil.sendSuccess(req);
+		return HttpHelpers.sendSuccess(req);
 	}
 
 	
@@ -777,7 +777,7 @@ public class AdminAPI {
 		
 		if(script == null)
 		{
-			return HttpUtil.sendError(req, ApiErrors.NOT_FOUND);
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 		}
 		
 		try {
@@ -786,7 +786,7 @@ public class AdminAPI {
 		} catch (ScriptLoadException e) {
 			String errorMessage = e.getCause().getMessage();
 			errorMessage = errorMessage.replaceAll("\\<eval\\>", e.ScriptId);
-			return HttpUtil.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
+			return HttpHelpers.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
 		}
 		
 		script.delete();
@@ -795,13 +795,13 @@ public class AdminAPI {
 			ScriptManager.scriptsUpdated();
 		} catch (InterruptedException e) {
 			String errorMessage = e.getMessage();
-			return HttpUtil.sendError(req, ApiErrors.UNKNOWN, errorMessage);
+			return HttpHelpers.sendError(req, ApiErrors.UNKNOWN, errorMessage);
 		} catch (ScriptException e) {
 			String errorMessage = e.getCause().getMessage()+" at line "+e.getLineNumber();
-			return HttpUtil.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
+			return HttpHelpers.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
 		}
 		
-		return HttpUtil.sendSuccess(req);
+		return HttpHelpers.sendSuccess(req);
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
@@ -828,7 +828,7 @@ public class AdminAPI {
 		}
 		String replyVal = value.toString();
 		
-		return HttpUtil.sendText(req, replyVal, "text/plain");
+		return HttpHelpers.sendText(req, replyVal, "text/plain");
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
@@ -846,11 +846,11 @@ public class AdminAPI {
 		
 		String value = req.getBody();
 		if(value == null || value.length() == 0)
-			return HttpUtil.sendError(req, ApiErrors.INVALID_CONTENT, "Can't set an empty value this way");
+			return HttpHelpers.sendError(req, ApiErrors.INVALID_CONTENT, "Can't set an empty value this way");
 		
 		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, JsonDataType.fromString(dataType), value);
 		KeyDataManager.saveKey(id, item);
 		
-		return HttpUtil.sendSuccess(req);
+		return HttpHelpers.sendSuccess(req);
 	}
 }

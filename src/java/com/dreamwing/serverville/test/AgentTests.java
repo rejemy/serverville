@@ -11,7 +11,7 @@ import com.dreamwing.serverville.agent.AgentMessages.UserInfoRequest;
 import com.dreamwing.serverville.agent.AgentServerSocketInitializer;
 import com.dreamwing.serverville.data.AgentKey;
 import com.dreamwing.serverville.net.ApiErrors;
-import com.dreamwing.serverville.net.HttpUtil;
+import com.dreamwing.serverville.net.HttpHelpers;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -20,7 +20,7 @@ public class AgentTests
 	@SuppressWarnings({ "rawtypes" })
 	private <S> S makeAgentCall(String auth, String api, Object request, TypeReference valueTypeRef) throws IOException, JsonApiException
 	{
-		return HttpUtil.postClientApi(AgentServerSocketInitializer.URL+api, auth, request, valueTypeRef);
+		return HttpHelpers.postClientApi(AgentServerSocketInitializer.URL+api, auth, request, valueTypeRef);
 	}
 	
 	private AgentKey Key;

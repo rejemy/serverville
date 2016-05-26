@@ -50,7 +50,7 @@ public class SVLog implements Message, IndexedLogMessage {
 		}
 		if(Req != null)
 		{
-			str.append(" Request(RequestId:"+Req.RequestId+" URI:"+Req.Request.getUri()+")");
+			str.append(" Request(RequestId:"+Req.RequestId+" URI:"+Req.Request.uri()+")");
 		}
 		
 		Formatted = str.toString();
@@ -70,7 +70,7 @@ public class SVLog implements Message, IndexedLogMessage {
 		if(Req != null)
 		{
 			doc.add(new StringField("requestId", Req.RequestId.toLowerCase(), Field.Store.NO));
-			doc.add(new TextField("uri", Req.Request.getUri(), Field.Store.NO));
+			doc.add(new TextField("uri", Req.Request.uri(), Field.Store.NO));
 		}
 	}
 	

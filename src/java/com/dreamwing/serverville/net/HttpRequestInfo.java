@@ -9,8 +9,8 @@ import java.util.Map;
 import com.dreamwing.serverville.data.ServervilleUser;
 
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.QueryStringDecoder;
-import io.netty.handler.codec.http.HttpHeaders.Names;
 
 public class HttpRequestInfo {
 
@@ -25,7 +25,7 @@ public class HttpRequestInfo {
 	
 	public void init(HttpConnectionInfo conn, FullHttpRequest request, String requestId) throws URISyntaxException
 	{
-		URI uri = new URI(request.getUri());
+		URI uri = new URI(request.uri());
 		
 		Connection = conn;
 		Request = request;
@@ -38,7 +38,7 @@ public class HttpRequestInfo {
     		QueryParams = decoder.parameters();
     	}
 		
-		String contentType = request.headers().get(Names.CONTENT_TYPE);
+		String contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
 		if(contentType != null && contentType.equals("application/x-www-form-urlencoded") && request.content() != null)
 		{
 			String formBody = getBody();

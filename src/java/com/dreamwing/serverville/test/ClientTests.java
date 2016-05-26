@@ -8,7 +8,7 @@ import com.dreamwing.serverville.client.ClientMessages.*;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.client.ClientSocketInitializer;
 import com.dreamwing.serverville.net.ApiError;
-import com.dreamwing.serverville.net.HttpUtil;
+import com.dreamwing.serverville.net.HttpHelpers;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.util.SVID;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -31,7 +31,7 @@ public class ClientTests {
 	@SuppressWarnings({ "rawtypes" })
 	private <S> S makeClientCall(TestUser user, String api, Object request, TypeReference valueTypeRef) throws IOException, JsonApiException
 	{
-		return HttpUtil.postClientApi(ClientSocketInitializer.URL+api, user.SessionId, request, valueTypeRef);
+		return HttpHelpers.postClientApi(ClientSocketInitializer.URL+api, user.SessionId, request, valueTypeRef);
 	}
 	
 	private Random Rand = new Random();
@@ -40,7 +40,7 @@ public class ClientTests {
 	public void InvalidAPI() throws IOException
 	{
 		String url = ClientSocketInitializer.URL+"api/lskdjioif";
-		ApiError result = HttpUtil.getJson(url, ApiError.class);
+		ApiError result = HttpHelpers.getJson(url, ApiError.class);
 		Assert.assertNotNull(result);
 		Assert.assertTrue(result.isError);
 	}

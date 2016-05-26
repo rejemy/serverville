@@ -22,16 +22,16 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.util.CharsetUtil;
 
-public class HttpUtil {
+public class HttpHelpers {
 
-	private static final Logger l = LogManager.getLogger(HttpUtil.class);
+	private static final Logger l = LogManager.getLogger(HttpHelpers.class);
 	
 	private static OkHttpClient SharedHttpClient;
 	
@@ -49,10 +49,10 @@ public class HttpUtil {
 	public static ChannelFuture sendPreflightApproval(ChannelHandlerContext ctx)
 	{
 		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-		HttpHeaders.setContentLength(response, 0);
+		HttpUtil.setContentLength(response, 0);
 		
-		response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-		response.headers().set(Names.ACCESS_CONTROL_ALLOW_HEADERS, "Content-Type, Authorization");
+		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_HEADERS, "Content-Type, Authorization");
 		
 		return ctx.writeAndFlush(response);
 	}
@@ -60,9 +60,9 @@ public class HttpUtil {
 	public static ChannelFuture sendSuccess(HttpRequestInfo req)
 	{
 		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-		HttpHeaders.setContentLength(response, 0);
+		HttpUtil.setContentLength(response, 0);
 		
-		response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 		
 		return req.Connection.Ctx.writeAndFlush(response);
 	}
@@ -78,10 +78,10 @@ public class HttpUtil {
 		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK,
 				content);
 		
-		HttpUtil.setContentTypeHeader(response, contentType);
-		HttpHeaders.setContentLength(response, content.readableBytes());
+		HttpHelpers.setContentTypeHeader(response, contentType);
+		HttpUtil.setContentLength(response, content.readableBytes());
 		
-		response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 		
 		return req.Connection.Ctx.writeAndFlush(response);
 	}
@@ -102,10 +102,10 @@ public class HttpUtil {
 		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status,
 				content);
 		
-		HttpUtil.setContentTypeHeader(response, contentType);
-		HttpHeaders.setContentLength(response, content.readableBytes());
+		HttpHelpers.setContentTypeHeader(response, contentType);
+		HttpUtil.setContentLength(response, content.readableBytes());
 		
-		response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 		
 		return req.Connection.Ctx.writeAndFlush(response);
 	}
@@ -147,24 +147,24 @@ public class HttpUtil {
 		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status,
 				content);
 		
-		HttpUtil.setContentTypeHeader(response, contentType);
-		HttpHeaders.setContentLength(response, content.readableBytes());
+		HttpHelpers.setContentTypeHeader(response, contentType);
+		HttpUtil.setContentLength(response, content.readableBytes());
 		
-		response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 		
 		return ctx.writeAndFlush(response);
 	}
 	
     public static ChannelFuture sendRedirect(HttpRequestInfo req, String newUri) {
         FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.FOUND);
-        response.headers().set(Names.LOCATION, newUri);
+        response.headers().set(HttpHeaderNames.LOCATION, newUri);
 
         return req.Connection.Ctx.writeAndFlush(response);
     }
     
     public static void setContentTypeHeader(HttpResponse response, String contentType) {
         
-        response.headers().set(Names.CONTENT_TYPE, contentType);
+        response.headers().set(HttpHeaderNames.CONTENT_TYPE, contentType);
     }
     
     public static class JsonResponse<S,E>
@@ -210,7 +210,7 @@ public class HttpUtil {
     	Request.Builder requestBuilder = new Request.Builder().url(url);
     	
     	if(sessionId != null)
-    		requestBuilder.addHeader(Names.AUTHORIZATION, sessionId);
+    		requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
     	
     	Request request = requestBuilder.build();
     	
@@ -240,7 +240,7 @@ public class HttpUtil {
     	Request.Builder requestBuilder = new Request.Builder().url(url);
     	
     	if(sessionId != null)
-    		requestBuilder.addHeader(Names.AUTHORIZATION, sessionId);
+    		requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
     	
     	Request request = requestBuilder.build();
 	
@@ -287,7 +287,7 @@ public class HttpUtil {
     			.method("POST", body);
     	
     	if(sessionId != null)
-    		requestBuilder.addHeader(Names.AUTHORIZATION, sessionId);
+    		requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
     	
     	Request request = requestBuilder.build();
 
@@ -308,7 +308,7 @@ public class HttpUtil {
     			.method("POST", body);
     	
     	if(sessionId != null)
-    		requestBuilder.addHeader(Names.AUTHORIZATION, sessionId);
+    		requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
     	
     	Request request = requestBuilder.build();
 
@@ -342,7 +342,7 @@ public class HttpUtil {
     			.method("POST", rbody);
     	
     	if(sessionId != null)
-    		requestBuilder.addHeader(Names.AUTHORIZATION, sessionId);
+    		requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
     	
     	Request request = requestBuilder.build();
 

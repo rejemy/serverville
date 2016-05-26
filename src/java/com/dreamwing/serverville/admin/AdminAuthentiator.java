@@ -10,7 +10,7 @@ import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.net.APIAuthenticator;
 import com.dreamwing.serverville.net.HttpRequestInfo;
 
-import io.netty.handler.codec.http.HttpHeaders.Names;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 
 public class AdminAuthentiator implements APIAuthenticator
@@ -25,7 +25,7 @@ public class AdminAuthentiator implements APIAuthenticator
 			return false;
 		
 		int privNeeded = 0;
-		if(req.Request.getMethod() == HttpMethod.GET)
+		if(req.Request.method() == HttpMethod.GET)
 		{
 			// If it's a get, they only need read privileges
 			privNeeded = ServervilleUser.Admin_ReadPriv;
@@ -45,7 +45,7 @@ public class AdminAuthentiator implements APIAuthenticator
 	
 	private ServervilleUser getUser(HttpRequestInfo req)
 	{
-		String authToken = req.getOneHeader(Names.AUTHORIZATION, null);
+		String authToken = req.getOneHeader(HttpHeaderNames.AUTHORIZATION.toString(), null);
 		if(authToken == null)
 			return null;
 		
