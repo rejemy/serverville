@@ -114,6 +114,7 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
 		}
 		catch(Exception e)
 		{
+			l.error("Internal server error: ", e);
 			return HttpHelpers.sendError(CurrRequest, ApiErrors.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 

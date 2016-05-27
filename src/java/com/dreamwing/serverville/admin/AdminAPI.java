@@ -178,8 +178,8 @@ public class AdminAPI {
 	{
 		String query = req.getOneQuery("q", "*:*");
 
-		long from = (long)req.getOneQueryAsDouble("from", 0.0);
-		long to = (long)req.getOneQueryAsDouble("to", 0.0);
+		long from = (long)req.getOneQueryAsDouble("from", Long.MIN_VALUE);
+		long to = (long)req.getOneQueryAsDouble("to", Long.MAX_VALUE);
 	
 		try
 		{

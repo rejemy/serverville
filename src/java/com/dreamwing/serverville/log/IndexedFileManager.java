@@ -30,17 +30,19 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.FieldType;
-import org.apache.lucene.document.LongField;
+//import org.apache.lucene.document.FieldType;
+//import org.apache.lucene.document.LegacyLongField;
+import org.apache.lucene.document.LongPoint;
+import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.DocValuesType;
-import org.apache.lucene.index.IndexOptions;
+//import org.apache.lucene.index.DocValuesType;
+//import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.NumericRangeQuery;
+//import org.apache.lucene.search.LegacyNumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
@@ -387,16 +389,16 @@ public class IndexedFileManager implements Runnable {
 	  /** 
 	   * Type for a stored sorted LongField:
 	   */
-	  public static final FieldType LONG_STORED_SORTED = new FieldType();
+	  /*public static final FieldType LONG_STORED_SORTED = new FieldType();
 	  static {
 		LONG_STORED_SORTED.setTokenized(true);
 	    LONG_STORED_SORTED.setOmitNorms(true);
 	    LONG_STORED_SORTED.setIndexOptions(IndexOptions.DOCS);
-	    LONG_STORED_SORTED.setNumericType(FieldType.NumericType.LONG);
+	    LONG_STORED_SORTED.setNumericType(FieldType.LegacyNumericType.LONG);
 	    LONG_STORED_SORTED.setStored(true);
 	    LONG_STORED_SORTED.setDocValuesType(DocValuesType.NUMERIC);
 	    LONG_STORED_SORTED.freeze();
-	  }
+	  }*/
 	
 	protected void indexLogEvent(LogEvent event, long filePos, int eventLength)
 	{
@@ -408,7 +410,10 @@ public class IndexedFileManager implements Runnable {
 			Document doc = new Document();
 	    	doc.add(new StoredField("filepos", filePos));
 	    	doc.add(new StoredField("length", eventLength-1)); // remove newline
-	    	doc.add(new LongField("timestamp", event.getTimeMillis(), LONG_STORED_SORTED));
+	    	doc.add(new NumericDocValuesField("timestamp", event.getTimeMillis()));
+	    	doc.add(new LongPoint("timestamp", event.getTimeMillis()));
+	    	doc.add(new StoredField("timestamp", event.getTimeMillis()));
+	    	//doc.add(new LegacyLongField("timestamp", event.getTimeMillis(), LONG_STORED_SORTED));
 	    	doc.add(new StringField("level", event.getLevel().toString().toLowerCase(), Field.Store.YES));
 	    	doc.add(new StringField("host", Hostname.toLowerCase(), Field.Store.NO));
 	    	Message m = event.getMessage();
@@ -541,9 +546,10 @@ public class IndexedFileManager implements Runnable {
 
 		int maxResults = 100;
 		
-		if(lowerTime != 0 || upperTime != 0)
+		if(lowerTime != Long.MIN_VALUE || upperTime != Long.MAX_VALUE)
 		{
-			Query rangeQuery = NumericRangeQuery.newLongRange("timestamp", lowerTime != 0 ? lowerTime : null, upperTime != 0 ? upperTime : null, false, true);
+			//Query rangeQuery = LegacyNumericRangeQuery.newLongRange("timestamp", lowerTime != 0 ? lowerTime : null, upperTime != 0 ? upperTime : null, false, true);
+			Query rangeQuery = LongPoint.newRangeQuery("timestamp", lowerTime, upperTime);
 			BooleanQuery.Builder booleanQueryBuilder = new BooleanQuery.Builder();
 			booleanQueryBuilder.add(query, BooleanClause.Occur.MUST);
 			booleanQueryBuilder.add(rangeQuery, BooleanClause.Occur.FILTER);

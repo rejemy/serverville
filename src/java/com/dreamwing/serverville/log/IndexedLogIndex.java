@@ -63,7 +63,7 @@ public class IndexedLogIndex {
 				iwc.setCommitOnClose(true);
 				Writer = new IndexWriter(dir, iwc);
 				
-				Reader = DirectoryReader.open(Writer, false);
+				Reader = DirectoryReader.open(Writer, false, false);
 				
 				CommitLock = new ReentrantReadWriteLock();
 			}
