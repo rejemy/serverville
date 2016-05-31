@@ -3,7 +3,6 @@
 
 // Javascript to setup a Serverville javascript context
 
-
 delete quit;
 delete exit;
 delete readLine;
@@ -14,6 +13,7 @@ delete Packages;
 delete JavaImporter;
 delete Java;
 
+"use strict";
 
 // Holder for exposed client handlers
 var client:any = {};

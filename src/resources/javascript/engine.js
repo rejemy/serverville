@@ -10,6 +10,7 @@ delete loadWithNewGlobal;
 delete Packages;
 delete JavaImporter;
 delete Java;
+"use strict";
 // Holder for exposed client handlers
 var client = {};
 // Holder for exposed agent handlers

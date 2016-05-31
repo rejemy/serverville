@@ -1,0 +1,7 @@
+{
+	"compilerOptions": {
+		"target": "es5",
+		"out": "../../resources/javascript/engine.js",
+		"sourceMap": false
+	}
+}
