@@ -30,6 +30,7 @@ public enum ApiErrors {
 	PRIVATE_DATA(104, "This data cannot be read by the current user"),
 	CHANNEL_ID_TAKEN(105, "This channel ID is already taken by something other than a channel"),
 	USER_NOT_PRESENT(106, "The user does not have a two-way presence connection to the server"),
+	ALREADY_JOINED(107, "The user has already joined this channel"),
 	
 	UNKNOWN(Integer.MAX_VALUE, "Unknown error");
 	

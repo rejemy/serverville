@@ -17,7 +17,6 @@ import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpConnectionInfo;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.residents.OnlineUser;
-import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.serialize.SerializeUtil;
 import com.dreamwing.serverville.util.JSON;
 import com.dreamwing.serverville.util.SVID;
@@ -106,7 +105,6 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		if(UserPresence != null)
 		{
 			UserPresence.destroy();
-			
 			UserPresence = null;
 		}
 		
@@ -240,7 +238,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			info.MessageNum = null;
 			info.ConnectionHandler = this;
 			info.User = Info.User;
-			
+			info.UserPresence = UserPresence;
 			
 			Object reply = Dispatcher.dispatch(messageType, messageBody, info);
 			if(reply instanceof ApiError)
@@ -319,6 +317,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		info.MessageNum = messageNum;
 		info.ConnectionHandler = this;
 		info.User = Info.User;
+		info.UserPresence = UserPresence;
 		
 		Object replyObj = Dispatcher.dispatch(messageType, messageBody, info);
 		String sendType = replyObj instanceof ApiError ? "E" : "R";
@@ -351,6 +350,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		info.MessageNum = message.MessageNum;
 		info.ConnectionHandler = this;
 		info.User = Info.User;
+		info.UserPresence = UserPresence;
 		
 		Object replyObj = Dispatcher.dispatch(message.Api, message.RequestJson, info);
 		char sendType = replyObj instanceof ApiError ? 'E' : 'R';
@@ -409,24 +409,24 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		return sendMessage(messageType, JSON.serializeToString(messageBody), from);
 	}
 	
-	public ChannelFuture sendMessage(String messageType, String serializedMessageBody, String from)
+	public ChannelFuture sendMessage(String messageType, String serializedMessageBody, String from, String via)
 	{
 		if(WebsocketConnected)
-			return sendWSMessage(messageType, serializedMessageBody, from);
+			return sendWSMessage(messageType, serializedMessageBody, from, via);
 		else if(BinaryConnected)
-			return sendBinaryMessage(messageType, serializedMessageBody, from);
+			return sendBinaryMessage(messageType, serializedMessageBody, from, via);
 		else
 			return null;
 	}
 	
-	private ChannelFuture sendWSMessage(String messageType, String serializedMessageBody, String from)
+	private ChannelFuture sendWSMessage(String messageType, String serializedMessageBody, String from, String via)
 	{
-		String messageStr = "M:"+messageType+":"+from+":"+serializedMessageBody;
+		String messageStr = "M:"+messageType+":"+from+":"+via+":"+serializedMessageBody;
 		
 		return write(messageStr);
 	}
 	
-	private ChannelFuture sendBinaryMessage(String messageType, String serializedMessageBody, String from)
+	private ChannelFuture sendBinaryMessage(String messageType, String serializedMessageBody, String from, String via)
 	{
 		ByteBuf messageBuf = Unpooled.buffer(256);
 		messageBuf.writerIndex(2); // Skip over size header
@@ -436,6 +436,10 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		{
 			SerializeUtil.writeUTF(messageType, messageBuf);
 			SerializeUtil.writeUTF(from, messageBuf);
+			if(via == null)
+				SerializeUtil.writeUTF("", messageBuf);
+			else
+				SerializeUtil.writeUTF(via, messageBuf);
 			SerializeUtil.writeUTF(serializedMessageBody, messageBuf);
 		}
 		catch(Exception e)
@@ -494,27 +498,10 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		if(WebsocketConnected)
 		{
-			UserPresence = new OnlineUser(this);
-			ResidentManager.addResident(UserPresence);
+			UserPresence = new OnlineUser(user.getId(), this);
 		}
 		
-		//User = new OnlineUser();
-		//User.DisplayName = username;
-		//User.UserId = userId;
-		//User.Connection = this;
-		
-		/*UserJoined joinedMsg = new UserJoined();
-		joinedMsg.user_info = new UserInfo();
-		joinedMsg.user_info.user_id = User.UserId;
-		joinedMsg.user_info.display_name = User.DisplayName;
-		
-		try {
-			OnlineUserManager.sendBroadcast("UserJoined", joinedMsg, User);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}*/
-		
-		//OnlineUserManager.addUser(User);
+
 	}
 
 }

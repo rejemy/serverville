@@ -22,6 +22,7 @@ import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.residents.BaseResident;
 import com.dreamwing.serverville.residents.Channel;
+import com.dreamwing.serverville.residents.Resident;
 import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.serialize.JsonDataDecoder;
@@ -270,58 +271,53 @@ public class AgentScriptAPI
 		res.destroy();
 	}
 	
-	public void addListener(String sourceId, String listenerId) throws JsonApiException
+	public void addResident(String channelId, String residentId) throws JsonApiException
 	{
-		addListener(sourceId, listenerId, false);
-	}
-	
-	public void addListener(String sourceId, String listenerId, boolean twoWay) throws JsonApiException
-	{
-		if(sourceId == null)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, sourceId);
-		if(listenerId == null)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, listenerId);
+		if(channelId == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
+		if(residentId == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, residentId);
 		
-		BaseResident source = ResidentManager.getResident(sourceId);
-		if(source == null)
+		BaseResident source = ResidentManager.getResident(channelId);
+		if(source == null || !(source instanceof Channel))
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, sourceId);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, channelId);
 		}
+		Channel channel = (Channel)source;
 		
-		BaseResident listener = ResidentManager.getResident(listenerId);
-		if(listener == null)
+		BaseResident listener = ResidentManager.getResident(residentId);
+		if(listener == null || !(listener instanceof Resident))
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, listenerId);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, residentId);
 		}
+		Resident resident = (Resident)listener;
 		
-		source.addListener(listener);
-		if(twoWay)
-			listener.addListener(source);
-
+		channel.addResident(resident);
 	}
 	
 
-	public void removeListener(String sourceId, String listenerId) throws JsonApiException
+	public void removeResident(String channelId, String residentId) throws JsonApiException
 	{
-		if(sourceId == null)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, sourceId);
-		if(listenerId == null)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, listenerId);
+		if(channelId == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
+		if(residentId == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, residentId);
 		
-		BaseResident source = ResidentManager.getResident(sourceId);
-		if(source == null)
+		BaseResident source = ResidentManager.getResident(channelId);
+		if(source == null || !(source instanceof Channel))
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, sourceId);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, channelId);
 		}
+		Channel channel = (Channel)source;
 		
-		BaseResident listener = ResidentManager.getResident(listenerId);
-		if(listener == null)
+		BaseResident listener = ResidentManager.getResident(residentId);
+		if(listener == null || !(listener instanceof Resident))
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, listenerId);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, residentId);
 		}
+		Resident resident = (Resident)listener;
 		
-		source.removeListener(listener);
-		listener.removeListener(source);
+		channel.removeResident(resident);
 
 	}
 	

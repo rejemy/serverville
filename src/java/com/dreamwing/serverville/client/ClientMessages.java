@@ -152,23 +152,48 @@ public class ClientMessages {
 	
 	public static class JoinChannelRequest
 	{
+		public String alias;
 		public String id;
-		public boolean listen_only;
 	}
 	
 	public static class LeaveChannelRequest
 	{
+		public String alias;
 		public String id;
 	}
 	
+	public static class ListenToChannelRequest
+	{
+		public String id;
+	}
+	
+	public static class StopListenToChannelRequest
+	{
+		public String id;
+	}
+	
+	public static class ChannelMemberInfo
+	{
+		public String id;
+		public Map<String,DataItemReply> values;
+	}
 	
 	public static class ChannelInfo
 	{
 		public String id;
-		public List<String> members;
+		public Map<String,DataItemReply> values;
+		public Map<String,ChannelMemberInfo> members;
 	}
 	
 	public static class SetTransientValueRequest
+	{
+		public String alias;
+		public String key;
+		public Object value;
+		public JsonDataType data_type;
+	}
+	
+	public static class SetTransientValueItem
 	{
 		public String key;
 		public Object value;
@@ -177,24 +202,28 @@ public class ClientMessages {
 	
 	public static class SetTransientValuesRequest
 	{
-		public List<SetTransientValueRequest> values;
+		public String alias;
+		public List<SetTransientValueItem> values;
 	}
 
 	public static class GetTransientValueRequest
 	{
 		public String id;
+		public String alias;
 		public String key;
 	}
 	
 	public static class GetTransientValuesRequest
 	{
 		public String id;
+		public String alias;
 		public List<String> keys;
 	}
 	
 	public static class GetAllTransientValuesRequest
 	{
 		public String id;
+		public String alias;
 	}
 	
 	public static class TransientMessageRequest
@@ -211,4 +240,5 @@ public class ClientMessages {
 		public Object value;
 		public JsonDataType data_type;
 	}
+	
 }

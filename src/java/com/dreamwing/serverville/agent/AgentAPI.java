@@ -123,17 +123,17 @@ public class AgentAPI
 		return reply;
 	}
 	
-	public static EmptyReply AddListener(ListenerRequest request) throws JsonApiException
+	public static EmptyReply AddResident(AddResidentRequest request) throws JsonApiException
 	{
-		ApiInst.addListener(request.source, request.listener, request.two_way);
+		ApiInst.addResident(request.channel_id, request.resident_id);
 		
 		EmptyReply reply = new EmptyReply();
 		return reply;
 	}
 	
-	public static EmptyReply RemoveListener(EndListenerRequest request) throws JsonApiException
+	public static EmptyReply RemoveResident(RemoveResidentRequest request) throws JsonApiException
 	{
-		ApiInst.removeListener(request.source, request.listener);
+		ApiInst.removeResident(request.channel_id, request.resident_id);
 		
 		EmptyReply reply = new EmptyReply();
 		return reply;

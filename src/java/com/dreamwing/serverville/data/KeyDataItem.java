@@ -30,6 +30,10 @@ public class KeyDataItem
 	public boolean dirty;
 	public Boolean deleted;
 	
+	// For in-memory resident transient state
+	public KeyDataItem nextItem;
+	public KeyDataItem prevItem;
+	
 	public KeyDataItem() {}
 	
 	public KeyDataItem(String key)
@@ -350,4 +354,5 @@ public class KeyDataItem
 			return false;
 		return key.charAt(0) == '_';
 	}
+	
 }

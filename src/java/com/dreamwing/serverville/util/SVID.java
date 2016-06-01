@@ -5,8 +5,13 @@ import java.nio.ByteOrder;
 import java.util.Date;
 import java.util.Random;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public final class SVID {
 
+	private static final Logger l = LogManager.getLogger(SVID.class);
+	
 	private static final long EpochOffset = 1420000000000L;
 	private static final Random CounterGenerator = new Random();
 	
@@ -25,7 +30,7 @@ public final class SVID {
 	public static String makeSVID()
 	{
 		short c;
-		long epoch = (System.currentTimeMillis() & 0xffffffffffffL) - EpochOffset;
+		long epoch = ((System.currentTimeMillis()-EpochOffset) & 0xffffffffffffL);
 		synchronized(SVID.class)
 		{
 			if(epoch > LastTime)
@@ -44,12 +49,14 @@ public final class SVID {
 					LastTime++;
 					CounterStart=(short)CounterGenerator.nextInt();
 					Counter = CounterStart;
+					
+					l.warn("SVID generator is running "+(LastTime-epoch)+" milliseconds behind");
 				}
 			}
 		}
 		
 		ByteBuffer buf = ByteBuffer.allocate(10).order(ByteOrder.BIG_ENDIAN);
-		epoch = epoch << 16;
+		epoch = LastTime << 16;
 		buf.putLong(epoch);
 		buf.position(6);
 		buf.putShort(ServerId);
@@ -60,7 +67,7 @@ public final class SVID {
 	
 	public static String engineerSVID(long time, short serverId, short counter)
 	{
-		long epoch = (time & 0xffffffffffffL) - EpochOffset;
+		long epoch = (time-EpochOffset) & 0xffffffffffffL;
 		ByteBuffer buf = ByteBuffer.allocate(10).order(ByteOrder.BIG_ENDIAN);
 		epoch = epoch << 16;
 		buf.putLong(epoch);

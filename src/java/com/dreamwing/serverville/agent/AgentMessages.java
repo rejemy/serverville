@@ -72,17 +72,16 @@ public class AgentMessages
 		public String id;
 	}
 	
-	public static class ListenerRequest
+	public static class AddResidentRequest
 	{
-		public String source;
-		public String listener;
-		boolean two_way;
+		public String channel_id;
+		public String resident_id;
 	}
 	
-	public static class EndListenerRequest
+	public static class RemoveResidentRequest
 	{
-		public String source;
-		public String listener;
+		public String channel_id;
+		public String resident_id;
 	}
 	
 	public static class GetTransientValueRequest

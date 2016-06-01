@@ -2,12 +2,15 @@ package com.dreamwing.serverville.residents;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.dreamwing.serverville.client.ClientAPI;
+import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
 import com.dreamwing.serverville.client.ClientMessages.TransientValuesChangeMessage;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.util.JSON;
@@ -19,16 +22,18 @@ public abstract class BaseResident
 	
 	protected String Id;
 	
-	private ConcurrentMap<String,KeyDataItem> TransientValues;
-	private ConcurrentMap<String,BaseResident> Listeners;
-	private ConcurrentMap<String,BaseResident> ListeningTo;
+	protected ConcurrentMap<String,KeyDataItem> TransientValues;
+	protected KeyDataItem MostRecentValue;
+	
+	protected ConcurrentMap<String,MessageListener> Listeners;
+	
 	
 	public BaseResident(String id)
 	{
 		Id = id;
 		TransientValues = new ConcurrentHashMap<String,KeyDataItem>();
-		Listeners = new ConcurrentHashMap<String,BaseResident>();
-		ListeningTo = new ConcurrentHashMap<String,BaseResident>();
+		Listeners = new ConcurrentHashMap<String,MessageListener>();
+		
 	}
 	
 	public String getId() { return Id; }
@@ -37,18 +42,12 @@ public abstract class BaseResident
 	{
 		ResidentManager.removeResident(this);
 		
-		for(BaseResident source : ListeningTo.values())
+		for(MessageListener listener : Listeners.values())
 		{
-			source.Listeners.remove(Id);
-		}
-		
-		for(BaseResident listener : Listeners.values())
-		{
-			listener.ListeningTo.remove(Id);
+			listener.onStoppedListeningTo(this);
 		}
 		
 		Listeners.clear();
-		ListeningTo.clear();
 	}
 	
 	public void sendMessage(String messageType, Object messageObject)
@@ -57,7 +56,7 @@ public abstract class BaseResident
 		try {
 			messageBody = JSON.serializeToString(messageObject);
 		} catch (JsonProcessingException e) {
-			l.error("Error encoding state change message", e);
+			l.error("Error encoding directed message", e);
 			return;
 		}
 		
@@ -66,23 +65,24 @@ public abstract class BaseResident
 	
 	public void sendMessage(String messageType, String messageBody)
 	{
-		for(BaseResident listener : Listeners.values())
+		if(messageType == null || messageType.length() == 0 || messageType.charAt(0) == '_' || messageType.indexOf(':') >= 0)
+			throw new IllegalArgumentException("Invalid message type: "+messageType);
+		
+		for(MessageListener listener : Listeners.values())
 		{
-			listener.relayMessage(messageType, messageBody, Id);
+			listener.onMessage(messageType, messageBody, Id, null);
 		}
 	}
 	
-	protected void relayMessage(String messageType, String messageBody, String fromId)
-	{
-		for(BaseResident listener : Listeners.values())
-		{
-			listener.relayMessage(messageType, messageBody, fromId);
-		}
-	}
 	
 	public void setTransientValue(KeyDataItem value)
 	{
-		TransientValues.put(value.key, value);
+		long currTime = System.currentTimeMillis();
+		value.created = currTime;
+		value.modified = currTime;
+		
+		KeyDataItem prev = TransientValues.put(value.key, value);
+		updateTransientValueInList(prev, value);
 		
 		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
 		
@@ -92,7 +92,8 @@ public abstract class BaseResident
 		} catch (Exception e) {
 			l.error("Error decoding json object", e);
 		}
-		sendMessage("stateChange", changeMessage);
+		
+		onStateChanged(changeMessage, currTime);
 	}
 	
 	public void setTransientValues(Collection<KeyDataItem> values)
@@ -100,9 +101,15 @@ public abstract class BaseResident
 		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
 		changeMessage.values = new HashMap<String,Object>();
 		
+		long currTime = System.currentTimeMillis();
+		
 		for(KeyDataItem value : values)
 		{
-			TransientValues.put(value.key, value);
+			value.created = currTime;
+			value.modified = currTime;
+			
+			KeyDataItem prev = TransientValues.put(value.key, value);
+			updateTransientValueInList(prev, value);
 			
 			try {
 				changeMessage.values.put(value.key, value.asDecodedObject());
@@ -111,9 +118,46 @@ public abstract class BaseResident
 			}
 		}
 		
-		sendMessage("stateChange", changeMessage);
+		onStateChanged(changeMessage, currTime);
 	}
 	
+	protected void onStateChanged(TransientValuesChangeMessage changeMessage, long when)
+	{
+		String messageBody = null;
+		try {
+			messageBody = JSON.serializeToString(changeMessage);
+		} catch (JsonProcessingException e) {
+			l.error("Error encoding state change message", e);
+			return;
+		}
+		
+		onStateChanged(messageBody, when);
+
+	}
+	
+	protected void onStateChanged(String changeMessage, long when)
+	{
+		for(MessageListener listener : Listeners.values())
+		{
+			listener.onStateChange(changeMessage, when, getId(), null);
+		}
+	}
+	
+	protected synchronized void updateTransientValueInList(KeyDataItem prevItem, KeyDataItem newItem)
+	{
+		if(prevItem != null)
+		{
+			if(prevItem.prevItem != null)
+				prevItem.prevItem.nextItem = prevItem.nextItem;
+			if(prevItem.nextItem != null)
+				prevItem.nextItem.prevItem = prevItem.prevItem;
+			
+			newItem.created = prevItem.created;
+		}
+		
+		MostRecentValue.nextItem = MostRecentValue;
+		MostRecentValue = newItem;
+	}
 	
 	public KeyDataItem getTransientValue(String key)
 	{
@@ -130,35 +174,51 @@ public abstract class BaseResident
 		TransientValues.remove(key);
 	}
 	
-	public void addListener(BaseResident resident)
+	public void addListener(MessageListener listener)
 	{
-		Listeners.put(resident.getId(), resident);
-		resident.listenTo(this);
+		Listeners.put(listener.getId(), listener);
+		listener.onListeningTo(this);
 	}
 	
-	protected void listenTo(BaseResident resident)
+	
+	public void removeListener(MessageListener listener)
 	{
-		ListeningTo.put(resident.getId(), resident);
+		Listeners.remove(listener.getId());
+		listener.onStoppedListeningTo(this);
 	}
 	
-	public void removeListener(BaseResident resident)
-	{
-		Listeners.remove(resident.getId());
-		resident.stopListenTo(this);
-	}
-	
-	protected void stopListenTo(BaseResident resident)
-	{
-		ListeningTo.remove(resident.getId());
-	}
-	
+
 	public Collection<String> getListeners()
 	{
 		return Listeners.keySet();
 	}
 	
-	public Collection<String> getListeningTo()
+	public boolean hasListener(String id)
 	{
-		return ListeningTo.keySet();
+		return Listeners.containsKey(id);
 	}
+	
+	protected Map<String,DataItemReply> getState(long since)
+	{
+		Map<String,DataItemReply> values = new HashMap<String,DataItemReply>();
+
+		KeyDataItem value = MostRecentValue;
+		while(value != null && value.modified >= since)
+		{
+			DataItemReply item = ClientAPI.KeyDataItemToDataItemReply(Id, value);
+			values.put(item.key, item);
+			
+			value = value.nextItem;
+		}
+		
+		return values;
+	}
+
+	public long getLastModifiedTime()
+	{
+		if(MostRecentValue == null)
+			return 0;
+		return MostRecentValue.modified;
+	}
+	
 }
