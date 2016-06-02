@@ -1,5 +1,6 @@
 package com.dreamwing.serverville.residents;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -198,15 +199,22 @@ public abstract class BaseResident
 		return Listeners.containsKey(id);
 	}
 	
-	protected Map<String,DataItemReply> getState(long since)
+	protected Map<String,Object> getState(long since)
 	{
-		Map<String,DataItemReply> values = new HashMap<String,DataItemReply>();
+		Map<String,Object> values = new HashMap<String,Object>();
 
 		KeyDataItem value = MostRecentValue;
 		while(value != null && value.modified >= since)
 		{
-			DataItemReply item = ClientAPI.KeyDataItemToDataItemReply(Id, value);
-			values.put(item.key, item);
+			Object val;
+			try {
+				val = value.asDecodedObject();
+			} catch (Exception e)
+			{
+				l.error("Exception decoding JSON value: ",e);
+				val = "<error>";
+			}
+			values.put(value.key, val);
 			
 			value = value.nextItem;
 		}

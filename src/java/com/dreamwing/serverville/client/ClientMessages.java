@@ -162,12 +162,12 @@ public class ClientMessages {
 		public String id;
 	}
 	
-	public static class ListenToChannelRequest
+	public static class ListenToResidentRequest
 	{
 		public String id;
 	}
 	
-	public static class StopListenToChannelRequest
+	public static class StopListenToResidentRequest
 	{
 		public String id;
 	}
@@ -175,13 +175,13 @@ public class ClientMessages {
 	public static class ChannelMemberInfo
 	{
 		public String id;
-		public Map<String,DataItemReply> values;
+		public Map<String,Object> values;
 	}
 	
 	public static class ChannelInfo
 	{
 		public String id;
-		public Map<String,DataItemReply> values;
+		public Map<String,Object> values;
 		public Map<String,ChannelMemberInfo> members;
 	}
 	

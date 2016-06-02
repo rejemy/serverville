@@ -603,6 +603,51 @@ public class ClientAPI {
 		return new EmptyClientReply();
 	}
 	
+	public static ChannelInfo ListenToChannel(ListenToResidentRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(request.id == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
+		
+		if(info.UserPresence == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
+		}
+		
+		BaseResident source = ResidentManager.getResident(request.id);
+		if(source == null || !(source instanceof Channel))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
+		}
+		Channel channel = (Channel)source;
+		
+		channel.addListener(info.UserPresence);
+		
+		return channel.getChannelInfo(0);
+	}
+	
+	public static EmptyClientReply StopListenToChannel(StopListenToResidentRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(request.id == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
+		
+		BaseResident listener = ResidentManager.getResident(info.User.getId());
+		if(listener == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
+		}
+		
+		BaseResident source = ResidentManager.getResident(request.id);
+		if(source == null || !(source instanceof Channel))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
+		}
+		Channel channel = (Channel)source;
+		
+		channel.removeListener(info.UserPresence);
+		
+		return new EmptyClientReply();
+	}
+	
 	public static EmptyClientReply SendClientMessage(TransientMessageRequest request, ClientMessageInfo info) throws JsonApiException
 	{
 		if(request.to == null)
