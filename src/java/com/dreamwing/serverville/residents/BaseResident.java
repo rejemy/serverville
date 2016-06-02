@@ -1,6 +1,5 @@
 package com.dreamwing.serverville.residents;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,8 +9,6 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.dreamwing.serverville.client.ClientAPI;
-import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
 import com.dreamwing.serverville.client.ClientMessages.TransientValuesChangeMessage;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.util.JSON;
