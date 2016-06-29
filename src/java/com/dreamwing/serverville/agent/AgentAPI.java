@@ -3,6 +3,7 @@ package com.dreamwing.serverville.agent;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.dreamwing.serverville.agent.AgentMessages.*;
 import com.dreamwing.serverville.client.ClientMessages.AllGlobalKeysRequest;
@@ -10,6 +11,8 @@ import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
 import com.dreamwing.serverville.client.ClientMessages.GlobalKeyRequest;
 import com.dreamwing.serverville.client.ClientMessages.GlobalKeysRequest;
 import com.dreamwing.serverville.client.ClientMessages.SetDataReply;
+import com.dreamwing.serverville.client.ClientMessages.TransientDataItemReply;
+import com.dreamwing.serverville.client.ClientMessages.TransientDataItemsReply;
 import com.dreamwing.serverville.client.ClientMessages.UserDataReply;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.db.KeyDataManager;
@@ -140,15 +143,15 @@ public class AgentAPI
 	}
 	
 
-	public static EmptyReply SetTransientValue(SetGlobalDataRequest request) throws JsonApiException
+	public static EmptyReply SetTransientValue(SetTransientDataRequest request) throws JsonApiException
 	{
-		ApiInst.setTransientValue(request.id, request.key, request.value, request.data_type.value());
+		ApiInst.setTransientValue(request.id, request.key, request.value);
 		
 		EmptyReply reply = new EmptyReply();
 		return reply;
 	}
 	
-	public static EmptyReply SetTransientValues(SetGlobalDataListRequest request) throws JsonApiException
+	public static EmptyReply SetTransientValues(SetTransientDataListRequest request) throws JsonApiException
 	{
 		EmptyReply reply = new EmptyReply();
 		
@@ -159,38 +162,37 @@ public class AgentAPI
 		if(res == null)
 			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
 		
-		List<KeyDataItem> stateValues = new ArrayList<KeyDataItem>(request.values.size());
-		
-		for(SetGlobalDataItemRequest data : request.values)
+		for(Map.Entry<String,Object> item : request.values.entrySet())
 		{
-			if(!KeyDataItem.isValidKeyname(data.key))
-				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
-			
-			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
-			stateValues.add(item);
+			if(!KeyDataItem.isValidKeyname(item.getKey()))
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, item.getKey());
 		}
 		
-		res.setTransientValues(stateValues);
+		res.setTransientValues(request.values);
 		
 		return reply;
 	}
 	
-	public static DataItemReply GetTransientValue(GetTransientValueRequest request) throws JsonApiException
+	public static TransientDataItemReply GetTransientValue(GetTransientValueRequest request) throws JsonApiException
 	{
-		return ApiInst.getTransientValue(request.id, request.key);
+		TransientDataItemReply reply = new TransientDataItemReply();
+		Object value = ApiInst.getTransientValue(request.id, request.key);
+		
+		reply.value = value;
+		return reply;
 	}
 	
 
-	public static UserDataReply GetTransientValues(GetTransientValuesRequest request) throws JsonApiException
+	public static TransientDataItemsReply GetTransientValues(GetTransientValuesRequest request) throws JsonApiException
 	{
-		UserDataReply reply = new UserDataReply();
+		TransientDataItemsReply reply = new TransientDataItemsReply();
 		reply.values = ApiInst.getTransientValues(request.id, request.keys);
 		return reply;
 	}
 	
-	public static UserDataReply getAllTransientValues(GetAllTransientValuesRequest request) throws JsonApiException
+	public static TransientDataItemsReply getAllTransientValues(GetAllTransientValuesRequest request) throws JsonApiException
 	{
-		UserDataReply reply = new UserDataReply();
+		TransientDataItemsReply reply = new TransientDataItemsReply();
 		reply.values = ApiInst.getAllTransientValues(request.id);
 		return reply;
 	}

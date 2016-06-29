@@ -180,10 +180,9 @@ public class ServervilleMain {
     	JSON.init();
     	DatabaseManager.init();
     	KeyDataManager.init();
-    	ScriptManager.init();
-    	
     	ResidentManager.init();
     	UserManager.init();
+    	ScriptManager.init();
     	
     	SelfTest.init();
 	}

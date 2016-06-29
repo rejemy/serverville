@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mindrot.jbcrypt.BCrypt;
 
+import com.dreamwing.serverville.data.AdminUserSession.UserIdLookup;
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
@@ -469,9 +470,16 @@ public class ServervilleUser {
 			DatabaseManager.ServervilleUser_EmailDao.deleteById(Email);
 		}
 		
-		AdminUserSession adminSession = AdminUserSession.findByUserId(getId());
-		if(adminSession != null)
-			adminSession.delete();
+		List<UserIdLookup> sessionIds = AdminUserSession.findAllLookupsByUserId(getId());
+		if(sessionIds != null)
+		{
+			for(UserIdLookup lookup : sessionIds)
+			{
+				AdminUserSession adminSession = AdminUserSession.findById(lookup.Id);
+				if(adminSession != null)
+					adminSession.delete();
+			}
+		}
 		
 		DatabaseManager.ServervilleUserDao.delete(this);
 		

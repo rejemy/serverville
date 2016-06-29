@@ -1,6 +1,7 @@
 package com.dreamwing.serverville.agent;
 
 import java.util.List;
+import java.util.Map;
 
 import com.dreamwing.serverville.data.JsonDataType;
 
@@ -33,6 +34,13 @@ public class AgentMessages
 		public JsonDataType data_type;
 	}
 	
+	public static class SetTransientDataRequest
+	{
+		public String id;
+		public String key;
+		public Object value;
+	}
+	
 	public static class SetGlobalDataItemRequest
 	{
 		public String key;
@@ -44,6 +52,12 @@ public class AgentMessages
 	{
 		public String id;
 		public List<SetGlobalDataItemRequest> values;
+	}
+	
+	public static class SetTransientDataListRequest
+	{
+		public String id;
+		public Map<String,Object> values;
 	}
 	
 	public static class DeleteGlobalKeyDataRequest

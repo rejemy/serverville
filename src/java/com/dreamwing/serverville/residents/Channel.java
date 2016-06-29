@@ -31,28 +31,53 @@ public class Channel extends BaseResident
 		Members.clear();
 	}
 	
-	public void addResident(Resident resident)
+	public boolean addResident(Resident resident)
 	{
-		Members.put(resident.getId(), resident);
 		resident.Channels.put(getId(), this);
+		
+		if(Members.put(resident.getId(), resident) != null)
+		{
+			// already in
+			return false;
+		}
+		
 		
 		for(MessageListener listener : Listeners.values())
 		{
 			listener.onResidentJoined(resident, this);
 		}
+		
+		return true;
 	}
 	
-	public void removeResident(Resident resident)
+	public boolean hasResident(Resident resident)
 	{
-		Members.remove(resident.getId());
+		return Members.containsKey(resident.getId());
+	}
+	
+	public boolean removeResident(Resident resident)
+	{
 		resident.Channels.remove(getId());
 		
+		if(Members.remove(resident.getId()) == null)
+		{
+			// wasn't in
+			return false;
+		}
+
+		onResidentRemoved(resident);
+		
+		return true;
+	}
+	
+	public void onResidentRemoved(Resident resident)
+	{
 		for(MessageListener listener : Listeners.values())
 		{
 			listener.onResidentLeft(resident, this);
 		}
 	}
-	
+
 	protected void relayMessage(String messageType, String messageBody, String fromId)
 	{
 		for(MessageListener listener : Listeners.values())

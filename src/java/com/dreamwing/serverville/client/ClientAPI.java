@@ -15,6 +15,7 @@ import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataRecord;
 import com.dreamwing.serverville.data.ServervilleUser;
+import com.dreamwing.serverville.data.TransientDataItem;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
@@ -221,6 +222,8 @@ public class ClientAPI {
 		return data;
 	}
 	
+	
+	
 	public static DataItemReply GetUserKey(KeyRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(!KeyDataItem.isValidKeyname(request.key))
@@ -412,11 +415,9 @@ public class ClientAPI {
 		
 		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
-		
-		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(request.key, request.data_type, request.value);
-		
+
 		Resident resident = info.UserPresence.getOrCreateAlias(request.alias);
-		resident.setTransientValue(item);
+		resident.setTransientValue(request.key, request.value);
 		
 		EmptyClientReply reply = new EmptyClientReply();
 		return reply;
@@ -429,25 +430,21 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
 		}
 		
-		List<KeyDataItem> stateValues = new ArrayList<KeyDataItem>(request.values.size());
-		
-		for(SetTransientValueItem data : request.values)
+		for(String keyname : request.values.keySet())
 		{
-			if(!KeyDataItem.isValidKeyname(data.key))
-				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
-			
-			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
-			stateValues.add(item);
+			if(!KeyDataItem.isValidKeyname(keyname))
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, keyname);
 		}
 		
 		Resident resident = info.UserPresence.getOrCreateAlias(request.alias);
-		resident.setTransientValues(stateValues);
+		resident.setTransientValues(request.values);
 		
 		EmptyClientReply reply = new EmptyClientReply();
 		return reply;
 	}
 	
-	public static DataItemReply GetTransientValue(GetTransientValueRequest request, ClientMessageInfo info) throws JsonApiException
+	
+	public static TransientDataItemReply GetTransientValue(GetTransientValueRequest request, ClientMessageInfo info) throws JsonApiException
 	{
 		BaseResident resident = null;
 		
@@ -465,18 +462,20 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, request.id+" / "+request.alias);
 		}
 		
-		if(!KeyDataItem.isValidKeyname(request.key))
-			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
+		//if(!KeyDataItem.isValidKeyname(request.key))
+		//	throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
-		KeyDataItem item = resident.getTransientValue(request.key);
+		TransientDataItem item = resident.getTransientValue(request.key);
 		if(item == null)
 			throw new JsonApiException(ApiErrors.NOT_FOUND);
 		
-		return KeyDataItemToDataItemReply(resident.getId(), item);
+		TransientDataItemReply reply = new TransientDataItemReply();
+		reply.value = item.value;
+		return reply;
 	}
 	
 
-	public static UserDataReply GetTransientValues(GetTransientValuesRequest request, ClientMessageInfo info) throws JsonApiException
+	public static TransientDataItemsReply GetTransientValues(GetTransientValuesRequest request, ClientMessageInfo info) throws JsonApiException
 	{
 		BaseResident resident = null;
 		
@@ -494,24 +493,23 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, request.id+" / "+request.alias);
 		}
 		
-		Map<String,DataItemReply> values = new HashMap<String,DataItemReply>();
+		Map<String,Object> values = new HashMap<String,Object>();
 		
 		for(String key : request.keys)
 		{
-			KeyDataItem item = resident.getTransientValue(key);
+			TransientDataItem item = resident.getTransientValue(key);
 			if(item != null)
 			{
-				DataItemReply data = KeyDataItemToDataItemReply(resident.getId(), item);
-				values.put(data.key, data);
+				values.put(item.key, item.value);
 			}
 		}
 
-		UserDataReply reply = new UserDataReply();
+		TransientDataItemsReply reply = new TransientDataItemsReply();
 		reply.values = values;
 		return reply;
 	}
 	
-	public static UserDataReply getAllTransientValues(GetAllTransientValuesRequest request, ClientMessageInfo info) throws JsonApiException
+	public static TransientDataItemsReply GetAllTransientValues(GetAllTransientValuesRequest request, ClientMessageInfo info) throws JsonApiException
 	{
 		BaseResident resident = null;
 		
@@ -529,15 +527,14 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, request.id+" / "+request.alias);
 		}
 		
-		Map<String,DataItemReply> values = new HashMap<String,DataItemReply>();
+		Map<String,Object> values = new HashMap<String,Object>();
 		
-		for(KeyDataItem item : resident.getAllTransientValues())
+		for(TransientDataItem item : resident.getAllTransientValues())
 		{
-			DataItemReply data = KeyDataItemToDataItemReply(resident.getId(), item);
-			values.put(data.key, data);
+			values.put(item.key, item);
 		}
 		
-		UserDataReply reply = new UserDataReply();
+		TransientDataItemsReply reply = new TransientDataItemsReply();
 		reply.values = values;
 		return reply;
 	}
@@ -559,16 +556,12 @@ public class ClientAPI {
 		}
 		Channel channel = (Channel)source;
 		
-		if(channel.hasListener(info.UserPresence.getId()))
-		{
-			throw new JsonApiException(ApiErrors.ALREADY_JOINED, info.User.getId());
-		}
-		
 		Resident alias = info.UserPresence.getOrCreateAlias(request.alias);
 		
-		channel.addListener(info.UserPresence);
 		channel.addResident(alias);
+		channel.addListener(info.UserPresence);
 		
+
 		return channel.getChannelInfo(0);
 	}
 	
@@ -597,9 +590,63 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.NOT_FOUND, request.alias);
 		}
 		
-		channel.removeListener(info.UserPresence);
 		channel.removeResident(alias);
+		channel.removeListener(info.UserPresence);
 		
+		return new EmptyClientReply();
+	}
+	
+	public static EmptyClientReply AddAliasToChannel(JoinChannelRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(request.id == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
+		
+		if(info.UserPresence == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
+		}
+		
+		BaseResident source = ResidentManager.getResident(request.id);
+		if(source == null || !(source instanceof Channel))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
+		}
+		Channel channel = (Channel)source;
+		
+		Resident alias = info.UserPresence.getOrCreateAlias(request.alias);
+		
+		channel.addResident(alias);
+		
+		return new EmptyClientReply();
+	}
+	
+	public static EmptyClientReply RemoveAliasFromChannel(LeaveChannelRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(request.id == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
+		
+		
+		BaseResident listener = ResidentManager.getResident(info.User.getId());
+		if(listener == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
+		}
+		
+		BaseResident source = ResidentManager.getResident(request.id);
+		if(source == null || !(source instanceof Channel))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
+		}
+		Channel channel = (Channel)source;
+		
+		Resident alias = info.UserPresence.getAlias(request.alias);
+		if(alias == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.alias);
+		}
+		
+		channel.removeResident(alias);
+
 		return new EmptyClientReply();
 	}
 	
@@ -662,7 +709,6 @@ public class ClientAPI {
 		TransientClientMessage message = new TransientClientMessage();
 		message.message_type = request.message_type;
 		message.value = request.value;
-		message.data_type = request.data_type;
 		
 		listener.sendMessage("clientMessage", message);
 		

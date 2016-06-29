@@ -61,7 +61,7 @@ DROP TABLE IF EXISTS `adminsession_userid`;
 CREATE TABLE `adminsession_userid` (
   `userid` varchar(255) NOT NULL,
   `id` varchar(255) NOT NULL,
-  PRIMARY KEY (`userid`)
+  KEY `UserIndex` (`userid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

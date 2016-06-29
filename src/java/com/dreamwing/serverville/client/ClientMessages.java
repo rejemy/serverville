@@ -85,6 +85,16 @@ public class ClientMessages {
 		public boolean deleted;
 	}
 	
+	public static class TransientDataItemReply
+	{
+		public Object value;
+	}
+	
+	public static class TransientDataItemsReply
+	{
+		public Map<String,Object> values;
+	}
+	
 	public static class KeysRequest
 	{
 		public List<String> keys;
@@ -190,20 +200,12 @@ public class ClientMessages {
 		public String alias;
 		public String key;
 		public Object value;
-		public JsonDataType data_type;
-	}
-	
-	public static class SetTransientValueItem
-	{
-		public String key;
-		public Object value;
-		public JsonDataType data_type;
 	}
 	
 	public static class SetTransientValuesRequest
 	{
 		public String alias;
-		public List<SetTransientValueItem> values;
+		public Map<String,Object> values;
 	}
 
 	public static class GetTransientValueRequest
@@ -231,14 +233,12 @@ public class ClientMessages {
 		public String to;
 		public String message_type;
 		public Object value;
-		public JsonDataType data_type;
 	}
 	
 	public static class TransientClientMessage
 	{
 		public String message_type;
 		public Object value;
-		public JsonDataType data_type;
 	}
 	
 }

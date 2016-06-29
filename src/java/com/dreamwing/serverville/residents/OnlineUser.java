@@ -13,7 +13,7 @@ public class OnlineUser extends BaseListener
 	
 	private Resident DefaultAlias;
 	private Map<String,Resident> Aliases;
-	
+
 	public OnlineUser(String id, ClientConnectionHandler connection)
 	{
 		super(id);
@@ -56,12 +56,13 @@ public class OnlineUser extends BaseListener
 		if(alias == null)
 		{
 			alias = new Resident(User.getId()+"/"+name);
-			Aliases.put(alias.getId(), alias);
+			Aliases.put(name, alias);
 			ResidentManager.addResident(alias);
 		}
 		
 		return alias;
 	}
+	
 	
 	@Override
 	public void destroy()

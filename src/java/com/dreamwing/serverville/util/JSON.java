@@ -29,6 +29,7 @@ public final class JSON {
 		{
 			JsonMapper.enable(SerializationFeature.INDENT_OUTPUT);
 		}
+		JsonMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 	}
 	
 	public static byte[] serializeToBytes(Object data) throws JsonProcessingException

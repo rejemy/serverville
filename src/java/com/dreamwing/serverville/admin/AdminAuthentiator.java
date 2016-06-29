@@ -55,10 +55,8 @@ public class AdminAuthentiator implements APIAuthenticator
 			if(req.Connection.User != null)
 			{
 				// Make sure our session is still valid
-				AdminUserSession session = AdminUserSession.findByUserId(req.Connection.User.getId());
+				AdminUserSession session = AdminUserSession.findById(authToken);
 				if(session == null)
-					return null;
-				if(!session.getId().equals(authToken))
 					return null;
 				
 				return req.Connection.User;

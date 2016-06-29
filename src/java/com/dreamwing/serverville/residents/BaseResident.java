@@ -10,7 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.dreamwing.serverville.client.ClientMessages.TransientValuesChangeMessage;
-import com.dreamwing.serverville.data.KeyDataItem;
+import com.dreamwing.serverville.data.TransientDataItem;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -20,8 +20,8 @@ public abstract class BaseResident
 	
 	protected String Id;
 	
-	protected ConcurrentMap<String,KeyDataItem> TransientValues;
-	protected KeyDataItem MostRecentValue;
+	protected ConcurrentMap<String,TransientDataItem> TransientValues;
+	protected TransientDataItem MostRecentValue;
 	
 	protected ConcurrentMap<String,MessageListener> Listeners;
 	
@@ -29,7 +29,7 @@ public abstract class BaseResident
 	public BaseResident(String id)
 	{
 		Id = id;
-		TransientValues = new ConcurrentHashMap<String,KeyDataItem>();
+		TransientValues = new ConcurrentHashMap<String,TransientDataItem>();
 		Listeners = new ConcurrentHashMap<String,MessageListener>();
 		
 	}
@@ -73,47 +73,48 @@ public abstract class BaseResident
 	}
 	
 	
-	public void setTransientValue(KeyDataItem value)
+	public void setTransientValue(String key, Object value)
 	{
-		long currTime = System.currentTimeMillis();
-		value.created = currTime;
-		value.modified = currTime;
-		
-		KeyDataItem prev = TransientValues.put(value.key, value);
-		updateTransientValueInList(prev, value);
+		TransientDataItem item = TransientValues.computeIfAbsent(key, k -> { return new TransientDataItem(key, value);});
+		if(item.value != value)
+		{
+			item.value = value;
+			item.modified = System.currentTimeMillis();
+		}
+
+		updateTransientValueInList(item);
 		
 		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
 		
 		changeMessage.values = new HashMap<String,Object>();
-		try {
-			changeMessage.values.put(value.key, value.asDecodedObject());
-		} catch (Exception e) {
-			l.error("Error decoding json object", e);
-		}
+		changeMessage.values.put(item.key, item.value);
 		
-		onStateChanged(changeMessage, currTime);
+		onStateChanged(changeMessage, item.modified);
 	}
 	
-	public void setTransientValues(Collection<KeyDataItem> values)
+	public void setTransientValues(Map<String,Object> values)
 	{
 		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
 		changeMessage.values = new HashMap<String,Object>();
 		
 		long currTime = System.currentTimeMillis();
 		
-		for(KeyDataItem value : values)
+		for(Map.Entry<String,Object> itemSet : values.entrySet())
 		{
-			value.created = currTime;
-			value.modified = currTime;
+			String key = itemSet.getKey();
+			Object value = itemSet.getValue();
 			
-			KeyDataItem prev = TransientValues.put(value.key, value);
-			updateTransientValueInList(prev, value);
-			
-			try {
-				changeMessage.values.put(value.key, value.asDecodedObject());
-			} catch (Exception e) {
-				l.error("Error decoding json object", e);
+			TransientDataItem item = TransientValues.computeIfAbsent(key, k -> { return new TransientDataItem(key, value);});
+			if(item.value != value)
+			{
+				item.value = value;
+				item.modified = System.currentTimeMillis();
 			}
+
+			updateTransientValueInList(item);
+			
+			changeMessage.values.put(key, value);
+
 		}
 		
 		onStateChanged(changeMessage, currTime);
@@ -141,28 +142,30 @@ public abstract class BaseResident
 		}
 	}
 	
-	protected synchronized void updateTransientValueInList(KeyDataItem prevItem, KeyDataItem newItem)
+	protected synchronized void updateTransientValueInList(TransientDataItem newItem)
 	{
-		if(prevItem != null)
-		{
-			if(prevItem.prevItem != null)
-				prevItem.prevItem.nextItem = prevItem.nextItem;
-			if(prevItem.nextItem != null)
-				prevItem.nextItem.prevItem = prevItem.prevItem;
-			
-			newItem.created = prevItem.created;
-		}
+		if(newItem == MostRecentValue)
+			return;
 		
-		MostRecentValue.nextItem = MostRecentValue;
+		// Remove from existing place in line
+		if(newItem.prevItem != null)
+			newItem.prevItem.nextItem = newItem.nextItem;
+		if(newItem.nextItem != null)
+			newItem.nextItem.prevItem = newItem.prevItem;
+		
+		// Add to head of line
+		newItem.nextItem = MostRecentValue;
+		if(MostRecentValue != null)
+			MostRecentValue.prevItem = newItem;
 		MostRecentValue = newItem;
 	}
 	
-	public KeyDataItem getTransientValue(String key)
+	public TransientDataItem getTransientValue(String key)
 	{
 		return TransientValues.get(key);
 	}
 	
-	public Collection<KeyDataItem> getAllTransientValues()
+	public Collection<TransientDataItem> getAllTransientValues()
 	{
 		return TransientValues.values();
 	}
@@ -174,15 +177,15 @@ public abstract class BaseResident
 	
 	public void addListener(MessageListener listener)
 	{
-		Listeners.put(listener.getId(), listener);
-		listener.onListeningTo(this);
+		if(Listeners.put(listener.getId(), listener) == null)
+			listener.onListeningTo(this);
 	}
 	
 	
 	public void removeListener(MessageListener listener)
 	{
-		Listeners.remove(listener.getId());
-		listener.onStoppedListeningTo(this);
+		if(Listeners.remove(listener.getId()) != null)
+			listener.onStoppedListeningTo(this);
 	}
 	
 
@@ -200,19 +203,10 @@ public abstract class BaseResident
 	{
 		Map<String,Object> values = new HashMap<String,Object>();
 
-		KeyDataItem value = MostRecentValue;
+		TransientDataItem value = MostRecentValue;
 		while(value != null && value.modified >= since)
 		{
-			Object val;
-			try {
-				val = value.asDecodedObject();
-			} catch (Exception e)
-			{
-				l.error("Exception decoding JSON value: ",e);
-				val = "<error>";
-			}
-			values.put(value.key, val);
-			
+			values.put(value.key, value.value);
 			value = value.nextItem;
 		}
 		
