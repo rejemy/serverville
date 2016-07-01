@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataResultHandlers.IntResultSetHandler;
@@ -15,6 +16,7 @@ public class UserManager {
 	private static final Logger l = LogManager.getLogger(UserManager.class);
 	
 	public static final long AdminLogRetentionPeriod = 1000 * 60 * 60 * 24 * 30; // 30 days
+	public static final long AdminSessionInactivePeriod = 1000 * 60 * 60 * 24 * 30; // 30 days
 	public static final long InactiveAnonymousAccountPeriod = 1000 * 60 * 60 * 24 * 30; // 30 days
 	
 	public static void init()
@@ -41,9 +43,15 @@ public class UserManager {
 			public void run()
 			{
 				try {
-					purgeOldAnonymousUsers();
+					purgeOldAdminSessions();
 				} catch (SQLException e) {
-					l.error("Error purging old anonymous users", e);
+					l.error("Error purging old admin sessions", e);
+				}
+				
+				try {
+					purgeOldUserSessions();
+				} catch (SQLException e) {
+					l.error("Error purging old user sessions and anonymous users", e);
 				}
 			}
 		};
@@ -82,10 +90,17 @@ public class UserManager {
 		DatabaseManager.getServer().update("DELETE FROM `admin_log` WHERE `created`<?;", since);
 	}
 	
-	private static void purgeOldAnonymousUsers() throws SQLException
+	private static void purgeOldAdminSessions() throws SQLException
 	{
 		long since = System.currentTimeMillis() - InactiveAnonymousAccountPeriod;
 		
-		ServervilleUser.getOldAnonymousUsers(since);
+		AdminUserSession.deleteSessionsInactiveSince(since);
+	}
+	
+	private static void purgeOldUserSessions() throws SQLException
+	{
+		long since = System.currentTimeMillis() - InactiveAnonymousAccountPeriod;
+		
+		AdminUserSession.deleteSessionsInactiveSince(since);
 	}
 }

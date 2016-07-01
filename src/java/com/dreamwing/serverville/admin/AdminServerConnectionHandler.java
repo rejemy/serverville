@@ -17,6 +17,7 @@ import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.timeout.IdleStateEvent;
 
 import com.dreamwing.serverville.data.AdminActionLog;
+import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.log.SVLog;
 import com.dreamwing.serverville.net.HttpDispatcher;
 import com.dreamwing.serverville.net.HttpRequestInfo;
@@ -56,6 +57,18 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		super.channelInactive(ctx);
 		l.debug(new SVLog("Admin HTTP connection closed", Info));
+		
+		if(Info.Session != null)
+		{
+			AdminUserSession session = (AdminUserSession) Info.Session;
+			session.Connected = false;
+			
+			try {
+				session.update();
+			} catch (Exception e) {
+				l.warn("Exception updating user session:", e);
+			}
+		}
     }
 	
     @Override
@@ -106,6 +119,7 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
 		}
 		catch(SQLException e)
 		{
+			l.warn("Database error: ", e);
 			return HttpHelpers.sendError(CurrRequest, ApiErrors.DB_ERROR, e.getMessage());
 		}
 		catch(JsonApiException e)
@@ -124,12 +138,17 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
     		AdminActionLog log = new AdminActionLog();
     		log.RequestId = CurrRequest.RequestId;
     		log.ConnectionId = CurrRequest.Connection.ConnectionId;
+    		log.SessionId = CurrRequest.Connection.Session.getId();
     		log.UserId = Info.User.getId();
     		log.Created = new Date();
-    		log.API = CurrRequest.RequestURI.getPath();
+    		String uriPath = CurrRequest.RequestURI.getPath();
+    		String uriQuery = CurrRequest.RequestURI.getQuery();
+    		if(uriQuery != null)
+    			uriPath += uriQuery;
+    		log.API = uriPath;
     		log.Request = CurrRequest.getBody();
-    		if(log.Request.length() >= 255)
-    			log.Request = log.Request.substring(0, 255);
+    		if(log.Request.length() > 65535)
+    			log.Request = log.Request.substring(0, 65535);
     		
     		try {
 				log.create();

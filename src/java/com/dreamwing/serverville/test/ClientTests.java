@@ -39,6 +39,9 @@ public class ClientTests {
 	@Test(order=1)
 	public void InvalidAPI() throws IOException
 	{
+		// Start with fresh connections
+		HttpHelpers.resetHttpClient();
+		
 		String url = ClientSocketInitializer.URL+"api/lskdjioif";
 		ApiError result = HttpHelpers.getJson(url, ApiError.class);
 		Assert.assertNotNull(result);
@@ -117,6 +120,8 @@ public class ClientTests {
 	@Test(order=100)
 	public void Cleanup() throws SQLException
 	{
+		HttpHelpers.resetHttpClient();
+		
 		ServervilleUser tempUser1 = ServervilleUser.findById(User1.UserId);
 		Assert.assertNotNull(tempUser1);
 		tempUser1.delete();

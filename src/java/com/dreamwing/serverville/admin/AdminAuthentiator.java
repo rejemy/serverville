@@ -9,9 +9,11 @@ import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.net.APIAuthenticator;
 import com.dreamwing.serverville.net.HttpRequestInfo;
+import com.dreamwing.serverville.net.JsonApiException;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpUtil;
 
 public class AdminAuthentiator implements APIAuthenticator
 {
@@ -47,7 +49,11 @@ public class AdminAuthentiator implements APIAuthenticator
 	{
 		String authToken = req.getOneHeader(HttpHeaderNames.AUTHORIZATION.toString(), null);
 		if(authToken == null)
+		{
+			req.Connection.User = null;
+			req.Connection.Session = null;
 			return null;
+		}
 		
 		try {
 			
@@ -56,31 +62,52 @@ public class AdminAuthentiator implements APIAuthenticator
 			{
 				// Make sure our session is still valid
 				AdminUserSession session = AdminUserSession.findById(authToken);
-				if(session == null)
+				if(session == null || session.Expired)
+				{
+					req.Connection.User = null;
+					req.Connection.Session = null;
 					return null;
-				
+				}
 				return req.Connection.User;
 			}
 			
 			AdminUserSession session = AdminUserSession.findById(authToken);
 			
 			if(session == null)
+			{
+				req.Connection.User = null;
+				req.Connection.Session = null;
 				return null;
+			}
 			
 			ServervilleUser user = ServervilleUser.findById(session.UserId);
 			if(user == null)
 			{
 				l.warn("We had an admin session that points to a missing user: "+session.UserId);
+				req.Connection.User = null;
+				req.Connection.Session = null;
 				return null;
 			}
 			
+			if(HttpUtil.isKeepAlive(req.Request) && session.Connected == false)
+			{
+				session.Connected = true;
+				session.update();
+			}
+			
 			req.Connection.User = user;
+			req.Connection.Session = session;
 			
 			return user;
 			
 		} catch (SQLException e) {
 			l.warn("Sql excpetion while trying to authenticate admin connection", e);
+		} catch (JsonApiException e) {
+			l.warn("API exception while trying to authenticate admin connection", e);
 		}
+		
+		req.Connection.User = null;
+		req.Connection.Session = null;
 		
 		return null;
 	}

@@ -45,6 +45,7 @@ import okhttp3.MediaType;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpUtil;
 
 public class AdminAPI {
 
@@ -92,6 +93,13 @@ public class AdminAPI {
 		reply.session_id = session.getId();
 		
 		req.Connection.User = admin;
+		req.Connection.Session = session;
+		
+		if(HttpUtil.isKeepAlive(req.Request) && session.Connected == false)
+		{
+			session.Connected = true;
+			session.update();
+		}
 
 		return HttpHelpers.sendJson(req, reply);
 	}

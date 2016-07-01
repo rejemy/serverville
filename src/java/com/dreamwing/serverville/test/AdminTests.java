@@ -75,6 +75,7 @@ public class AdminTests {
 	@Test(order=1)
 	public void LogTestInfo() throws SQLException
 	{
+		// Start with fresh connections
 		HttpHelpers.resetHttpClient();
 		
 		LogSearchTerm = SVID.makeSVID();
@@ -543,9 +544,15 @@ public class AdminTests {
 	@Test(order=1000)
 	public void Cleanup() throws SQLException
 	{
+		// Close connections to avoid messy exceptions when we delete the admin user later
+		HttpHelpers.resetHttpClient();
+		
+		
 		ServervilleUser tempAdmin = ServervilleUser.findById(AdminUserId);
 		Assert.assertNotNull(tempAdmin);
 		tempAdmin.delete();
+		
+		
 	}
 	
 	

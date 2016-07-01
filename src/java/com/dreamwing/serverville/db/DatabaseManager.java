@@ -15,6 +15,7 @@ import com.dreamwing.serverville.data.AgentKey;
 import com.dreamwing.serverville.data.KeyDataRecord;
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.data.ServervilleUser;
+import com.dreamwing.serverville.data.UserSession;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.DataSourceConnectionSource;
@@ -29,12 +30,13 @@ public class DatabaseManager {
 	private static ServervilleQueryRunner SqlServer;
 	
 	public static Dao<ServervilleUser, String> ServervilleUserDao;
-	public static Dao<ServervilleUser.SessionIdLookup, String> ServervilleUser_SessionIdDao;
+	public static Dao<UserSession, String> ServervilleUser_UserSessionDao;
+	public static Dao<UserSession.UserSessionLookup, Void> ServervilleUser_UserSession_UserIdDao;
 	public static Dao<ServervilleUser.UsernameLookup, String> ServervilleUser_UsernameDao;
 	public static Dao<ServervilleUser.EmailLookup, String> ServervilleUser_EmailDao;
 	
 	public static Dao<AdminUserSession, String> AdminUserSessionDao;
-	public static Dao<AdminUserSession.UserIdLookup, String> AdminUserSession_UserIdDao;
+	public static Dao<AdminUserSession.AdminUserSessionLookup, Void> AdminUserSession_UserIdDao;
 	
 	public static Dao<AdminActionLog, String> AdminActionLogDao;
 	
@@ -88,12 +90,13 @@ public class DatabaseManager {
 		DataSourceConnectionSource cs = new DataSourceConnectionSource(DataSource, url);
 		
 		ServervilleUserDao = DaoManager.createDao(cs, ServervilleUser.class);
-		ServervilleUser_SessionIdDao = DaoManager.createDao(cs, ServervilleUser.SessionIdLookup.class);
+		ServervilleUser_UserSessionDao = DaoManager.createDao(cs, UserSession.class);
+		ServervilleUser_UserSession_UserIdDao = DaoManager.createDao(cs, UserSession.UserSessionLookup.class);
 		ServervilleUser_UsernameDao = DaoManager.createDao(cs, ServervilleUser.UsernameLookup.class);
 		ServervilleUser_EmailDao = DaoManager.createDao(cs, ServervilleUser.EmailLookup.class);
 		
 		AdminUserSessionDao = DaoManager.createDao(cs, AdminUserSession.class);
-		AdminUserSession_UserIdDao = DaoManager.createDao(cs, AdminUserSession.UserIdLookup.class);
+		AdminUserSession_UserIdDao = DaoManager.createDao(cs, AdminUserSession.AdminUserSessionLookup.class);
 		
 		AdminActionLogDao = DaoManager.createDao(cs, AdminActionLog.class);
 

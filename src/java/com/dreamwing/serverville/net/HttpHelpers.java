@@ -2,10 +2,12 @@ package com.dreamwing.serverville.net;
 
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -38,9 +40,22 @@ public class HttpHelpers {
 	
 	static
 	{
+		long timeout = 0;
+		try
+		{
+			timeout = Long.parseLong(ServervilleMain.ServerProperties.getProperty("selftest_timeout"));
+		}
+		catch(Exception e)
+		{
+			l.error("Invalid number format in selftest_timeout: ", e);
+		}
+		
 		OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
 		SharedHttpConnectionPool = new ConnectionPool();
-		clientBuilder.connectionPool(SharedHttpConnectionPool);
+		clientBuilder.connectionPool(SharedHttpConnectionPool)
+			.connectTimeout(timeout, TimeUnit.MILLISECONDS)
+			.readTimeout(timeout, TimeUnit.MILLISECONDS)
+			.writeTimeout(timeout, TimeUnit.MILLISECONDS);
 		SharedHttpClient = clientBuilder.build();
 	}
 	

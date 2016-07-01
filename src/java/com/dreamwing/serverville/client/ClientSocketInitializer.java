@@ -36,7 +36,7 @@ public class ClientSocketInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast("httpServer", new HttpServerCodec());
         pipeline.addLast("httpAggregator", new HttpObjectAggregator(65536));
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
-        pipeline.addLast(new IdleStateHandler(0, 0, 60));
+        pipeline.addLast(new IdleStateHandler(0, 0, 120));
         pipeline.addLast(new ClientConnectionHandler(Dispatcher));
 	}
 

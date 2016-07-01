@@ -58,6 +58,7 @@ public class ServervilleMain {
 		DefaultProperties.setProperty("cache_files_under", "30000");
 		DefaultProperties.setProperty("pretty_json", "false");
 		DefaultProperties.setProperty("selftest_on_start", "false");
+		DefaultProperties.setProperty("selftest_timeout", "3000");
 		DefaultProperties.setProperty("exit_on_selftest_fail", "false");
 		DefaultProperties.setProperty("jdbc_driver", "com.mysql.jdbc.Driver");
 		DefaultProperties.setProperty("jdbc_url", "");

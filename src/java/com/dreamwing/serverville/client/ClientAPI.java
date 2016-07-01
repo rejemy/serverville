@@ -16,6 +16,7 @@ import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataRecord;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.data.TransientDataItem;
+import com.dreamwing.serverville.data.UserSession;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
@@ -66,14 +67,26 @@ public class ClientAPI {
 	{
 		UserAccountInfo reply = new UserAccountInfo();
 		
-		ServervilleUser user = ServervilleUser.findBySessionId(request.session_id);
-		
-		if(user == null)
+		UserSession session = UserSession.findById(request.session_id);
+		if(session == null)
 		{
 			throw new JsonApiException(ApiErrors.BAD_AUTH, "Invalid session id");
 		}
 		
-		info.ConnectionHandler.signedIn(user);
+		ServervilleUser user = ServervilleUser.findById(session.UserId);
+		if(user == null)
+		{
+			throw new JsonApiException(ApiErrors.BAD_AUTH, "Invalid session");
+		}
+		
+		if(session.Expired)
+		{
+			// Unexpire it, it's back baby!
+			session.Expired = false;
+			session.update();
+		}
+		
+		info.ConnectionHandler.signedIn(user, session);
 		
 		reply.username = user.getUsername();
 		reply.email = user.getEmail();

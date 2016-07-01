@@ -5,6 +5,9 @@ import java.util.Date;
 import java.util.List;
 
 import com.dreamwing.serverville.db.DatabaseManager;
+import com.dreamwing.serverville.net.ApiErrors;
+import com.dreamwing.serverville.net.HttpSession;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.util.PasswordUtil;
 import com.dreamwing.serverville.util.SVID;
 import com.j256.ormlite.field.DataType;
@@ -13,7 +16,8 @@ import com.j256.ormlite.stmt.PreparedDelete;
 import com.j256.ormlite.table.DatabaseTable;
 
 @DatabaseTable(tableName = "adminsession")
-public class AdminUserSession {
+public class AdminUserSession implements HttpSession
+{
 	
 	@DatabaseField(columnName="id", id=true, canBeNull=false)
 	private String Id;
@@ -24,17 +28,23 @@ public class AdminUserSession {
 	@DatabaseField(columnName="started", dataType=DataType.DATE_LONG, canBeNull=false)
 	public Date Started;
 	
-	@DatabaseField(columnName="lastactive", dataType=DataType.DATE_LONG, canBeNull=false)
+	@DatabaseField(columnName="lastactive", dataType=DataType.DATE_LONG, canBeNull=false, version=true)
 	public Date LastActive;
 	
+	@DatabaseField(columnName="expired", canBeNull=false)
+	public boolean Expired;
+	
+	@DatabaseField(columnName="connected", canBeNull=false)
+	public boolean Connected;
+	
 	@DatabaseTable(tableName = "adminsession_userid")
-	public static class UserIdLookup
+	public static class AdminUserSessionLookup
 	{
 		@DatabaseField(columnName="userid", canBeNull=false)
 		public String UserId;
 		
-		@DatabaseField(columnName="id", canBeNull=false)
-		public String Id;
+		@DatabaseField(columnName="sessionid", canBeNull=false)
+		public String SessionId;
 	}
 	
 	public AdminUserSession() {}
@@ -43,17 +53,12 @@ public class AdminUserSession {
 	
 	public static AdminUserSession startNewSession(String userId) throws SQLException
 	{
-		/*AdminUserSession oldSession = findByUserId(userId);
-		if(oldSession != null)
-		{
-			oldSession.delete();
-		}*/
-		
 		AdminUserSession session = new AdminUserSession();
 		session.Id = PasswordUtil.makeRandomString(8)+"/"+SVID.makeSVID();
 		session.UserId = userId;
 		session.Started = new Date();
 		session.LastActive = session.Started;
+		session.Expired = false;
 		
 		session.create();
 		return session;
@@ -65,7 +70,7 @@ public class AdminUserSession {
 	}
 	
 	
-	public static List<UserIdLookup> findAllLookupsByUserId(String userId) throws SQLException
+	public static List<AdminUserSessionLookup> findAllLookupsByUserId(String userId) throws SQLException
 	{
 		return DatabaseManager.AdminUserSession_UserIdDao.queryForEq("userid", userId);
 	}
@@ -73,8 +78,8 @@ public class AdminUserSession {
 	public void deleteLookupByUserIdAndId(String userId, String sessionId) throws SQLException
 	{
 		@SuppressWarnings("unchecked")
-		PreparedDelete<UserIdLookup> deleteQuery = (PreparedDelete<UserIdLookup>)
-				DatabaseManager.AdminUserSession_UserIdDao.deleteBuilder().where().eq("userid", userId).and().eq("id", sessionId).prepare();
+		PreparedDelete<AdminUserSessionLookup> deleteQuery = (PreparedDelete<AdminUserSessionLookup>)
+				DatabaseManager.AdminUserSession_UserIdDao.deleteBuilder().where().eq("userid", userId).and().eq("sessionid", sessionId).prepare();
 		
 		DatabaseManager.AdminUserSession_UserIdDao.delete(deleteQuery);
 	}
@@ -83,16 +88,37 @@ public class AdminUserSession {
 	{
 		DatabaseManager.AdminUserSessionDao.create(this);
 		
-		UserIdLookup lookup = new UserIdLookup();
+		AdminUserSessionLookup lookup = new AdminUserSessionLookup();
 		lookup.UserId = UserId;
-		lookup.Id = Id;
+		lookup.SessionId = Id;
 		
-		DatabaseManager.AdminUserSession_UserIdDao.createOrUpdate(lookup);
+		DatabaseManager.AdminUserSession_UserIdDao.create(lookup);
+	}
+	
+	public void update() throws JsonApiException, SQLException
+	{
+		if(DatabaseManager.AdminUserSessionDao.update(this) != 1)
+			throw new JsonApiException(ApiErrors.CONCURRENT_MODIFICATION);
+	}
+	
+	public void refresh() throws SQLException
+	{
+		DatabaseManager.AdminUserSessionDao.refresh(this);
 	}
 	
 	public void delete() throws SQLException
 	{
 		DatabaseManager.AdminUserSessionDao.deleteById(Id);
 		deleteLookupByUserIdAndId(UserId, Id);
+	}
+	
+	public static void deleteSessionsInactiveSince(long since) throws SQLException
+	{
+		List<AdminUserSession> oldSessions = DatabaseManager.AdminUserSessionDao.queryBuilder().where().lt("lastactive", since).query();
+		
+		for(AdminUserSession oldSession : oldSessions)
+		{
+			oldSession.delete();
+		}
 	}
 }

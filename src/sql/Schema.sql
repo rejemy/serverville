@@ -1,8 +1,3 @@
--- MySQL dump 10.13  Distrib 5.6.24, for osx10.8 (x86_64)
---
--- Host: 127.0.0.1    Database: serverville
--- ------------------------------------------------------
--- Server version 5.6.26
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -27,8 +22,9 @@ CREATE TABLE `admin_log` (
   `userid` varchar(255) NOT NULL,
   `created` bigint(20) NOT NULL,
   `connectionid` varchar(255) NOT NULL,
+  `sessionid` varchar(255) NOT NULL,
   `api` varchar(255) NOT NULL,
-  `request` varchar(255) DEFAULT NULL,
+  `request` text,
   PRIMARY KEY (`requestid`),
   KEY `UserIndex` (`userid`),
   KEY `CreatedIndex` (`created`)
@@ -47,7 +43,10 @@ CREATE TABLE `adminsession` (
   `userid` varchar(255) NOT NULL,
   `started` bigint(20) NOT NULL,
   `lastactive` bigint(20) NOT NULL,
-  PRIMARY KEY (`id`)
+  `expired` tinyint(4) NOT NULL,
+  `connected` tinyint(4) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `LastActiveIndex` (`lastactive`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -60,7 +59,7 @@ DROP TABLE IF EXISTS `adminsession_userid`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `adminsession_userid` (
   `userid` varchar(255) NOT NULL,
-  `id` varchar(255) NOT NULL,
+  `sessionid` varchar(255) NOT NULL,
   KEY `UserIndex` (`userid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -89,13 +88,13 @@ DROP TABLE IF EXISTS `keydata`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `keydata` (
-  `id` VARCHAR(255) NOT NULL,
-  `type` VARCHAR(255) NOT NULL,
-  `owner` VARCHAR(255) NOT NULL,
-  `parent` VARCHAR(255) NULL,
-  `version` INT NOT NULL,
-  `created` BIGINT(20) NOT NULL,
-  `modified` BIGINT(20) NOT NULL,
+  `id` varchar(255) NOT NULL,
+  `type` varchar(255) NOT NULL,
+  `owner` varchar(255) NOT NULL,
+  `parent` varchar(255) DEFAULT NULL,
+  `version` int(11) NOT NULL,
+  `created` bigint(20) NOT NULL,
+  `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `Type_index` (`type`),
   KEY `Parent_index` (`parent`),
@@ -176,16 +175,35 @@ CREATE TABLE `user_email` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `user_sessionid`
+-- Table structure for table `user_session`
 --
 
-DROP TABLE IF EXISTS `user_sessionid`;
+DROP TABLE IF EXISTS `user_session`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `user_sessionid` (
+CREATE TABLE `user_session` (
+  `id` varchar(255) NOT NULL,
+  `userid` varchar(255) NOT NULL,
+  `started` bigint(20) NOT NULL,
+  `lastactive` bigint(20) NOT NULL,
+  `expired` tinyint(4) NOT NULL,
+  `connected` tinyint(4) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `LastActiveIndex` (`lastactive`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `user_session_userid`
+--
+
+DROP TABLE IF EXISTS `user_session_userid`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_session_userid` (
+  `userid` varchar(255) NOT NULL,
   `sessionid` varchar(255) NOT NULL,
-  `id` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`sessionid`)
+  KEY `UserIndex` (`userid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -213,4 +231,4 @@ CREATE TABLE `user_username` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-01-25 12:53:26
+-- Dump completed on 2016-07-01  9:25:53

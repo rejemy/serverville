@@ -9,12 +9,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mindrot.jbcrypt.BCrypt;
 
-import com.dreamwing.serverville.data.AdminUserSession.UserIdLookup;
+import com.dreamwing.serverville.data.AdminUserSession.AdminUserSessionLookup;
+import com.dreamwing.serverville.data.UserSession.UserSessionLookup;
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
-import com.dreamwing.serverville.util.PasswordUtil;
 import com.dreamwing.serverville.util.SVID;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
@@ -60,16 +60,6 @@ public class ServervilleUser {
 	@DatabaseField(columnName="admin", canBeNull=false, defaultValue="0")
 	public int AdminLevel;
 	
-	@DatabaseTable(tableName = "user_sessionid")
-	public static class SessionIdLookup
-	{
-		@DatabaseField(columnName="sessionid", id=true, canBeNull=false)
-		public String SessionId;
-		
-		@DatabaseField(columnName="id", canBeNull=false)
-		private String Id;
-	}
-	
 	@DatabaseTable(tableName = "user_username")
 	public static class UsernameLookup
 	{
@@ -103,6 +93,10 @@ public class ServervilleUser {
 	public String getSessionId() { return SessionId; }
 	public String getEmail() { return Email; }
 	
+	public boolean isAnonymous()
+	{
+		return PasswordHash == null && Email == null && Username == null;
+	}
 	
 	public static ServervilleUser create(String password, String username, String email, int adminLevel) throws SQLException
 	{
@@ -324,7 +318,7 @@ public class ServervilleUser {
 	
 	public static ServervilleUser findBySessionId(String sessionId) throws SQLException
 	{
-		SessionIdLookup lookup = DatabaseManager.ServervilleUser_SessionIdDao.queryForId(sessionId);
+		UserSession lookup = DatabaseManager.ServervilleUser_UserSessionDao.queryForId(sessionId);
 		if(lookup == null)
 			return null;
 		
@@ -334,7 +328,6 @@ public class ServervilleUser {
 	public static ServervilleUser findByUsername(String username) throws SQLException
 	{
 		UsernameLookup lookup = DatabaseManager.ServervilleUser_UsernameDao.queryBuilder().where().eq("username", username).and().isNull("hold").queryForFirst();
-		//UsernameLookup lookup = DatabaseManager.ServervilleUser_UsernameDao.queryForId(username);
 		if(lookup == null)
 			return null;
 		
@@ -344,7 +337,6 @@ public class ServervilleUser {
 	public static ServervilleUser findByEmail(String email) throws SQLException
 	{
 		EmailLookup lookup = DatabaseManager.ServervilleUser_EmailDao.queryBuilder().where().eq("email", email).and().isNull("hold").queryForFirst();
-		//EmailLookup lookup = DatabaseManager.ServervilleUser_EmailDao.queryForId(email);
 		if(lookup == null)
 			return null;
 		
@@ -357,10 +349,6 @@ public class ServervilleUser {
 			throw new JsonApiException(ApiErrors.CONCURRENT_MODIFICATION);
 	}
 	
-	public void startNewSession() throws SQLException, JsonApiException
-	{
-		setSessionId(PasswordUtil.makeRandomString(8)+"/"+SVID.makeSVID());
-	}
 	
 	public void setSessionId(String sessionId) throws SQLException, JsonApiException
 	{
@@ -370,17 +358,17 @@ public class ServervilleUser {
 		String oldSessionId = SessionId;
 		SessionId = sessionId;
 		
-		if(SessionId != null)
-		{
-			SessionIdLookup lookup = new SessionIdLookup();
-			lookup.SessionId = SessionId;
-			lookup.Id = Id;
-			DatabaseManager.ServervilleUser_SessionIdDao.create(lookup);
-		}
-		
+
 		if(oldSessionId != null)
 		{
-			DatabaseManager.ServervilleUser_SessionIdDao.deleteById(oldSessionId);
+			// Expire old session
+			UserSession oldSession = UserSession.findById(oldSessionId);
+			if(oldSession != null)
+			{
+				oldSession.Expired = true;
+				oldSession.Connected = false;
+				oldSession.update();
+			}
 		}
 		
 		update();
@@ -457,10 +445,7 @@ public class ServervilleUser {
 	
 	public void delete() throws SQLException
 	{
-		if(SessionId != null)
-		{
-			DatabaseManager.ServervilleUser_SessionIdDao.deleteById(SessionId);
-		}
+		
 		if(Username != null)
 		{
 			DatabaseManager.ServervilleUser_UsernameDao.deleteById(Username);
@@ -470,27 +455,31 @@ public class ServervilleUser {
 			DatabaseManager.ServervilleUser_EmailDao.deleteById(Email);
 		}
 		
-		List<UserIdLookup> sessionIds = AdminUserSession.findAllLookupsByUserId(getId());
-		if(sessionIds != null)
+		List<AdminUserSessionLookup> adminSessions = AdminUserSession.findAllLookupsByUserId(getId());
+		if(adminSessions != null)
 		{
-			for(UserIdLookup lookup : sessionIds)
+			for(AdminUserSessionLookup lookup : adminSessions)
 			{
-				AdminUserSession adminSession = AdminUserSession.findById(lookup.Id);
+				AdminUserSession adminSession = AdminUserSession.findById(lookup.SessionId);
 				if(adminSession != null)
 					adminSession.delete();
+			}
+		}
+		
+		List<UserSessionLookup> userSessions = UserSession.findAllLookupsByUserId(getId());
+		if(userSessions != null)
+		{
+			for(UserSessionLookup lookup : userSessions)
+			{
+				UserSession userSession = UserSession.findById(lookup.SessionId);
+				if(userSession != null)
+					userSession.delete(false);
 			}
 		}
 		
 		DatabaseManager.ServervilleUserDao.delete(this);
 		
 		KeyDataManager.deleteAllKeys(getId());
-	}
-	
-	public static List<ServervilleUser> getOldAnonymousUsers(long age) throws SQLException
-	{
-		// Use awesome ever-incrementing property of SVIDs to find users with old session Ids
-		String sessionId = SVID.engineerSVID(age, (short)0, (short)0);
-		return DatabaseManager.ServervilleUserDao.queryBuilder().where().isNull("username").and().lt("sessionid", sessionId).query();
 	}
 	
 	public static int parseAdminLevel(String adminLevelStr)

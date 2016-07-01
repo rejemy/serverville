@@ -25,6 +25,9 @@ public class AdminActionLog
 	@DatabaseField(columnName="connectionid", canBeNull=false)
 	public String ConnectionId;
 	
+	@DatabaseField(columnName="sessionid", canBeNull=false)
+	public String SessionId;
+	
 	@DatabaseField(columnName="api", canBeNull=false)
 	public String API;
 	

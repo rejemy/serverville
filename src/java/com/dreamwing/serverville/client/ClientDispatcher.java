@@ -116,6 +116,7 @@ public class ClientDispatcher {
 		}
 		catch(SQLException e)
 		{
+			l.warn("Database error:", e);
 			return new ApiError(ApiErrors.DB_ERROR, e.getMessage());
 		}
 		catch(JsonApiException e)

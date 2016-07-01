@@ -22,6 +22,7 @@ public enum ApiErrors {
 	DATA_CONVERSION(16, "Can't convert the supplied value to the correct type"),
 	JSON_ENCODE_ERROR(17, "Error encoding JSON. This shouldn't happen."),
 	INVALID_IP_RANGE(18, "Couldn't parse the supplied IP range"),
+	SESSION_EXPIRED(19, "Your session has expired, call ValidateSession to renew it", HttpResponseStatus.FORBIDDEN),
 	
 	INVALID_QUERY(100, "Invalid lucene query"),
 	INVALID_KEY_NAME(101, "Invalid key name"),
