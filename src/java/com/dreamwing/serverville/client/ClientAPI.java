@@ -32,9 +32,9 @@ public class ClientAPI {
 	private static final Logger l = LogManager.getLogger(ClientAPI.class);
 	
 	@ClientHandlerOptions(auth=false)
-	public static UserAccountInfo SignIn(SignIn request, ClientMessageInfo info) throws JsonApiException, SQLException
+	public static SignInReply SignIn(SignIn request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		UserAccountInfo reply = new UserAccountInfo();
+		SignInReply reply = new SignInReply();
 		
 		ServervilleUser user = null;
 		
@@ -52,20 +52,22 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.BAD_AUTH, "Password does not match");
 		}
 		
-		info.ConnectionHandler.signedIn(user);
+		info.ConnectionHandler.signIn(user);
 		
 		reply.username = user.getUsername();
 		reply.email = user.getEmail();
 		reply.user_id = user.getId();
 		reply.session_id = user.getSessionId();
 		
+		reply.time = System.currentTimeMillis();
+		
 		return reply;
 	}
 	
 	@ClientHandlerOptions(auth=false)
-	public static UserAccountInfo ValidateSession(ValidateSessionRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	public static SignInReply ValidateSession(ValidateSessionRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		UserAccountInfo reply = new UserAccountInfo();
+		SignInReply reply = new SignInReply();
 		
 		UserSession session = UserSession.findById(request.session_id);
 		if(session == null)
@@ -86,35 +88,39 @@ public class ClientAPI {
 			session.update();
 		}
 		
-		info.ConnectionHandler.signedIn(user, session);
+		info.ConnectionHandler.signIn(user, session);
 		
 		reply.username = user.getUsername();
 		reply.email = user.getEmail();
 		reply.user_id = user.getId();
 		reply.session_id = user.getSessionId();
 		
+		reply.time = System.currentTimeMillis();
+		
 		return reply;
 	}
 	
 	@ClientHandlerOptions(auth=false)
-	public static UserAccountInfo CreateAnonymousAccount(CreateAnonymousAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
+	public static SignInReply CreateAnonymousAccount(CreateAnonymousAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		ServervilleUser user = ServervilleUser.create(null, null, null, ServervilleUser.AdminLevel_User);
 		
-		UserAccountInfo reply = new UserAccountInfo();
+		SignInReply reply = new SignInReply();
 		reply.user_id = user.getId();
 		
-		info.ConnectionHandler.signedIn(user);
+		info.ConnectionHandler.signIn(user);
 		
 		reply.username = null;
 		reply.email = null;
 		reply.session_id = user.getSessionId();
 		
+		reply.time = System.currentTimeMillis();
+		
 		return reply;
 	}
 	
 	@ClientHandlerOptions(auth=false)
-	public static UserAccountInfo CreateAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
+	public static SignInReply CreateAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(request.username == null || request.email == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must set a username and email to create an account");
@@ -125,19 +131,21 @@ public class ClientAPI {
 		ServervilleUser user = ServervilleUser.create(request.password, request.username, request.email, ServervilleUser.AdminLevel_User);
 		
 
-		UserAccountInfo reply = new UserAccountInfo();
+		SignInReply reply = new SignInReply();
 		reply.user_id = user.getId();
 		
-		info.ConnectionHandler.signedIn(user);
+		info.ConnectionHandler.signIn(user);
 		
 		reply.username = user.getUsername();
 		reply.email = user.getEmail();
 		reply.session_id = user.getSessionId();
 		
+		reply.time = System.currentTimeMillis();
+		
 		return reply;
 	}
 	
-	public static UserAccountInfo ConvertToFullAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
+	public static SignInReply ConvertToFullAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(info.User.getUsername() != null)
 			throw new JsonApiException(ApiErrors.ALREADY_REGISTERED, "Account is already converted");
@@ -150,14 +158,24 @@ public class ClientAPI {
 		
 		info.User.register(request.password, request.username, request.email);
 		
-		UserAccountInfo reply = new UserAccountInfo();
+		SignInReply reply = new SignInReply();
 		
 		reply.user_id = info.User.getId();
 		reply.username = info.User.getUsername();
 		reply.email = info.User.getEmail();
 		reply.session_id = info.User.getSessionId();
 		
+		reply.time = System.currentTimeMillis();
+		
 		return reply;
+	}
+	
+	public static ServerTime GetTime(EmptyClientRequest request, ClientMessageInfo info)
+	{
+		ServerTime time = new ServerTime();
+		time.time = System.currentTimeMillis();
+		
+		return time;
 	}
 	
 	public static UserAccountInfo GetUserInfo(GetUserInfo request, ClientMessageInfo info)

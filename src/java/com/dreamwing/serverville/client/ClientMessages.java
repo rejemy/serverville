@@ -10,6 +10,11 @@ import com.dreamwing.serverville.data.JsonDataType;
 
 public class ClientMessages {
 
+	public static class EmptyClientRequest
+	{
+
+	}
+	
 	public static class EmptyClientReply
 	{
 
@@ -44,12 +49,26 @@ public class ClientMessages {
 		public String password;
 	}
 	
+	public static class SignInReply
+	{
+		public String user_id;
+		public String username;
+		public String email;
+		public String session_id;
+		public double time;
+	}
+	
 	public static class UserAccountInfo
 	{
 		public String user_id;
 		public String username;
 		public String email;
 		public String session_id;
+	}
+	
+	public static class ServerTime
+	{
+		public double time;
 	}
 	
 	public static class SetUserDataRequest

@@ -56,7 +56,7 @@ public class ClientTests {
 		request.email = request.username+"@serverville.com";
 		request.password = Long.toHexString(Rand.nextLong())+Long.toHexString(Rand.nextLong());
 		
-		UserAccountInfo reply = makeClientCall(User1, "api/CreateAccount", request, new TypeReference<UserAccountInfo>(){});
+		SignInReply reply = makeClientCall(User1, "api/CreateAccount", request, new TypeReference<SignInReply>(){});
 		Assert.assertNotNull(reply);
 		Assert.assertNotNull(reply.user_id);
 		Assert.assertNotNull(reply.session_id);
@@ -80,7 +80,7 @@ public class ClientTests {
 		boolean gotError = false;
 		try
 		{
-			makeClientCall(User1, "api/SignIn", request, new TypeReference<UserAccountInfo>(){});
+			makeClientCall(User1, "api/SignIn", request, new TypeReference<SignInReply>(){});
 		} catch (JsonApiException e) {
 			gotError = true;
 		}
@@ -96,7 +96,7 @@ public class ClientTests {
 		request.username = User1.Username;
 		request.password = User1.Password;
 		
-		UserAccountInfo reply = makeClientCall(User1, "api/SignIn", request, new TypeReference<UserAccountInfo>(){});
+		SignInReply reply = makeClientCall(User1, "api/SignIn", request, new TypeReference<SignInReply>(){});
 		Assert.assertNotNull(reply);
 		Assert.assertNotNull(reply.user_id);
 		Assert.assertNotNull(reply.session_id);
@@ -111,7 +111,7 @@ public class ClientTests {
 		request.email = User1.Email;
 		request.password = User1.Password;
 		
-		UserAccountInfo reply = makeClientCall(User1, "api/SignIn", request, new TypeReference<UserAccountInfo>(){});
+		SignInReply reply = makeClientCall(User1, "api/SignIn", request, new TypeReference<SignInReply>(){});
 		Assert.assertNotNull(reply);
 		Assert.assertNotNull(reply.user_id);
 		Assert.assertNotNull(reply.session_id);

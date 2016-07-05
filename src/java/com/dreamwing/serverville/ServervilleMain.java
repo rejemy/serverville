@@ -24,6 +24,7 @@ import org.apache.logging.log4j.core.config.plugins.util.PluginManager;
 
 import com.dreamwing.serverville.admin.AdminServerSocketInitializer;
 import com.dreamwing.serverville.agent.AgentServerSocketInitializer;
+import com.dreamwing.serverville.client.ClientSessionManager;
 import com.dreamwing.serverville.client.ClientSocketInitializer;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.db.DatabaseManager;
@@ -184,6 +185,7 @@ public class ServervilleMain {
     	ResidentManager.init();
     	UserManager.init();
     	ScriptManager.init();
+    	ClientSessionManager.init();
     	
     	SelfTest.init();
 	}

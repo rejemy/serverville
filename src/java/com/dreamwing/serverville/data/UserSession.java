@@ -55,11 +55,6 @@ public class UserSession implements HttpSession
 	
 	public static UserSession startNewSession(String userId) throws SQLException
 	{
-		/*AdminUserSession oldSession = findByUserId(userId);
-		if(oldSession != null)
-		{
-			oldSession.delete();
-		}*/
 		
 		UserSession session = new UserSession();
 		session.Id = PasswordUtil.makeRandomString(8)+"/"+SVID.makeSVID();

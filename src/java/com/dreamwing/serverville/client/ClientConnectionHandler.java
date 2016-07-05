@@ -48,19 +48,16 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	private static final Logger l = LogManager.getLogger(ClientConnectionHandler.class);
 	
 	private static final String WEBSOCKET_PATH = "/websocket";
+	
+	private ClientDispatcher Dispatcher;
 	private WebSocketServerHandshaker Handshaker;
 	
 	private HttpConnectionInfo Info;
-	
 	private OnlineUser UserPresence;
 	
-	private ClientDispatcher Dispatcher;
-	
-	private long LastCheckedSession;
-	
-	private volatile boolean Keepalive = false;
-	private volatile boolean WebsocketConnected = false;
-	private volatile boolean BinaryConnected = false;
+	private boolean Keepalive = false;
+	private boolean WebsocketConnected = false;
+	private boolean BinaryConnected = false;
 
 	public ClientConnectionHandler(ClientDispatcher dispatcher)
 	{
@@ -72,6 +69,11 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	public ServervilleUser getUser()
 	{
 		return Info != null ? Info.User : null;
+	}
+	
+	public UserSession getSession()
+	{
+		return Info != null ? (UserSession)Info.Session : null;
 	}
 	
 	@Override
@@ -96,7 +98,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		l.debug(new SVLog("Client HTTP connection closed", Info));
 		
-		logout();
+		signOut();
     }
 	
 	@Override
@@ -108,18 +110,72 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		}
 	}
 	
-	private void logout()
+	public void signIn(ServervilleUser user) throws SQLException, JsonApiException
+	{
+		UserSession session = UserSession.startNewSession(user.getId());
+		
+		signIn(user, session);
+	}
+	
+	public void signIn(ServervilleUser user, UserSession session) throws SQLException, JsonApiException
+	{
+		if(user == null)
+		{
+			signOut();
+			return;
+		}
+		if(user.equals(Info.User))
+		{
+			// ALready logged in, just ignore
+			return;
+		}
+		else if(Info.User != null)
+		{
+			// Already logged in as someone else, can happen on a re-used HTTP connection
+			signOut();
+		}
+		
+		user.setSessionId(session.Id);
+		Info.User = user;
+		Info.Session = session;
+		
+		if((WebsocketConnected || Keepalive) && session.Connected == false)
+		{
+			session.Connected = true;
+			session.update();
+		}
+		
+		
+		if(WebsocketConnected)
+		{
+			UserPresence = new OnlineUser(user.getId(), this);
+		}
+		
+		ClientSessionManager.addSession(this);
+	}
+	
+	private void signOut()
+	{
+		signOut(true);
+	}
+	
+	private void signOut(boolean updateSession)
 	{
 		if(Info.User != null)
 		{
-			UserSession session = (UserSession) Info.Session;
-			session.Connected = false;
-			
-			try {
-				session.update();
-			} catch (Exception e) {
-				l.warn("Exception updating user session:", e);
+			if(updateSession)
+			{
+				UserSession session = (UserSession) Info.Session;
+				session.Connected = false;
+				
+				try {
+					session.update();
+				} catch (Exception e) {
+					l.warn("Exception updating user session:", e);
+				}
 			}
+			
+			ClientSessionManager.removeSession(this);
 			
 			Info.User = null;
 			Info.Session = null;
@@ -131,6 +187,81 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			UserPresence = null;
 		}
 		
+	}
+	
+	
+	private void authenticate(FullHttpRequest request) throws SQLException, JsonApiException
+	{
+		String authToken = request.headers().get(HttpHeaderNames.AUTHORIZATION);
+		if(authToken == null)
+		{
+			if(Info.User != null)
+			{
+				signOut();
+			}
+			return;
+		}
+		
+
+		if(Info.User != null)
+		{
+			if(!authToken.equals(Info.Session.getId()))
+			{
+				signOut();
+				throw new JsonApiException(ApiErrors.BAD_AUTH);
+			}
+			return;
+		}
+		
+		UserSession session = UserSession.findById(authToken);
+		if(session == null)
+		{
+			throw new JsonApiException(ApiErrors.BAD_AUTH);
+		}
+		
+		ServervilleUser user = ServervilleUser.findById(session.UserId);
+		if(user == null)
+		{
+			try
+			{
+				session.delete(false);
+			}
+			catch(SQLException e)
+			{
+				l.error("Error deleting orphaned session: ", e);
+			}
+			throw new JsonApiException(ApiErrors.BAD_AUTH);
+		}
+		
+		if(session.Expired)
+		{
+			throw new JsonApiException(ApiErrors.SESSION_EXPIRED);
+		}
+		
+		signIn(user, session);
+	
+	}
+	
+	public void expireSession()
+	{
+		if(Info.Session == null)
+		{
+			return;
+		}
+		
+		UserSession session = (UserSession) Info.Session;
+		session.Expired = true;
+		signOut();
+		
+		if(WebsocketConnected)
+		{
+			sendMessage("_error", new ApiError(ApiErrors.SESSION_EXPIRED), "", "").addListener(ChannelFutureListener.CLOSE);
+		}
+		else
+		{
+			Info.Ctx.close();
+		}
+
 	}
 	
 	@Override
@@ -158,74 +289,18 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			throw new Exception("Unexpected message type received from client: "+msg.getClass());
 		}
 		
-		if (!Keepalive) {
+		if (!(Keepalive || WebsocketConnected))
+		{
             // Close the connection when the whole content is written out.
     		if(lastWrite != null)
     		{
     			lastWrite.addListener(ChannelFutureListener.CLOSE);
     		}
+    		else
+    		{
+    			ctx.close();
+    		}
         }
-	}
-	
-	private void authenticate(FullHttpRequest request) throws SQLException, JsonApiException
-	{
-		String authToken = request.headers().get(HttpHeaderNames.AUTHORIZATION);
-		if(authToken == null)
-		{
-			Info.User = null;
-			Info.Session = null;
-			return;
-		}
-		
-		UserSession session = (UserSession) Info.Session;
-		
-		if(session != null)
-		{
-			if(!authToken.equals(session.getId()))
-			{
-				Info.User = null;
-				Info.Session = null;
-				throw new JsonApiException(ApiErrors.BAD_AUTH);
-			}
-			
-			long now = System.currentTimeMillis();
-			if(now - LastCheckedSession > 5000)
-			{
-				LastCheckedSession = now;
-				session.refresh();
-			}
-		}
-		else
-		{
-			session = UserSession.findById(authToken);
-			if(session == null)
-			{
-				Info.User = null;
-				Info.Session = null;
-				throw new JsonApiException(ApiErrors.BAD_AUTH);
-			}
-			LastCheckedSession = System.currentTimeMillis();
-		}
-		
-		if(session.Expired)
-		{
-			Info.User = null;
-			Info.Session = null;
-			throw new JsonApiException(ApiErrors.SESSION_EXPIRED);
-		}
-		
-		if(Info.User == null)
-		{
-			Info.User = ServervilleUser.findById(session.UserId);
-			if(Info.User == null)
-			{
-				Info.User = null;
-				Info.Session = null;
-				throw new JsonApiException(ApiErrors.BAD_AUTH);
-			}
-		}
-		
-		Info.Session = session;
 	}
 	
 	private ChannelFuture handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request)
@@ -250,6 +325,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		if (!request.decoderResult().isSuccess()) {
             return HttpHelpers.sendError(currRequest, ApiErrors.HTTP_DECODE_ERROR);
         }
+		
 		
 		try {
 			authenticate(request);
@@ -332,8 +408,10 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
         }
 	}
 	
+	
 	private ChannelFuture handleTextMessage(String messageText)
 	{
+
 		String messageParts[] = messageText.split(":", 3);
 		if(messageParts.length != 3)
 		{
@@ -378,6 +456,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			BinaryConnected = true; 
 		}
 		
+
 		ClientMessageInfo info = new ClientMessageInfo();
 		info.MessageId = SVID.makeSVID();
 		info.MessageNum = message.MessageNum;
@@ -437,9 +516,17 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
         }
     }
 	
-	public ChannelFuture sendMessage(String messageType, Object messageBody, String from) throws JsonProcessingException 
+	public ChannelFuture sendMessage(String messageType, Object messageBody, String from, String via)
 	{
-		return sendMessage(messageType, JSON.serializeToString(messageBody), from);
+		try
+		{
+			return sendMessage(messageType, JSON.serializeToString(messageBody), from, via);
+		}
+		catch(JsonProcessingException e)
+		{
+			l.error("Error encoding message:", e);
+			return null;
+		}
 	}
 	
 	public ChannelFuture sendMessage(String messageType, String serializedMessageBody, String from, String via)
@@ -507,48 +594,6 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		return future;
 	}
 	
-	public void signedIn(ServervilleUser user) throws SQLException, JsonApiException
-	{
-		UserSession session = UserSession.startNewSession(user.getId());
-		
-		signedIn(user, session);
-	}
 	
-	public void signedIn(ServervilleUser user, UserSession session) throws SQLException, JsonApiException
-	{
-		if(user == null)
-		{
-			logout();
-			return;
-		}
-		if(user.equals(Info.User))
-		{
-			// ALready logged in, just ignore
-			return;
-		}
-		else if(Info.User != null)
-		{
-			// Already logged in as someone else, can happen on a re-used HTTP connection
-			logout();
-		}
-		
-		user.setSessionId(session.Id);
-		Info.User = user;
-		Info.Session = session;
-		
-		if((WebsocketConnected || Keepalive) && session.Connected == false)
-		{
-			session.Connected = true;
-			session.update();
-		}
-		
-		
-		if(WebsocketConnected)
-		{
-			UserPresence = new OnlineUser(user.getId(), this);
-		}
-		
-
-	}
 
 }

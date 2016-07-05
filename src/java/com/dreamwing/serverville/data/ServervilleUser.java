@@ -9,6 +9,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mindrot.jbcrypt.BCrypt;
 
+import com.dreamwing.serverville.client.ClientConnectionHandler;
+import com.dreamwing.serverville.client.ClientSessionManager;
 import com.dreamwing.serverville.data.AdminUserSession.AdminUserSessionLookup;
 import com.dreamwing.serverville.data.UserSession.UserSessionLookup;
 import com.dreamwing.serverville.db.DatabaseManager;
@@ -361,8 +363,20 @@ public class ServervilleUser {
 
 		if(oldSessionId != null)
 		{
+			// TODO - this will need to be totally rewritten when clustering is supported
+			ClientConnectionHandler connectionHandler = ClientSessionManager.getSession(oldSessionId);
+			UserSession oldSession = null;
+			if(connectionHandler != null)
+			{
+				connectionHandler.expireSession();
+				oldSession = connectionHandler.getSession();
+			}
+			else
+			{
+				oldSession = UserSession.findById(oldSessionId);
+			}
+			
 			// Expire old session
-			UserSession oldSession = UserSession.findById(oldSessionId);
 			if(oldSession != null)
 			{
 				oldSession.Expired = true;

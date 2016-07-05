@@ -151,10 +151,10 @@ public class BrowserClient {
 			apiCall.set("ReqType", method.RequestType.Name);
 			apiCall.set("ReplyType", method.ReplyType.Name);
 			
-			if(method.ReplyType.Name.equals("UserAccountInfo"))
+			if(method.ReplyType.Name.equals("SignInReply"))
 			{
 				apiCall.set("PreCall", "var self:Serverville = this;");
-				apiCall.set("SuccessClosure", "function(reply:UserAccountInfo):void { self.setUserInfo(reply); if(onSuccess) { onSuccess(reply);} }");
+				apiCall.set("SuccessClosure", "function(reply:SignInReply):void { self.setUserInfo(reply); if(onSuccess) { onSuccess(reply);} }");
 			}
 			else
 			{
