@@ -15,6 +15,8 @@ delete Java;
 var client = {};
 // Holder for exposed agent handlers
 var agent = {};
+// Holder for exposed callback handlers
+var callbacks = {};
 var ValidKeynameRegex = new RegExp("^[a-zA-Z_$][0-9a-zA-Z_$]*$");
 function isValidKeyname(key) {
     if (key == null)

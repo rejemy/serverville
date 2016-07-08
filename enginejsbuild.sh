@@ -1,3 +1,4 @@
 #!/bin/bash
-
-tsc -p src/typescript/embedded/
+pushd src/typescript/embedded
+tsc
+popd

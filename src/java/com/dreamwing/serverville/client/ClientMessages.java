@@ -177,6 +177,7 @@ public class ClientMessages {
 	public static class TransientValuesChangeMessage
 	{
 		public Map<String,Object> values;
+		public List<String> deleted;
 	}
 	
 	public static class JoinChannelRequest

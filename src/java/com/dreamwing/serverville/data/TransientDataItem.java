@@ -6,8 +6,7 @@ public class TransientDataItem
 	public Object value;
 	public long created;
 	public long modified;
-	public boolean dirty;
-	public Boolean deleted;
+	public boolean deleted;
 	
 	// For in-memory resident transient state
 	public TransientDataItem nextItem;

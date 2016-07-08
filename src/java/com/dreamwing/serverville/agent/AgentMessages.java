@@ -41,6 +41,23 @@ public class AgentMessages
 		public Object value;
 	}
 	
+	public static class DeleteTransientDataRequest
+	{
+		public String id;
+		public String key;
+	}
+	
+	public static class DeleteTransientDatasRequest
+	{
+		public String id;
+		public List<String> keys;
+	}
+	
+	public static class DeleteAllTransientDataRequest
+	{
+		public String id;
+	}
+	
 	public static class SetGlobalDataItemRequest
 	{
 		public String key;

@@ -62,9 +62,11 @@ declare type DataItemInfoMap = {[key:string]:DataItemInfo};
 
 declare var client:any;
 declare var agent:any;
+declare var callbacks:any;
 
 declare namespace api
 {
+	function time():number;
 	function makeSVID():string;
 	function log_debug(msg:string):void;
 	function log_info(msg:string):void;
@@ -89,4 +91,17 @@ declare namespace api
 	function getAllDataKeys(id:string, since:number, includeDeleted:boolean):DataItemInfoMap;
 	function deleteDataKey(id:string, key:string):number;
 	function deleteAllDataKeys(id:string):number;
+
+	function createChannel(channelId:string):string;
+	function deleteChannel(channelId:string):void;
+	function addResident(channelId:string,residentId:string):void;
+	function removeResident(channelId:string,residentId:string):void;
+	function setTransientValue(id:string, key:String, value:any):void;
+	function setTransientValues(id:string, keys:{[key:string]:any}):void;
+	function getTransientValue(id:string, key:String):any;
+	function getTransientValues(id:string, keys:String[]):{[key:string]:any};
+	function getAllTransientValues(id:string):{[key:string]:any};
+	function deleteTransientValue(id:string, key:string):void;
+	function deleteTransientValues(id:string, keys:string[]):void;
+	function deleteAllTransientValues(id:string):void;
 }

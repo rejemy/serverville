@@ -66,6 +66,11 @@ public class AgentScriptAPI
 		return SVID.makeSVID();
 	}
 	
+	public double time()
+	{
+		return System.currentTimeMillis();
+	}
+	
 	public UserInfoReply getUserInfo(Map<String,Object> request) throws JsonApiException, SQLException
 	{
 		String id = (String)request.getOrDefault("id", null);
@@ -414,9 +419,48 @@ public class AgentScriptAPI
 		
 		for(TransientDataItem item : res.getAllTransientValues())
 		{
+			if(item.deleted)
+				continue;
 			reply.put(item.key, item.value);
 		}
 		
 		return reply;
+	}
+	
+	public void deleteTransientValue(String id, String key) throws JsonApiException
+	{
+		if(id == null || id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
+		
+		BaseResident res = ResidentManager.getResident(id);
+		if(res == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, id);
+		
+		res.deleteTransientValue(key);
+		
+	}
+	
+	public void deleteTransientValues(String id, List<String> keys) throws JsonApiException
+	{
+		if(id == null || id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
+		
+		BaseResident res = ResidentManager.getResident(id);
+		if(res == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, id);
+		
+		res.deleteTransientValues(keys);
+	}
+	
+	public void deleteAllTransientValues(String id) throws JsonApiException
+	{
+		if(id == null || id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
+		
+		BaseResident res = ResidentManager.getResident(id);
+		if(res == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, id);
+		
+		res.deleteAllTransientValues();
 	}
 }

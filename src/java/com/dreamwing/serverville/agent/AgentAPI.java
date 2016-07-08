@@ -196,4 +196,22 @@ public class AgentAPI
 		reply.values = ApiInst.getAllTransientValues(request.id);
 		return reply;
 	}
+	
+	public static EmptyReply DeleteTransientValue(DeleteTransientDataRequest request) throws JsonApiException
+	{
+		ApiInst.deleteTransientValue(request.id, request.key);
+		return new EmptyReply();
+	}
+	
+	public static EmptyReply DeleteTransientValues(DeleteTransientDatasRequest request) throws JsonApiException
+	{
+		ApiInst.deleteTransientValues(request.id, request.keys);
+		return new EmptyReply();
+	}
+	
+	public static EmptyReply DeleteAllTransientValues(DeleteAllTransientDataRequest request) throws JsonApiException
+	{
+		ApiInst.deleteAllTransientValues(request.id);
+		return new EmptyReply();
+	}
 }

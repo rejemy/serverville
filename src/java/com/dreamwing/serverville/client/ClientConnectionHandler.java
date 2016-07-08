@@ -1,5 +1,6 @@
 package com.dreamwing.serverville.client;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -506,8 +507,17 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	
 	@Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        l.error("Exception caught in client handler: ", cause);
         
+		if(cause instanceof IOException)
+		{
+			// Connection closed by other end while we were trying to write something at them. Not the end of the world.
+			l.debug("Exception caught in client handler: ", cause);
+		}
+		else
+		{
+			l.error("Exception caught in client handler: ", cause);
+		}
+		
         if (ctx.channel().isActive())
         {
         	ApiError ise = new ApiError(ApiErrors.INTERNAL_SERVER_ERROR);

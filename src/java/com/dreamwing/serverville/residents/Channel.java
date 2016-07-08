@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import com.dreamwing.serverville.client.ClientMessages.ChannelInfo;
 import com.dreamwing.serverville.client.ClientMessages.ChannelMemberInfo;
+import com.dreamwing.serverville.scripting.ScriptManager;
 
 public class Channel extends BaseResident
 {
@@ -110,15 +111,18 @@ public class Channel extends BaseResident
 		return info;
 	}
 	
-	/*
-	protected void listenTo(BaseResident resident)
+	public void addListener(MessageListener listener)
 	{
-		super.listenTo(resident);
+		super.addListener(listener);
+		
+		ScriptManager.onListenToChannel(this, listener);
 	}
 	
-	protected void stopListenTo(BaseResident resident)
+	
+	public void removeListener(MessageListener listener)
 	{
-		super.stopListenTo(resident);
+		super.removeListener(listener);
+		
+		ScriptManager.onStopListenToChannel(this, listener);
 	}
-	*/
 }

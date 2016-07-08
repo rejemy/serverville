@@ -747,9 +747,6 @@ public class AdminAPI {
 		
 		try {
 			ScriptManager.scriptsUpdated();
-		} catch (InterruptedException e) {
-			String errorMessage = e.getMessage();
-			return HttpHelpers.sendError(req, ApiErrors.UNKNOWN, errorMessage);
 		} catch (ScriptException e) {
 			String errorMessage = e.getCause().getMessage()+" at line "+e.getLineNumber();
 			return HttpHelpers.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
@@ -801,9 +798,6 @@ public class AdminAPI {
 		
 		try {
 			ScriptManager.scriptsUpdated();
-		} catch (InterruptedException e) {
-			String errorMessage = e.getMessage();
-			return HttpHelpers.sendError(req, ApiErrors.UNKNOWN, errorMessage);
 		} catch (ScriptException e) {
 			String errorMessage = e.getCause().getMessage()+" at line "+e.getLineNumber();
 			return HttpHelpers.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);

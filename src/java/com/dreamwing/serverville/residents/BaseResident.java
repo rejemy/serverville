@@ -1,7 +1,9 @@
 package com.dreamwing.serverville.residents;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -76,10 +78,11 @@ public abstract class BaseResident
 	public void setTransientValue(String key, Object value)
 	{
 		TransientDataItem item = TransientValues.computeIfAbsent(key, k -> { return new TransientDataItem(key, value);});
-		if(item.value != value)
+		if(item.value != value || item.deleted)
 		{
 			item.value = value;
 			item.modified = System.currentTimeMillis();
+			item.deleted = false;
 		}
 
 		updateTransientValueInList(item);
@@ -105,10 +108,11 @@ public abstract class BaseResident
 			Object value = itemSet.getValue();
 			
 			TransientDataItem item = TransientValues.computeIfAbsent(key, k -> { return new TransientDataItem(key, value);});
-			if(item.value != value)
+			if(item.value != value || item.deleted)
 			{
 				item.value = value;
 				item.modified = System.currentTimeMillis();
+				item.deleted = false;
 			}
 
 			updateTransientValueInList(item);
@@ -162,17 +166,83 @@ public abstract class BaseResident
 	
 	public TransientDataItem getTransientValue(String key)
 	{
-		return TransientValues.get(key);
+		TransientDataItem item = TransientValues.get(key);
+		if(item == null || item.deleted)
+			return null;
+		return item;
 	}
 	
+	// Note - includes deleted items
 	public Collection<TransientDataItem> getAllTransientValues()
 	{
 		return TransientValues.values();
 	}
 	
-	public void clearTransientValue(String key)
+	public void deleteTransientValue(String key)
 	{
-		TransientValues.remove(key);
+		TransientDataItem item = TransientValues.get(key);
+		if(item == null)
+		{
+			return;
+		}
+		
+		item.deleted = true;
+		item.modified = System.currentTimeMillis();
+		
+		updateTransientValueInList(item);
+		
+		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
+		
+		changeMessage.deleted = new ArrayList<String>(1);
+		changeMessage.deleted.add(key);
+		
+		onStateChanged(changeMessage, item.modified);
+	}
+	
+	public void deleteTransientValues(List<String> keys)
+	{
+		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
+		changeMessage.deleted = new ArrayList<String>(keys.size());
+		
+		long currTime = System.currentTimeMillis();
+		
+		for(String key : keys)
+		{
+			TransientDataItem item = TransientValues.get(key);
+			if(item == null)
+			{
+				continue;
+			}
+			
+			item.deleted = true;
+			item.modified = currTime;
+
+			updateTransientValueInList(item);
+			
+			changeMessage.deleted.add(key);
+		}
+		
+		onStateChanged(changeMessage, currTime);
+	}
+	
+	public synchronized void deleteAllTransientValues()
+	{
+		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
+		changeMessage.deleted = new ArrayList<String>(TransientValues.size());
+		
+		long currTime = System.currentTimeMillis();
+		
+		for(Map.Entry<String,TransientDataItem> itemSet : TransientValues.entrySet())
+		{
+			TransientDataItem item = itemSet.getValue();
+
+			item.deleted = true;
+			item.modified = currTime;
+
+			changeMessage.deleted.add(itemSet.getKey());
+		}
+		
+		onStateChanged(changeMessage, currTime);
 	}
 	
 	public void addListener(MessageListener listener)

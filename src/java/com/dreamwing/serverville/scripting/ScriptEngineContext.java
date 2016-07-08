@@ -31,6 +31,7 @@ public class ScriptEngineContext {
 	
 	private ScriptObjectMirror ClientHandlers;
 	private ScriptObjectMirror AgentHandlers;
+	private ScriptObjectMirror CallbackHandlers;
 	
 	public ScriptEngineContext()
 	{
@@ -90,7 +91,7 @@ public class ScriptEngineContext {
 		
 		ClientHandlers = (ScriptObjectMirror) Engine.get("client");
 		AgentHandlers = (ScriptObjectMirror) Engine.get("agent");
-		
+		CallbackHandlers = (ScriptObjectMirror) Engine.get("callbacks");
 		
 		try {
 			Engine.invokeFunction("localInit");
@@ -149,6 +150,11 @@ public class ScriptEngineContext {
 	public Object getClientHandler(String api)
 	{
 		return ClientHandlers.get(api);
+	}
+	
+	public Object getCallbackHandler(String api)
+	{
+		return CallbackHandlers.get(api);
 	}
 	
 	public Object invokeFunction(String name, Object... args)
@@ -235,5 +241,19 @@ public class ScriptEngineContext {
 		}
 	}
 	
+	public Object invokeCallbackHandler(String handlerName, final Object... args) throws NoSuchMethodException, ScriptException
+	{
+		return Engine.invokeMethod(CallbackHandlers, handlerName, args);
+	}
+	
+	public Object onListenToChannelHandler(String channelId, String listenerId) throws NoSuchMethodException, ScriptException
+	{
+		return Engine.invokeMethod(CallbackHandlers, "onListenToChannel", channelId, listenerId);
+	}
+	
+	public Object onStopListenToChannelHandler(String channelId, String listenerId) throws NoSuchMethodException, ScriptException
+	{
+		return Engine.invokeMethod(CallbackHandlers, "onStopListenToChannel", channelId, listenerId);
+	}
 
 }

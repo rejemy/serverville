@@ -21,6 +21,9 @@ var client:any = {};
 // Holder for exposed agent handlers
 var agent:any = {};
 
+// Holder for exposed callback handlers
+var callbacks:any = {};
+
 var ValidKeynameRegex:RegExp = new RegExp("^[a-zA-Z_$][0-9a-zA-Z_$]*$");
 
 

@@ -12,6 +12,8 @@ import javax.script.ScriptException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.dreamwing.serverville.residents.Channel;
+import com.dreamwing.serverville.residents.MessageListener;
 import com.dreamwing.serverville.util.FileUtil;
 
 
@@ -30,6 +32,8 @@ public class ScriptManager
 	
 	private static Map<String,Boolean> ClientHandlers;
 	private static Set<String> AgentHandlers;
+	private static boolean HasListenToChannelHandler;
+	private static boolean HasStopListenToChannelHandler;
 	
 	public static void init() throws Exception
 	{
@@ -41,17 +45,22 @@ public class ScriptManager
 
 		updateHandlerSets();
 		
+		ScriptEngineContext engine = getEngine();
 		try
 		{
-			getEngine().invokeFunction("globalInit");
+			engine.invokeFunction("globalInit");
 		} catch (NoSuchMethodException e) {
 			// No function, no problem
 		} catch (Exception e) {
 			l.error("Error executing script globalInit: ", e);
 		}
+		finally
+		{
+			returnEngine(engine);
+		}
 	}
 	
-	public static ScriptEngineContext getEngine() throws InterruptedException
+	public static ScriptEngineContext getEngine()
 	{
 		ScriptEngineContext engine = getEngineContext();
 		
@@ -66,9 +75,14 @@ public class ScriptManager
 		return engine;
 	}
 	
-	private static ScriptEngineContext getEngineContext() throws InterruptedException
+	private static ScriptEngineContext getEngineContext()
 	{
-		EngineLock.acquire();
+		try {
+			EngineLock.acquire();
+		} catch (InterruptedException e) {
+			l.error("Interrupted waiting for engine context", e);
+			return null;
+		}
 		synchronized(ScriptManager.class)
 		{
 			for(int i = 0; i<MAX_ENGINES; i++)
@@ -105,7 +119,7 @@ public class ScriptManager
 		EngineLock.release();
 	}
 	
-	public static void scriptsUpdated() throws InterruptedException, ScriptException
+	public static void scriptsUpdated() throws ScriptException
 	{
 		ScriptVersion++;
 		
@@ -173,6 +187,8 @@ public class ScriptManager
 		
 		AgentHandlers = agentHandlers;
 		
+		HasListenToChannelHandler = ctx.getCallbackHandler("onListenToChannel") != null;
+		HasStopListenToChannelHandler = ctx.getCallbackHandler("onStopListenToChannel") != null;
 	}
 	
 	public static Boolean hasClientHandler(String apiType)
@@ -185,5 +201,42 @@ public class ScriptManager
 		return AgentHandlers.contains(apiType);
 	}
 	
+	public static void onListenToChannel(Channel channel, MessageListener listener)
+	{
+		if(!HasListenToChannelHandler)
+			return;
+		
+		ScriptEngineContext engine = getEngine();
+		try
+		{
+			engine.invokeCallbackHandler("onListenToChannel", channel.getId(), listener.getId());
+			//engine.onListenToChannelHandler(channel.getId(), listener.getId());
+		} catch (Exception e) {
+			l.error("Error executing onListenToChannel handler: ", e);
+		}
+		finally
+		{
+			returnEngine(engine);
+		}
+	}
+	
+	public static void onStopListenToChannel(Channel channel, MessageListener listener)
+	{
+		if(!HasStopListenToChannelHandler)
+			return;
+		
+		ScriptEngineContext engine = getEngine();
+		try
+		{
+			engine.invokeCallbackHandler("onStopListenToChannel", channel.getId(), listener.getId());
+			//engine.onStopListenToChannelHandler(channel.getId(), listener.getId());
+		} catch (Exception e) {
+			l.error("Error executing onListenToChannel handler: ", e);
+		}
+		finally
+		{
+			returnEngine(engine);
+		}
+	}
 
 }
