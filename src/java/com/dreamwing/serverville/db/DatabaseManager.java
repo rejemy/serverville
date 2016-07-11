@@ -12,6 +12,7 @@ import com.dreamwing.serverville.agent.AgentKeyManager;
 import com.dreamwing.serverville.data.AdminActionLog;
 import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.data.AgentKey;
+import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.KeyDataRecord;
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.data.ServervilleUser;
@@ -45,6 +46,7 @@ public class DatabaseManager {
 	public static Dao<AgentKey, String> AgentKeyDao;
 	
 	public static Dao<KeyDataRecord, String> KeyDataRecordDao;
+	public static Dao<InviteCode, String> InviteCodeDao;
 	
 	public static void init() throws Exception
 	{
@@ -105,6 +107,8 @@ public class DatabaseManager {
 		AgentKeyDao = DaoManager.createDao(cs, AgentKey.class);
 		
 		KeyDataRecordDao = DaoManager.createDao(cs, KeyDataRecord.class);
+		
+		InviteCodeDao = DaoManager.createDao(cs, InviteCode.class);
 		
 		initAgentKeyPurger();
 	}

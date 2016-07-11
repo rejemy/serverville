@@ -22,7 +22,7 @@ public class ClientMessages {
 	
 	public static class CreateAnonymousAccount
 	{
-
+		public String invite_code;
 	}
 	
 	public static class GetUserInfo
@@ -35,6 +35,7 @@ public class ClientMessages {
 		public String username;
 		public String email;
 		public String password;
+		public String invite_code;
 	}
 
 	public static class ValidateSessionRequest

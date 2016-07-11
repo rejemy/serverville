@@ -56,6 +56,7 @@ public class ServervilleMain {
 		DefaultProperties.setProperty("agent_port", "8001");
 		DefaultProperties.setProperty("admin_port", "8002");
 		DefaultProperties.setProperty("res_root", "res");
+		DefaultProperties.setProperty("require_invite", "false");
 		DefaultProperties.setProperty("cache_files_under", "30000");
 		DefaultProperties.setProperty("pretty_json", "false");
 		DefaultProperties.setProperty("selftest_on_start", "false");
@@ -83,6 +84,8 @@ public class ServervilleMain {
 	public static long StartupTime; 
 	
 	public static ScheduledExecutorService ServiceScheduler;
+	
+	public static boolean RequireInvite=false;
 	
 	public static void main(String[] args)
 	{
@@ -178,6 +181,8 @@ public class ServervilleMain {
 		File resRootFile = ResRoot.toFile();
     	if(!resRootFile.exists() || !resRootFile.canRead() || !resRootFile.isDirectory())
     		throw new Exception("Invalid res root: "+ResRoot);
+    	
+    	RequireInvite = Boolean.parseBoolean(ServerProperties.getProperty("require_invite"));
     	
     	JSON.init();
     	DatabaseManager.init();

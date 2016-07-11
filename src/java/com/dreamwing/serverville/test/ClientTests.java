@@ -5,7 +5,9 @@ import java.sql.SQLException;
 import java.util.Random;
 
 import com.dreamwing.serverville.client.ClientMessages.*;
+import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.ServervilleUser;
+import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.client.ClientSocketInitializer;
 import com.dreamwing.serverville.net.ApiError;
 import com.dreamwing.serverville.net.HttpHelpers;
@@ -49,12 +51,17 @@ public class ClientTests {
 	}
 	
 	@Test(order=2)
-	public void CreateUserAccount() throws IOException, JsonApiException
+	public void CreateUserAccount() throws IOException, JsonApiException, SQLException
 	{
 		CreateAccount request = new CreateAccount();
 		request.username = "testUser_"+SVID.makeSVID();
 		request.email = request.username+"@serverville.com";
 		request.password = Long.toHexString(Rand.nextLong())+Long.toHexString(Rand.nextLong());
+		if(ServervilleMain.RequireInvite)
+		{
+			InviteCode code = InviteCode.create("test");
+			request.invite_code = code.getFriendlyId();
+		}
 		
 		SignInReply reply = makeClientCall(User1, "api/CreateAccount", request, new TypeReference<SignInReply>(){});
 		Assert.assertNotNull(reply);

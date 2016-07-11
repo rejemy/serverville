@@ -23,6 +23,8 @@ public enum ApiErrors {
 	JSON_ENCODE_ERROR(17, "Error encoding JSON. This shouldn't happen."),
 	INVALID_IP_RANGE(18, "Couldn't parse the supplied IP range"),
 	SESSION_EXPIRED(19, "Your session has expired, call ValidateSession to renew it", HttpResponseStatus.FORBIDDEN),
+	INVITE_REQUIRED(20, "An invite code is required to create a new account"),
+	INVALID_INVITE_CODE(21, "This invite code is not valid"),
 	
 	INVALID_QUERY(100, "Invalid lucene query"),
 	INVALID_KEY_NAME(101, "Invalid key name"),

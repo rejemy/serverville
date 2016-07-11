@@ -22,6 +22,7 @@ import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.agent.AgentKeyManager;
 import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.data.AgentKey;
+import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.ScriptData;
@@ -456,6 +457,32 @@ public class AdminAPI {
 		user.update();
 		
 		return HttpHelpers.sendSuccess(req);
+	}
+	
+	public static class InviteCodeList
+	{
+		public List<String> codes;
+	}
+	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
+	public static ChannelFuture createInviteCodes(HttpRequestInfo req) throws SQLException
+	{
+		int num = req.getOneBodyAsInt("num", 1);
+		if(num < 1 || num > 100)
+		{
+			return HttpHelpers.sendError(req, ApiErrors.INVALID_INPUT);
+		}
+
+		InviteCodeList reply = new InviteCodeList();
+		reply.codes = new ArrayList<String>(num);
+		
+		for(int i=0; i<num; i++)
+		{
+			InviteCode code = InviteCode.create(req.Connection.User.getId());
+			reply.codes.add(code.getFriendlyId());
+		}
+		
+		return HttpHelpers.sendJson(req, reply);
 	}
 	
 	public static class AgentKeyInfo

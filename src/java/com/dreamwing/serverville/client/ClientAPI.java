@@ -10,7 +10,9 @@ import java.util.Map;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.client.ClientMessages.*;
+import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataRecord;
@@ -103,7 +105,23 @@ public class ClientAPI {
 	@ClientHandlerOptions(auth=false)
 	public static SignInReply CreateAnonymousAccount(CreateAnonymousAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
+		InviteCode invite = null;
+		if(ServervilleMain.RequireInvite)
+		{
+			if(request.invite_code == null)
+				throw new JsonApiException(ApiErrors.INVITE_REQUIRED);
+			
+			invite = InviteCode.findById(request.invite_code);
+			if(invite == null)
+				throw new JsonApiException(ApiErrors.INVALID_INVITE_CODE, "Invalid invite code: "+request.invite_code);
+		}
+		
 		ServervilleUser user = ServervilleUser.create(null, null, null, ServervilleUser.AdminLevel_User);
+		
+		if(invite != null)
+		{
+			invite.delete();
+		}
 		
 		SignInReply reply = new SignInReply();
 		reply.user_id = user.getId();
@@ -128,8 +146,23 @@ public class ClientAPI {
 		if(!PasswordUtil.validatePassword(request.password))
 			throw new JsonApiException(ApiErrors.INVALID_INPUT, "Invalid password");
 		
+		InviteCode invite = null;
+		if(ServervilleMain.RequireInvite)
+		{
+			if(request.invite_code == null)
+				throw new JsonApiException(ApiErrors.INVITE_REQUIRED);
+			
+			invite = InviteCode.findById(request.invite_code);
+			if(invite == null)
+				throw new JsonApiException(ApiErrors.INVALID_INVITE_CODE, "Invalid invite code: "+request.invite_code);
+		}
+		
 		ServervilleUser user = ServervilleUser.create(request.password, request.username, request.email, ServervilleUser.AdminLevel_User);
 		
+		if(invite != null)
+		{
+			invite.delete();
+		}
 
 		SignInReply reply = new SignInReply();
 		reply.user_id = user.getId();

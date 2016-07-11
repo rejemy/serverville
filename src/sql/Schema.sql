@@ -81,6 +81,21 @@ CREATE TABLE `agent_key` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `invite`
+--
+
+DROP TABLE IF EXISTS `invite`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `invite` (
+  `id` varchar(255) NOT NULL,
+  `created` bigint(20) NOT NULL,
+  `created_by` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `keydata`
 --
 
