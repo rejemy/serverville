@@ -16,6 +16,9 @@ import com.dreamwing.serverville.data.TransientDataItem;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
+
+@SuppressWarnings("restriction")
 public abstract class BaseResident
 {
 	private static final Logger l = LogManager.getLogger(BaseResident.class);
@@ -75,12 +78,13 @@ public abstract class BaseResident
 	}
 	
 	
+	
 	public void setTransientValue(String key, Object value)
 	{
 		TransientDataItem item = TransientValues.computeIfAbsent(key, k -> { return new TransientDataItem(key, value);});
 		if(item.value != value || item.deleted)
 		{
-			item.value = value;
+			item.value = ScriptObjectMirror.wrapAsJSONCompatible(value, null);
 			item.modified = System.currentTimeMillis();
 			item.deleted = false;
 		}
@@ -110,7 +114,7 @@ public abstract class BaseResident
 			TransientDataItem item = TransientValues.computeIfAbsent(key, k -> { return new TransientDataItem(key, value);});
 			if(item.value != value || item.deleted)
 			{
-				item.value = value;
+				item.value = ScriptObjectMirror.wrapAsJSONCompatible(value, null);
 				item.modified = System.currentTimeMillis();
 				item.deleted = false;
 			}

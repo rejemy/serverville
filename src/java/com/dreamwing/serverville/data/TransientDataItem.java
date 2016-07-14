@@ -1,5 +1,8 @@
 package com.dreamwing.serverville.data;
 
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
+
+@SuppressWarnings("restriction")
 public class TransientDataItem
 {
 	public String key;
@@ -12,10 +15,11 @@ public class TransientDataItem
 	public TransientDataItem nextItem;
 	public TransientDataItem prevItem;
 		
+	
 	public TransientDataItem(String key, Object val)
 	{
 		this.key = key;
-		value = val;
+		value = ScriptObjectMirror.wrapAsJSONCompatible(val, null);;
 		created = System.currentTimeMillis();
 		modified = created;
 	}
