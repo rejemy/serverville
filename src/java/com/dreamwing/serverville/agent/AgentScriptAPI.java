@@ -302,7 +302,7 @@ public class AgentScriptAPI
 	}
 	
 
-	public void removeResident(String channelId, String residentId) throws JsonApiException
+	public void removeResident(String channelId, String residentId, Map<String,Object> finalValues) throws JsonApiException
 	{
 		if(channelId == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
@@ -323,8 +323,10 @@ public class AgentScriptAPI
 		}
 		Resident resident = (Resident)listener;
 		
-		channel.removeResident(resident);
+		channel.removeResident(resident, finalValues);
 
+		if(finalValues != null)
+			resident.setTransientValues(finalValues);
 	}
 	
 	public void setTransientValue(String id, String key, Object value) throws JsonApiException

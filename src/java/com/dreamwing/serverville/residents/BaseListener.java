@@ -70,9 +70,9 @@ public abstract class BaseListener implements MessageListener
 	}
 	
 	@Override
-	public void onResidentLeft(Resident resident, Channel viaChannel)
+	public void onResidentLeft(Resident resident, String messageBody, Channel viaChannel)
 	{
-		onMessage("_memberLeft", "", resident.Id, viaChannel);
+		onMessage("_memberLeft", messageBody, resident.Id, viaChannel);
 	}
 	
 	@Override

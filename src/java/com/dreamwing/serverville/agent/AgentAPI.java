@@ -136,7 +136,7 @@ public class AgentAPI
 	
 	public static EmptyReply RemoveResident(RemoveResidentRequest request) throws JsonApiException
 	{
-		ApiInst.removeResident(request.channel_id, request.resident_id);
+		ApiInst.removeResident(request.channel_id, request.resident_id, request.final_values);
 		
 		EmptyReply reply = new EmptyReply();
 		return reply;

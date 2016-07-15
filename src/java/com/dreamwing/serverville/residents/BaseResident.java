@@ -21,7 +21,7 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
 @SuppressWarnings("restriction")
 public abstract class BaseResident
 {
-	private static final Logger l = LogManager.getLogger(BaseResident.class);
+	protected static final Logger l = LogManager.getLogger(BaseResident.class);
 	
 	protected String Id;
 	
@@ -101,6 +101,11 @@ public abstract class BaseResident
 	
 	public void setTransientValues(Map<String,Object> values)
 	{
+		setTransientValues(values, false);
+	}
+	
+	public void setTransientValues(Map<String,Object> values, boolean forceUpdate)
+	{
 		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
 		changeMessage.values = new HashMap<String,Object>();
 		
@@ -112,7 +117,7 @@ public abstract class BaseResident
 			Object value = itemSet.getValue();
 			
 			TransientDataItem item = TransientValues.computeIfAbsent(key, k -> { return new TransientDataItem(key, value);});
-			if(item.value != value || item.deleted)
+			if(item.value != value || item.deleted || forceUpdate)
 			{
 				item.value = ScriptObjectMirror.wrapAsJSONCompatible(value, null);
 				item.modified = System.currentTimeMillis();
@@ -127,6 +132,8 @@ public abstract class BaseResident
 		
 		onStateChanged(changeMessage, currTime);
 	}
+	
+	
 	
 	protected void onStateChanged(TransientValuesChangeMessage changeMessage, long when)
 	{

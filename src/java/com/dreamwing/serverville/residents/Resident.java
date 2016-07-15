@@ -44,7 +44,7 @@ public class Resident extends BaseResident
 		for(Channel channel : Channels.values())
 		{
 			channel.Members.remove(getId());
-			channel.onResidentRemoved(this);
+			channel.onResidentRemoved(this, null);
 		}
 		
 		Channels.clear();

@@ -19,7 +19,7 @@ public class TransientDataItem
 	public TransientDataItem(String key, Object val)
 	{
 		this.key = key;
-		value = ScriptObjectMirror.wrapAsJSONCompatible(val, null);;
+		value = ScriptObjectMirror.wrapAsJSONCompatible(val, null);
 		created = System.currentTimeMillis();
 		modified = created;
 	}

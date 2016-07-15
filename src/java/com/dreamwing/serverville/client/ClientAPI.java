@@ -622,6 +622,11 @@ public class ClientAPI {
 		
 		Resident alias = info.UserPresence.getOrCreateAlias(request.alias);
 		
+		if(request.values != null)
+		{
+			alias.setTransientValues(request.values, true);
+		}
+		
 		channel.addResident(alias);
 		channel.addListener(info.UserPresence);
 		
@@ -654,7 +659,7 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.NOT_FOUND, request.alias);
 		}
 		
-		channel.removeResident(alias);
+		channel.removeResident(alias, request.final_values);
 		channel.removeListener(info.UserPresence);
 		
 		return new EmptyClientReply();
@@ -678,6 +683,11 @@ public class ClientAPI {
 		Channel channel = (Channel)source;
 		
 		Resident alias = info.UserPresence.getOrCreateAlias(request.alias);
+		
+		if(request.values != null)
+		{
+			alias.setTransientValues(request.values, true);
+		}
 		
 		channel.addResident(alias);
 		
@@ -709,7 +719,7 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.NOT_FOUND, request.alias);
 		}
 		
-		channel.removeResident(alias);
+		channel.removeResident(alias, request.final_values);
 
 		return new EmptyClientReply();
 	}

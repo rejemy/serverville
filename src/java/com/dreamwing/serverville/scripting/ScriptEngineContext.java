@@ -11,6 +11,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.ScriptData;
+import com.dreamwing.serverville.net.ApiErrors;
+import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.agent.AgentScriptAPI;
 
@@ -198,7 +200,7 @@ public class ScriptEngineContext {
 	}
 	
 
-	public Object invokeClientHandler(String apiId, String jsonInput, UserInfoReply user) throws NoSuchMethodException, ScriptException
+	public Object invokeClientHandler(String apiId, String jsonInput, UserInfoReply user) throws NoSuchMethodException, ScriptException, JsonApiException
 	{
 		Object decodedInput = decodeJSON(jsonInput);
 		
@@ -207,10 +209,10 @@ public class ScriptEngineContext {
 			Object result = Engine.invokeMethod(ClientHandlers, apiId, decodedInput, user);
 			return ScriptObjectMirror.wrapAsJSONCompatible(result, null);
 		}
-		catch(Exception e)
+		catch(ScriptException e)
 		{
-			l.error("Script error calling client API: "+apiId, e);
-			throw e;
+			l.error("Error executing client handler "+apiId, e);
+			throw new JsonApiException(ApiErrors.JAVASCRIPT_ERROR, e.getMessage());
 		}
 		
 	}
@@ -225,7 +227,7 @@ public class ScriptEngineContext {
 	}
 	
 
-	public Object invokeAgentHandler(String apiId, String jsonInput) throws Exception
+	public Object invokeAgentHandler(String apiId, String jsonInput) throws NoSuchMethodException, ScriptException, JsonApiException
 	{
 		Object decodedInput = decodeJSON(jsonInput);
 		
@@ -234,10 +236,10 @@ public class ScriptEngineContext {
 			Object result = Engine.invokeMethod(AgentHandlers, apiId, decodedInput);
 			return ScriptObjectMirror.wrapAsJSONCompatible(result, null);
 		}
-		catch(Exception e)
+		catch(ScriptException e)
 		{
-			l.error("Script error calling client API: "+apiId, e);
-			throw e;
+			l.error("Error executing agent handler "+apiId, e);
+			throw new JsonApiException(ApiErrors.JAVASCRIPT_ERROR, e.getMessage());
 		}
 	}
 	

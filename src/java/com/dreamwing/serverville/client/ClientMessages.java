@@ -185,12 +185,14 @@ public class ClientMessages {
 	{
 		public String alias;
 		public String id;
+		public Map<String,Object> values;
 	}
 	
 	public static class LeaveChannelRequest
 	{
 		public String alias;
 		public String id;
+		public Map<String,Object> final_values;
 	}
 	
 	public static class ListenToResidentRequest

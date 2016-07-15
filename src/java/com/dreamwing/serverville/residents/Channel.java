@@ -1,12 +1,15 @@
 package com.dreamwing.serverville.residents;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import com.dreamwing.serverville.client.ClientMessages.ChannelInfo;
 import com.dreamwing.serverville.client.ClientMessages.ChannelMemberInfo;
 import com.dreamwing.serverville.scripting.ScriptManager;
+import com.dreamwing.serverville.util.JSON;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class Channel extends BaseResident
 {
@@ -56,7 +59,7 @@ public class Channel extends BaseResident
 		return Members.containsKey(resident.getId());
 	}
 	
-	public boolean removeResident(Resident resident)
+	public boolean removeResident(Resident resident, Map<String,Object> finalValues)
 	{
 		resident.Channels.remove(getId());
 		
@@ -65,17 +68,31 @@ public class Channel extends BaseResident
 			// wasn't in
 			return false;
 		}
+		
+		String messageBody = null;
+		if(finalValues != null)
+		{
+			try {
+				messageBody = JSON.serializeToString(finalValues);
+			} catch (JsonProcessingException e) {
+				l.error("Error encoding state change message", e);
+			}
+		}
+		else
+		{
+			messageBody = "{}";
+		}
 
-		onResidentRemoved(resident);
+		onResidentRemoved(resident, messageBody);
 		
 		return true;
 	}
 	
-	public void onResidentRemoved(Resident resident)
+	public void onResidentRemoved(Resident resident, String messageBody)
 	{
 		for(MessageListener listener : Listeners.values())
 		{
-			listener.onResidentLeft(resident, this);
+			listener.onResidentLeft(resident, messageBody, this);
 		}
 	}
 

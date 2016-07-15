@@ -113,6 +113,7 @@ public class AgentMessages
 	{
 		public String channel_id;
 		public String resident_id;
+		public Map<String,Object> final_values;
 	}
 	
 	public static class GetTransientValueRequest
