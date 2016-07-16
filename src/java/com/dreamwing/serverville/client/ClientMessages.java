@@ -254,6 +254,7 @@ public class ClientMessages {
 	public static class TransientMessageRequest
 	{
 		public String to;
+		public String alias;
 		public String message_type;
 		public Object value;
 	}

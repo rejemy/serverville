@@ -55,6 +55,16 @@ public abstract class BaseResident
 	
 	public void sendMessage(String messageType, Object messageObject)
 	{
+		sendMessageFrom(messageType, messageObject, this);
+	}
+	
+	public void sendMessage(String messageType, String messageBody)
+	{
+		sendMessageFrom(messageType, messageBody, this);
+	}
+	
+	public void sendMessageFrom(String messageType, Object messageObject, BaseResident sender)
+	{
 		String messageBody = null;
 		try {
 			messageBody = JSON.serializeToString(messageObject);
@@ -63,21 +73,19 @@ public abstract class BaseResident
 			return;
 		}
 		
-		sendMessage(messageType, messageBody);
+		sendMessageFrom(messageType, messageBody, sender);
 	}
 	
-	public void sendMessage(String messageType, String messageBody)
+	public void sendMessageFrom(String messageType, String messageBody, BaseResident sender)
 	{
 		if(messageType == null || messageType.length() == 0 || messageType.charAt(0) == '_' || messageType.indexOf(':') >= 0)
 			throw new IllegalArgumentException("Invalid message type: "+messageType);
 		
 		for(MessageListener listener : Listeners.values())
 		{
-			listener.onMessage(messageType, messageBody, Id, null);
+			listener.onMessage(messageType, messageBody, sender.Id, null);
 		}
 	}
-	
-	
 	
 	public void setTransientValue(String key, Object value)
 	{

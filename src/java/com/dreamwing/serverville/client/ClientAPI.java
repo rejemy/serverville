@@ -771,20 +771,35 @@ public class ClientAPI {
 	
 	public static EmptyClientReply SendClientMessage(TransientMessageRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(request.to == null)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.to);
+		if(request.message_type == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "message_type");
+		if(request.value == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "value");
 		
-		BaseResident listener = ResidentManager.getResident(request.to);
-		if(listener == null)
+		Resident alias = info.UserPresence.getAlias(request.alias);
+		if(alias == null)
 		{
-			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, request.to);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.alias);
 		}
 		
 		TransientClientMessage message = new TransientClientMessage();
 		message.message_type = request.message_type;
 		message.value = request.value;
 		
-		listener.sendMessage("clientMessage", message);
+		if(request.to != null)
+		{
+			BaseResident listener = ResidentManager.getResident(request.to);
+			if(listener == null)
+			{
+				throw new JsonApiException(ApiErrors.NOT_FOUND, request.to);
+			}
+			
+			listener.sendMessageFrom("clientMessage", message, alias);
+		}
+		else
+		{
+			alias.sendMessage("clientMessage", message);
+		}
 		
 		return new EmptyClientReply();
 	}

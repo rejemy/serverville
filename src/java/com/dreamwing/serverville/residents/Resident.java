@@ -17,13 +17,13 @@ public class Resident extends BaseResident
 	}
 
 	@Override
-	public void sendMessage(String messageType, String messageBody)
+	public void sendMessageFrom(String messageType, String messageBody, BaseResident sender)
 	{
-		super.sendMessage(messageType, messageBody);
+		super.sendMessageFrom(messageType, messageBody, sender);
 		
 		for(Channel channel : Channels.values())
 		{
-			channel.relayMessage(messageType, messageBody, Id);
+			channel.relayMessage(messageType, messageBody, sender.Id);
 		}
 	}
 	

@@ -63,7 +63,7 @@ public abstract class BaseListener implements MessageListener
 			return;
 		}
 
-		onMessage("_memberJoined", messageBody, resident.Id, viaChannel);
+		onMessage("memberJoined", messageBody, resident.Id, viaChannel);
 		
 		long time = resident.getLastModifiedTime();
 		setTimestampForResident(resident.Id, time);
@@ -72,13 +72,13 @@ public abstract class BaseListener implements MessageListener
 	@Override
 	public void onResidentLeft(Resident resident, String messageBody, Channel viaChannel)
 	{
-		onMessage("_memberLeft", messageBody, resident.Id, viaChannel);
+		onMessage("memberLeft", messageBody, resident.Id, viaChannel);
 	}
 	
 	@Override
 	public void onStateChange(String messageBody, long when, String fromId, Channel viaChannel)
 	{
-		onMessage("_stateChange", messageBody, fromId, viaChannel);
+		onMessage("stateChange", messageBody, fromId, viaChannel);
 		
 		setTimestampForResident(fromId, when);
 	}

@@ -100,7 +100,7 @@ public class Channel extends BaseResident
 	{
 		for(MessageListener listener : Listeners.values())
 		{
-			listener.onMessage(messageType, messageBody, Id, this);
+			listener.onMessage(messageType, messageBody, fromId, this);
 		}
 	}
 	
