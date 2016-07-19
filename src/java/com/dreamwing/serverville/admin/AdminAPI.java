@@ -869,7 +869,7 @@ public class AdminAPI {
 
 		if(id == null || id.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a data id");
-		if(!KeyDataItem.isValidKeyname(key))
+		if(!KeyDataItem.isValidServerKeyname(key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 
 		

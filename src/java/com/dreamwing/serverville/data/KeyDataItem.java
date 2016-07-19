@@ -335,21 +335,41 @@ public class KeyDataItem
 		return (byte[])value;
 	}
 	
-	private static final Predicate<String> ValidKeynameRegex = Pattern.compile("^[a-zA-Z_$][0-9a-zA-Z_$]*$").asPredicate();
+	private static final Predicate<String> ValidUserWriteKeynameRegex = Pattern.compile("^[a-zA-Z_][0-9a-zA-Z_\\$]*$").asPredicate();
+	private static final Predicate<String> ValidUserReadKeynameRegex = Pattern.compile("^[a-zA-Z_][0-9a-zA-Z_\\$]*$|^\\$[0-9a-zA-Z_][0-9a-zA-Z_\\$]*$").asPredicate();
+	private static final Predicate<String> ValidServerKeynameRegex = Pattern.compile("^[a-zA-Z_][0-9a-zA-Z_\\$]*$|^\\$[0-9a-zA-Z_][0-9a-zA-Z_\\$]*$|^\\$\\$[0-9a-zA-Z_\\$]+$").asPredicate();
 	
 	// The keyname validator should not let anything through that might have damaging SQL escape sequences
-	public static boolean isValidKeyname(String key)
+	public static boolean isValidUserWriteKeyname(String key)
 	{
 		if(key == null)
 			return false;
-		return ValidKeynameRegex.test(key);
+		return ValidUserWriteKeynameRegex.test(key);
 	}
 	
-	public static boolean isPrivateKeyname(String key)
+	// The keyname validator should not let anything through that might have damaging SQL escape sequences
+	public static boolean isValidUserReadKeyname(String key)
 	{
 		if(key == null)
 			return false;
-		return key.charAt(0) == '_';
+		return ValidUserReadKeynameRegex.test(key);
 	}
+	
+	// The keyname validator should not let anything through that might have damaging SQL escape sequences
+	public static boolean isValidServerKeyname(String key)
+	{
+		if(key == null)
+			return false;
+		return ValidServerKeynameRegex.test(key);
+	}
+	
+	public static boolean isPublicKeyname(String key)
+	{
+		if(key == null || key.length() == 0)
+			return false;
+		return key.charAt(0) == '_' || (key.length() > 1 && key.charAt(0) == '$' && key.charAt(1) == '_');
+	}
+	
+
 	
 }

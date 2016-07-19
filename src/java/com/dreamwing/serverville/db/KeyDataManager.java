@@ -15,7 +15,6 @@ import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataTypes;
 import com.dreamwing.serverville.db.KeyDataResultHandlers.*;
-import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.serialize.ByteEncoder;
 
@@ -379,10 +378,6 @@ public class KeyDataManager {
 		boolean first = true;
 		for(String key : keys)
 		{
-			// The keyname validator should not let anything through that might have damaging SQL escape sequences
-			if(!KeyDataItem.isValidKeyname(key))
-				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
-			
 			if(!first)
 				str.append(",");
 			else
@@ -523,6 +518,62 @@ public class KeyDataManager {
 				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `modified`>?", ItemListHandler, id, time);
 			else
 				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `modified`>? AND `deleted` IS NULL;", ItemListHandler, id, time);
+			return results;
+		} catch (SQLException e) {
+			l.error("Error loading item "+id+" to database ", e);
+			throw e;
+		}
+	}
+	
+	public static List<KeyDataItem> loadAllUserVisibleKeys(String id) throws SQLException
+	{
+		return loadAllUserVisibleKeys(id, false);
+	}
+	
+	public static List<KeyDataItem> loadAllUserVisibleKeys(String id, boolean includeDeleted) throws SQLException
+	{
+		if(id == null || id.length() == 0)
+		{
+			l.error("Data item has invalid id: "+id);
+			throw new IllegalArgumentException("Invalid id");
+		}
+		
+		try {
+			List<KeyDataItem> results = null;
+			if(includeDeleted)
+				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `key`>=\"$0\";", ItemListHandler, id);
+			else
+				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `key`>=\"$0\" AND `deleted` IS NULL;", ItemListHandler, id);
+			return results;
+		} catch (SQLException e) {
+			l.error("Error loading item "+id+" to database ", e);
+			throw e;
+		}
+
+	}
+	
+	public static List<KeyDataItem> loadAllUserVisibleKeysSince(String id, long time) throws SQLException
+	{
+		return loadAllUserVisibleKeysSince(id, time, false);
+	}
+	
+	public static List<KeyDataItem> loadAllUserVisibleKeysSince(String id, long time, boolean includeDeleted) throws SQLException
+	{
+		if(time <= 0)
+			return loadAllUserVisibleKeys(id, includeDeleted);
+		
+		if(id == null || id.length() == 0)
+		{
+			l.error("Data item has invalid id: "+id);
+			throw new IllegalArgumentException("Invalid id");
+		}
+
+		try {
+			List<KeyDataItem> results = null;
+			if(includeDeleted)
+				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `key`>=\"$0\" AND `modified`>?", ItemListHandler, id, time);
+			else
+				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `key`>=\"$0\" AND `modified`>? AND `deleted` IS NULL;", ItemListHandler, id, time);
 			return results;
 		} catch (SQLException e) {
 			l.error("Error loading item "+id+" to database ", e);

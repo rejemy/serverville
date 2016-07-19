@@ -126,7 +126,7 @@ DROP TABLE IF EXISTS `keydata_item`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `keydata_item` (
   `id` varchar(255) NOT NULL,
-  `key` varchar(255) NOT NULL,
+  `key` varchar(255) CHARACTER SET ascii NOT NULL,
   `data` varbinary(62000) DEFAULT NULL,
   `datatype` int(11) NOT NULL,
   `created` bigint(20) NOT NULL,

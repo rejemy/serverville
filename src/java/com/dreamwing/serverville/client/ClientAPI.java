@@ -60,6 +60,7 @@ public class ClientAPI {
 		reply.email = user.getEmail();
 		reply.user_id = user.getId();
 		reply.session_id = user.getSessionId();
+		reply.admin_level = user.AdminLevel;
 		
 		reply.time = System.currentTimeMillis();
 		
@@ -96,6 +97,7 @@ public class ClientAPI {
 		reply.email = user.getEmail();
 		reply.user_id = user.getId();
 		reply.session_id = user.getSessionId();
+		reply.admin_level = user.AdminLevel;
 		
 		reply.time = System.currentTimeMillis();
 		
@@ -131,6 +133,7 @@ public class ClientAPI {
 		reply.username = null;
 		reply.email = null;
 		reply.session_id = user.getSessionId();
+		reply.admin_level = user.AdminLevel;
 		
 		reply.time = System.currentTimeMillis();
 		
@@ -172,6 +175,7 @@ public class ClientAPI {
 		reply.username = user.getUsername();
 		reply.email = user.getEmail();
 		reply.session_id = user.getSessionId();
+		reply.admin_level = user.AdminLevel;
 		
 		reply.time = System.currentTimeMillis();
 		
@@ -197,6 +201,7 @@ public class ClientAPI {
 		reply.username = info.User.getUsername();
 		reply.email = info.User.getEmail();
 		reply.session_id = info.User.getSessionId();
+		reply.admin_level = info.User.AdminLevel;
 		
 		reply.time = System.currentTimeMillis();
 		
@@ -227,7 +232,7 @@ public class ClientAPI {
 	{
 		SetDataReply reply = new SetDataReply();
 		
-		if(!KeyDataItem.isValidKeyname(request.key))
+		if(!KeyDataItem.isValidUserWriteKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
 		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(request.key, request.data_type, request.value);
@@ -245,7 +250,7 @@ public class ClientAPI {
 		
 		for(SetUserDataRequest data : request.values)
 		{
-			if(!KeyDataItem.isValidKeyname(data.key))
+			if(!KeyDataItem.isValidUserWriteKeyname(data.key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
 			
 			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
@@ -290,7 +295,7 @@ public class ClientAPI {
 	
 	public static DataItemReply GetUserKey(KeyRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		if(!KeyDataItem.isValidKeyname(request.key))
+		if(!KeyDataItem.isValidUserReadKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
 		KeyDataItem item = KeyDataManager.loadKey(info.User.getId(), request.key);
@@ -302,6 +307,12 @@ public class ClientAPI {
 	
 	public static UserDataReply GetUserKeys(KeysRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
+		for(String key : request.keys)
+		{
+			if(!KeyDataItem.isValidUserReadKeyname(key))
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
+		}
+		
 		List<KeyDataItem> items = KeyDataManager.loadKeysSince(info.User.getId(), request.keys, (long)request.since);
 		if(items == null)
 			throw new JsonApiException(ApiErrors.NOT_FOUND);
@@ -321,7 +332,7 @@ public class ClientAPI {
 	
 	public static UserDataReply GetAllUserKeys(AllKeysRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		List<KeyDataItem> items = KeyDataManager.loadAllKeysSince(info.User.getId(), (long)request.since);
+		List<KeyDataItem> items = KeyDataManager.loadAllUserVisibleKeysSince(info.User.getId(), (long)request.since);
 		if(items == null)
 			throw new JsonApiException(ApiErrors.NOT_FOUND);
 		
@@ -343,11 +354,11 @@ public class ClientAPI {
 		if(request.id == null || request.id.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 
-		if(!KeyDataItem.isValidKeyname(request.key))
+		if(!KeyDataItem.isValidUserReadKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
 		// If it's not our data, we can't see it
-		if(!request.id.equals(info.User.getId()) && KeyDataItem.isPrivateKeyname(request.key))
+		if(!request.id.equals(info.User.getId()) && !KeyDataItem.isPublicKeyname(request.key))
 		{
 			throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
 		}
@@ -369,7 +380,10 @@ public class ClientAPI {
 		
 		for(String keyname : request.keys)
 		{
-			if(!isMe && KeyDataItem.isPrivateKeyname(keyname))
+			if(!KeyDataItem.isValidUserReadKeyname(keyname))
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, keyname);
+			
+			if(!isMe && !KeyDataItem.isPublicKeyname(keyname))
 				throw new JsonApiException(ApiErrors.PRIVATE_DATA, keyname);
 		}
 		
@@ -396,7 +410,7 @@ public class ClientAPI {
 		if(request.id == null || request.id.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
-		List<KeyDataItem> items = KeyDataManager.loadAllKeysSince(request.id, (long)request.since, request.include_deleted);
+		List<KeyDataItem> items = KeyDataManager.loadAllUserVisibleKeysSince(request.id, (long)request.since, request.include_deleted);
 		if(items == null)
 			items = new ArrayList<KeyDataItem>();
 		
@@ -408,7 +422,7 @@ public class ClientAPI {
 		
 		for(KeyDataItem item : items)
 		{
-			if(!isMe && KeyDataItem.isPrivateKeyname(item.key))
+			if(!isMe && !KeyDataItem.isPublicKeyname(item.key))
 			{
 				continue;
 			}
@@ -455,7 +469,7 @@ public class ClientAPI {
 		
 		for(SetUserDataRequest data : request.values)
 		{
-			if(!KeyDataItem.isValidKeyname(data.key))
+			if(!KeyDataItem.isValidUserWriteKeyname(data.key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
 			
 			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
@@ -477,7 +491,7 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
 		}
 		
-		if(!KeyDataItem.isValidKeyname(request.key))
+		if(!KeyDataItem.isValidUserWriteKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 
 		Resident resident = info.UserPresence.getOrCreateAlias(request.alias);
@@ -496,7 +510,7 @@ public class ClientAPI {
 		
 		for(String keyname : request.values.keySet())
 		{
-			if(!KeyDataItem.isValidKeyname(keyname))
+			if(!KeyDataItem.isValidUserWriteKeyname(keyname))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, keyname);
 		}
 		

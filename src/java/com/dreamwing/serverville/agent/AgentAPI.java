@@ -40,7 +40,7 @@ public class AgentAPI
 		if(request.id == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 
-		if(!KeyDataItem.isValidKeyname(request.key))
+		if(!KeyDataItem.isValidServerKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
 		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(request.key, request.data_type, request.value);
@@ -62,7 +62,7 @@ public class AgentAPI
 		
 		for(SetGlobalDataItemRequest data : request.values)
 		{
-			if(!KeyDataItem.isValidKeyname(data.key))
+			if(!KeyDataItem.isValidServerKeyname(data.key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
 			
 			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
@@ -86,6 +86,7 @@ public class AgentAPI
 	public static UserDataReply GetDataKeys(GlobalKeysRequest request) throws JsonApiException, SQLException
 	{
 		UserDataReply reply = new UserDataReply();
+		
 		reply.values = ApiInst.getDataKeys(request.id, request.keys, request.since, request.include_deleted);
 		return reply;
 	}
@@ -164,7 +165,7 @@ public class AgentAPI
 		
 		for(Map.Entry<String,Object> item : request.values.entrySet())
 		{
-			if(!KeyDataItem.isValidKeyname(item.getKey()))
+			if(!KeyDataItem.isValidServerKeyname(item.getKey()))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, item.getKey());
 		}
 		

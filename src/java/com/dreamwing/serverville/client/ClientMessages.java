@@ -56,6 +56,7 @@ public class ClientMessages {
 		public String username;
 		public String email;
 		public String session_id;
+		public double admin_level;
 		public double time;
 	}
 	
@@ -65,6 +66,7 @@ public class ClientMessages {
 		public String username;
 		public String email;
 		public String session_id;
+		public double admin_level;
 	}
 	
 	public static class ServerTime
