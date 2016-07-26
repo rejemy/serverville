@@ -26,13 +26,13 @@ public class SubnetMask {
 		if(parts.length < 1 || parts.length > 2)
 			throw new IllegalArgumentException("Invalid address mask format: "+addrMask);
 		
-		int bits = 0;
-		if(parts.length == 2)
-			bits = Integer.parseInt(parts[1]);
-		
 		InetAddress addr = InetAddress.getByName(parts[0]);
 		if(addr instanceof Inet4Address)
 		{
+			int bits = 32;
+			if(parts.length == 2)
+				bits = Integer.parseInt(parts[1]);
+			
 			if(bits > 32 || bits < 0)
 				throw new IllegalArgumentException("Invalid address mask format: "+addrMask);
 			
@@ -43,11 +43,15 @@ public class SubnetMask {
 	                     ((b[2] & 0xFF) << 8)  |
 	                     ((b[3] & 0xFF) << 0);
 			
-			IPv4Mask = (0xffffffff << bits);
+			IPv4Mask = (0xffffffff << (32-bits));
 			Ipv4Addr = Ipv4Addr & IPv4Mask;
 		}
 		else if(addr instanceof Inet6Address)
 		{
+			int bits = 128;
+			if(parts.length == 2)
+				bits = Integer.parseInt(parts[1]);
+			
 			if(bits > 128 || bits < 0)
 				throw new IllegalArgumentException("Invalid address mask format: "+addrMask);
 			
@@ -72,9 +76,17 @@ public class SubnetMask {
 		                    ((b[14] & 0xFF) << 8)  |
 		                    ((b[15] & 0xFF) << 0);
 			
+			bits = 128 - bits;
+			
 			if(bits > 64)
 				IPv6UpperMask = (0xffffffffffffffffL << (bits-64));
-			IPv6LowerMask = (0xffffffffffffffffL << bits);
+			else
+				IPv6UpperMask = 0xffffffffffffffffL;
+			
+			if(bits >= 64)
+				IPv6LowerMask = 0L;
+			else
+				IPv6LowerMask = (0xffffffffffffffffL << bits);
 			
 			Ipv6UpperAddr = Ipv6UpperAddr & IPv6UpperMask;
 			Ipv6LowerAddr = Ipv6LowerAddr & IPv6LowerMask;
