@@ -21,8 +21,8 @@ public class DataTests {
 		Assert.assertNull(result);
 	}
 	
-	private static String TestItemID = KeyDataManager.TestIdPrefix+SVID.makeSVID();
-	private static byte[] TestItemBytes;
+	private String TestItemID = KeyDataManager.TestIdPrefix+SVID.makeSVID();
+	private byte[] TestItemBytes;
 	
 	@Test(order=2)
 	public void SaveItem() throws Exception
