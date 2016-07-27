@@ -1,5 +1,8 @@
 package com.dreamwing.serverville.agent;
 
+import com.dreamwing.serverville.ServervilleMain;
+import com.dreamwing.serverville.net.SslProtocolDetector;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -32,6 +35,14 @@ public class AgentServerSocketInitializer extends ChannelInitializer<SocketChann
     {
         ChannelPipeline pipeline = ch.pipeline();
         
+        if(SslProtocolDetector.SharedSslContext != null)
+        {
+	        if(SslProtocolDetector.AgentSSLOnly)
+	        	pipeline.addLast(SslProtocolDetector.SharedSslContext.newHandler(ch.alloc()));
+	        else
+	        	pipeline.addLast(new SslProtocolDetector());
+        }
+        
         pipeline.addLast(new HttpServerCodec());
         pipeline.addLast(new HttpObjectAggregator(65536));
         pipeline.addLast(new ChunkedWriteHandler());
@@ -51,7 +62,9 @@ public class AgentServerSocketInitializer extends ChannelInitializer<SocketChann
 
         b.bind(port).sync();
         
-        URL = "http://localhost:"+port+"/";
+        String hostname = ServervilleMain.ServerProperties.getProperty("hostname");
+        String protocol = SslProtocolDetector.AdminSSLOnly ? "https" : "http";
+        URL = protocol+"://"+hostname+":"+port+"/";
     }
     
     public static void shutdown()

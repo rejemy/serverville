@@ -1,5 +1,8 @@
 package com.dreamwing.serverville.client;
 
+import com.dreamwing.serverville.ServervilleMain;
+import com.dreamwing.serverville.net.SslProtocolDetector;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -32,8 +35,18 @@ public class ClientSocketInitializer extends ChannelInitializer<SocketChannel> {
 	{
 		ChannelPipeline pipeline = ch.pipeline();
         
-		pipeline.addLast("detector", new ClientProtocolDetector());
-        pipeline.addLast("httpServer", new HttpServerCodec());
+		if(SslProtocolDetector.SharedSslContext != null)
+        {
+			if(SslProtocolDetector.ClientSSLOnly)
+	        	pipeline.addLast(SslProtocolDetector.SharedSslContext.newHandler(ch.alloc()));
+	        else
+	        	pipeline.addLast(new SslProtocolDetector());
+        }
+		
+		// Disabling this thing for now, not used and needs more work
+		//pipeline.addLast("detector", new ClientProtocolDetector());
+      
+		pipeline.addLast("httpServer", new HttpServerCodec());
         pipeline.addLast("httpAggregator", new HttpObjectAggregator(65536));
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
         pipeline.addLast(new IdleStateHandler(0, 0, 120));
@@ -52,7 +65,9 @@ public class ClientSocketInitializer extends ChannelInitializer<SocketChannel> {
 
         b.bind(port).sync();
         
-        URL = "http://localhost:"+port+"/";
+        String hostname = ServervilleMain.ServerProperties.getProperty("hostname");
+        String protocol = SslProtocolDetector.AdminSSLOnly ? "https" : "http";
+        URL = protocol+"://"+hostname+":"+port+"/";
     }
     
     public static void shutdown()

@@ -63,11 +63,14 @@ public class ClientProtocolDetector extends ChannelInboundHandlerAdapter {
 	private void customProtocolDetected(ChannelHandlerContext ctx)
 	{
 		ChannelPipeline pipe = ctx.channel().pipeline();
+		
+		pipe.remove(this);
+		
 		pipe.remove("httpServer");
 		pipe.remove("httpAggregator");
 		pipe.remove("chunkedWriter");
 		
-		pipe.addLast("jsonDecoder", new ClientJsonProtocolDecoder());
+		pipe.addFirst("jsonDecoder", new ClientJsonProtocolDecoder());
 	}
 	
 

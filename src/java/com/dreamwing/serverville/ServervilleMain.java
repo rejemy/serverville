@@ -31,6 +31,7 @@ import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.launcher.Launcher;
 import com.dreamwing.serverville.log.IndexedFileAppender;
 import com.dreamwing.serverville.log.IndexedFileManager;
+import com.dreamwing.serverville.net.SslProtocolDetector;
 import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.test.SelfTest;
@@ -66,6 +67,12 @@ public class ServervilleMain {
 		DefaultProperties.setProperty("jdbc_url", "");
 		DefaultProperties.setProperty("jdbc_user", "");
 		DefaultProperties.setProperty("jdbc_password", "");
+		DefaultProperties.setProperty("ssl_key_file", "");
+		DefaultProperties.setProperty("ssl_cert_chain_file", "");
+		DefaultProperties.setProperty("admin_ssl_only", "false");
+		DefaultProperties.setProperty("agent_ssl_only", "false");
+		DefaultProperties.setProperty("client_ssl_only", "false");
+		DefaultProperties.setProperty("hostname", "localhost");
 	}
 	
 	private static Logger l;
@@ -184,6 +191,7 @@ public class ServervilleMain {
     	
     	RequireInvite = Boolean.parseBoolean(ServerProperties.getProperty("require_invite"));
     	
+    	SslProtocolDetector.init();
     	JSON.init();
     	DatabaseManager.init();
     	KeyDataManager.init();

@@ -1,13 +1,13 @@
 package com.dreamwing.serverville.admin;
 
 
-
 import java.nio.file.Path;
 
 import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.HttpDispatcher;
 import com.dreamwing.serverville.net.HttpFileServer;
+import com.dreamwing.serverville.net.SslProtocolDetector;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
@@ -30,6 +30,8 @@ public class AdminServerSocketInitializer extends ChannelInitializer<SocketChann
 	
 	public static String URL;
 	
+	
+	
     public AdminServerSocketInitializer() throws Exception {
 
     	Path adminFileRoot = ServervilleMain.ResRoot.resolve("admin/webroot");
@@ -43,11 +45,21 @@ public class AdminServerSocketInitializer extends ChannelInitializer<SocketChann
     	Dispatcher.addMethod			("/admin/*", fileServer, "getFile");
     	Dispatcher.addAllStaticMethods	("/api/", AdminAPI.class);
     	Dispatcher.addMethod			("/logs/*", logFileServer, "getFile");
+    	
+    	
     }
 
     @Override
     public void initChannel(SocketChannel ch) {
         ChannelPipeline pipeline = ch.pipeline();
+       
+        if(SslProtocolDetector.SharedSslContext != null)
+        {
+	        if(SslProtocolDetector.AdminSSLOnly)
+	        	pipeline.addLast(SslProtocolDetector.SharedSslContext.newHandler(ch.alloc()));
+	        else
+	        	pipeline.addLast(new SslProtocolDetector());
+        }
         
         pipeline.addLast(new HttpServerCodec());
         pipeline.addLast(new HttpObjectAggregator(65536));
@@ -68,7 +80,9 @@ public class AdminServerSocketInitializer extends ChannelInitializer<SocketChann
 
         b.bind(port).sync();
         
-        URL = "http://localhost:"+port+"/";
+        String hostname = ServervilleMain.ServerProperties.getProperty("hostname");
+        String protocol = SslProtocolDetector.AdminSSLOnly ? "https" : "http";
+        URL = protocol+"://"+hostname+":"+port+"/";
     }
     
     public static void shutdown()
