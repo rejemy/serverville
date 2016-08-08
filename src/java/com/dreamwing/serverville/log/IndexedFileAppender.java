@@ -25,8 +25,6 @@ import org.apache.logging.log4j.core.util.Integers;
 public class IndexedFileAppender extends AbstractAppender
 {
 
-	private static final long serialVersionUID = 1L;
-	
 	protected static final int DEFAULT_BUFFER_SIZE = 8192;
 	protected static final int DEFAULT_MAX_FLUSH_MS = 1000;
 	protected static final int DEFAULT_MAX_FILES = 0;
