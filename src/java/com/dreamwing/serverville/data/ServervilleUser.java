@@ -494,6 +494,8 @@ public class ServervilleUser {
 		DatabaseManager.ServervilleUserDao.delete(this);
 		
 		KeyDataManager.deleteAllKeys(getId());
+		
+		CurrencyRecord.deleteAllForUser(getId());
 	}
 	
 	public static int parseAdminLevel(String adminLevelStr)
