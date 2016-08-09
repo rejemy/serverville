@@ -267,4 +267,20 @@ public class ClientMessages {
 		public Object value;
 	}
 	
+	public static class CurrencyBalanceRequest
+	{
+		public String currency_id;
+	}
+	
+	public static class CurrencyBalanceReply
+	{
+		public String currency_id;
+		public int balance;
+	}
+	
+	public static class CurrencyBalancesReply
+	{
+		public Map<String,Integer> balances;
+	}
+	
 }

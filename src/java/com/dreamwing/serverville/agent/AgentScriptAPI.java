@@ -9,13 +9,15 @@ import java.util.Map;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-
+import com.dreamwing.serverville.CurrencyInfoManager;
 import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
+import com.dreamwing.serverville.data.CurrencyInfo;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyData;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataRecord;
+import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.data.TransientDataItem;
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataManager;
@@ -470,5 +472,90 @@ public class AgentScriptAPI
 			throw new JsonApiException(ApiErrors.NOT_FOUND, id);
 		
 		res.deleteAllTransientValues();
+	}
+	
+	public int getCurrencyBalance(String userid, String currencyId) throws JsonApiException, SQLException
+	{
+		if(userid == null || userid.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "userid");
+		
+		if(currencyId == null || currencyId.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "currencyid");
+		
+		ServervilleUser user = ServervilleUser.findById(userid);
+		if(user == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		CurrencyInfo currency = CurrencyInfoManager.getCurrencyInfo(currencyId);
+		if(currency == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "currency not found");
+		
+		return CurrencyInfoManager.getCurrencyBalance(user, currency);
+	}
+	
+	public Map<String,Integer> getCurrencyBalances(String userid) throws JsonApiException, SQLException
+	{
+		if(userid == null || userid.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "userid");
+		
+		ServervilleUser user = ServervilleUser.findById(userid);
+		if(user == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		return CurrencyInfoManager.getCurrencyBalances(user);
+	}
+	
+	public int addCurrency(String userid, String currencyId, int delta, String reason) throws JsonApiException, SQLException
+	{
+		if(userid == null || userid.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "userid");
+		
+		if(currencyId == null || currencyId.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "currencyid");
+		
+		if(reason == null || reason.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "reason");
+		
+		if(delta <= 0)
+		{
+			throw new JsonApiException(ApiErrors.INVALID_INPUT, "can only add positive values to currency balances");
+		}
+		
+		ServervilleUser user = ServervilleUser.findById(userid);
+		if(user == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		CurrencyInfo currency = CurrencyInfoManager.getCurrencyInfo(currencyId);
+		if(currency == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "currency not found");
+		
+		return CurrencyInfoManager.changeCurrencyBalance(user, currency, delta, reason);
+	}
+	
+	public int subtractCurrency(String userid, String currencyId, int delta, String reason) throws JsonApiException, SQLException
+	{
+		if(userid == null || userid.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "userid");
+		
+		if(currencyId == null || currencyId.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "currencyid");
+		
+		if(reason == null || reason.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "reason");
+		
+		if(delta <= 0)
+		{
+			throw new JsonApiException(ApiErrors.INVALID_INPUT, "can only subtract positive values from currency balances");
+		}
+		
+		ServervilleUser user = ServervilleUser.findById(userid);
+		if(user == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		CurrencyInfo currency = CurrencyInfoManager.getCurrencyInfo(currencyId);
+		if(currency == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "currency not found");
+		
+		return CurrencyInfoManager.changeCurrencyBalance(user, currency, -delta, reason);
 	}
 }

@@ -540,7 +540,6 @@ public class AdminTests {
 		TestKeytId = null;
 	}
 	
-	
 	@Test(order=1000)
 	public void Cleanup() throws SQLException
 	{

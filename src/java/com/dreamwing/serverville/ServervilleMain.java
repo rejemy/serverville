@@ -195,6 +195,7 @@ public class ServervilleMain {
     	JSON.init();
     	DatabaseManager.init();
     	KeyDataManager.init();
+    	CurrencyInfoManager.init();
     	ResidentManager.init();
     	UserManager.init();
     	ScriptManager.init();

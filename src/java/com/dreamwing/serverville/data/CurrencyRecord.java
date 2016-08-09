@@ -18,13 +18,16 @@ import com.j256.ormlite.table.DatabaseTable;
 public class CurrencyRecord
 {
 	@DatabaseField(columnName="userid", uniqueCombo=true, canBeNull=false)
-	private String UserId;
+	public String UserId;
 	
 	@DatabaseField(columnName="currency", uniqueCombo=true, canBeNull=false)
 	public String CurrencyId;
 	
 	@DatabaseField(columnName="balance", canBeNull=false)
 	public int Balance;
+	
+	@DatabaseField(columnName="remainder", canBeNull=false)
+	public double Remainder;
 	
 	@DatabaseField(columnName="modified", dataType=DataType.DATE_LONG, canBeNull=false, version=true)
 	public Date Modified;
@@ -43,15 +46,20 @@ public class CurrencyRecord
 	
 	public void create() throws SQLException, JsonApiException
 	{
+		if(Modified == null)
+			Modified = new Date();
+		
 		if(DatabaseManager.CurrencyDao.create(this) != 1)
 			throw new JsonApiException(ApiErrors.CONCURRENT_MODIFICATION);
 	}
 	
 	public void update() throws SQLException, JsonApiException
 	{
+		Date modified = new Date();
 		UpdateBuilder<CurrencyRecord,Void> builder = DatabaseManager.CurrencyDao.updateBuilder();
 		builder.updateColumnValue("balance", Balance);
-		builder.updateColumnValue("modified", Modified);
+		builder.updateColumnValue("remainder", Remainder);
+		builder.updateColumnValue("modified", modified);
 		
 		@SuppressWarnings("unchecked")
 		PreparedUpdate<CurrencyRecord> updateQuery = (PreparedUpdate<CurrencyRecord>)
@@ -61,6 +69,8 @@ public class CurrencyRecord
 		
 		if(DatabaseManager.CurrencyDao.update(updateQuery) != 1)
 			throw new JsonApiException(ApiErrors.CONCURRENT_MODIFICATION);
+		
+		Modified = modified;
 	}
 	
 	public static void deleteAllForUser(String userId) throws SQLException

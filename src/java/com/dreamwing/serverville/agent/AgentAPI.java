@@ -191,7 +191,7 @@ public class AgentAPI
 		return reply;
 	}
 	
-	public static TransientDataItemsReply getAllTransientValues(GetAllTransientValuesRequest request) throws JsonApiException
+	public static TransientDataItemsReply GetAllTransientValues(GetAllTransientValuesRequest request) throws JsonApiException
 	{
 		TransientDataItemsReply reply = new TransientDataItemsReply();
 		reply.values = ApiInst.getAllTransientValues(request.id);
@@ -215,4 +215,48 @@ public class AgentAPI
 		ApiInst.deleteAllTransientValues(request.id);
 		return new EmptyReply();
 	}
+	
+	public static CurrencyBalanceReply GetCurrencyBalance(CurrencyBalanceRequest request) throws JsonApiException, SQLException
+	{
+		CurrencyBalanceReply reply = new CurrencyBalanceReply();
+		reply.user_id = request.user_id;
+		reply.currency_id = request.currency_id;
+		
+		reply.balance = ApiInst.getCurrencyBalance(request.user_id, request.currency_id);
+		
+		return reply;
+	}
+	
+	public static CurrencyBalancesReply GetCurrencyBalances(CurrencyBalancesRequest request) throws JsonApiException, SQLException
+	{
+		CurrencyBalancesReply reply = new CurrencyBalancesReply();
+		reply.user_id = request.user_id;
+		
+		reply.balances = ApiInst.getCurrencyBalances(request.user_id);
+		
+		return reply;
+	}
+	
+	public static CurrencyBalanceReply AddCurrency(CurrencyChangeRequest request) throws JsonApiException, SQLException
+	{
+		CurrencyBalanceReply reply = new CurrencyBalanceReply();
+		reply.user_id = request.user_id;
+		reply.currency_id = request.currency_id;
+		
+		reply.balance = ApiInst.addCurrency(request.user_id, request.currency_id, request.delta, request.reason);
+		
+		return reply;
+	}
+	
+	public static CurrencyBalanceReply SubtractCurrency(CurrencyChangeRequest request) throws JsonApiException, SQLException
+	{
+		CurrencyBalanceReply reply = new CurrencyBalanceReply();
+		reply.user_id = request.user_id;
+		reply.currency_id = request.currency_id;
+		
+		reply.balance = ApiInst.subtractCurrency(request.user_id, request.currency_id, request.delta, request.reason);
+		
+		return reply;
+	}
+	
 }

@@ -2,10 +2,14 @@ package com.dreamwing.serverville.data;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.j256.ormlite.field.DatabaseField;
+import com.j256.ormlite.table.DatabaseTable;
 
+@DatabaseTable(tableName = "currency_info")
 public class CurrencyInfo
 {
 	@DatabaseField(columnName="id", id=true, canBeNull=false)
@@ -21,13 +25,37 @@ public class CurrencyInfo
 	public Integer Max;
 	
 	@DatabaseField(columnName="rate", canBeNull=false)
-	public int Rate;
+	public double Rate;
 	
 	@DatabaseField(columnName="history", canBeNull=false)
 	public boolean KeepHistory;
 	
+	private static final Predicate<String> ValidCurrencyIdRegex = Pattern.compile("^[a-zA-Z_][0-9a-zA-Z_\\$]*$").asPredicate();
+	
+	public static boolean isValidCurrencyId(String id)
+	{
+		if(id == null)
+			return false;
+		return ValidCurrencyIdRegex.test(id);
+	}
+	
 	public static List<CurrencyInfo> loadCurrencies() throws SQLException
 	{
 		return DatabaseManager.CurrencyInfoDao.queryForAll();
+	}
+	
+	public static CurrencyInfo loadCurrency(String id) throws SQLException
+	{
+		return DatabaseManager.CurrencyInfoDao.queryForId(id);
+	}
+	
+	public void save() throws SQLException
+	{
+		DatabaseManager.CurrencyInfoDao.createOrUpdate(this);
+	}
+	
+	public static void deleteById(String id) throws SQLException
+	{
+		DatabaseManager.CurrencyInfoDao.deleteById(id);
 	}
 }

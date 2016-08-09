@@ -10,8 +10,10 @@ import java.util.Map;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import com.dreamwing.serverville.CurrencyInfoManager;
 import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.client.ClientMessages.*;
+import com.dreamwing.serverville.data.CurrencyInfo;
 import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
@@ -816,6 +818,30 @@ public class ClientAPI {
 		}
 		
 		return new EmptyClientReply();
+	}
+	
+	public static CurrencyBalanceReply GetCurrencyBalance(CurrencyBalanceRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		if(request.currency_id == null || request.currency_id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "currency_id");
+		
+		CurrencyInfo currency = CurrencyInfoManager.getCurrencyInfo(request.currency_id);
+		if(currency == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "currency not found");
+		
+		CurrencyBalanceReply reply = new CurrencyBalanceReply();
+		reply.balance = CurrencyInfoManager.getCurrencyBalance(info.User, currency);
+		
+		return reply;
+	}
+	
+	public static CurrencyBalancesReply GetCurrencyBalances(EmptyClientRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		CurrencyBalancesReply reply = new CurrencyBalancesReply();
+		
+		reply.balances = CurrencyInfoManager.getCurrencyBalances(info.User);
+		
+		return reply;
 	}
 	
 }

@@ -10,11 +10,13 @@ import com.dreamwing.serverville.net.JsonApiException;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.stmt.PreparedDelete;
+import com.j256.ormlite.table.DatabaseTable;
 
+@DatabaseTable(tableName = "currency_history")
 public class CurrencyHistory
 {
 	@DatabaseField(columnName="userid", canBeNull=false)
-	private String UserId;
+	public String UserId;
 	
 	@DatabaseField(columnName="currency", canBeNull=false)
 	public String CurrencyId;

@@ -132,5 +132,37 @@ public class AgentMessages
 	{
 		public String id;
 	}
+	
+	public static class CurrencyBalanceRequest
+	{
+		public String user_id;
+		public String currency_id;
+	}
+	
+	public static class CurrencyBalancesRequest
+	{
+		public String user_id;
+	}
+	
+	public static class CurrencyChangeRequest
+	{
+		public String user_id;
+		public String currency_id;
+		public int delta;
+		public String reason;
+	}
+	
+	public static class CurrencyBalanceReply
+	{
+		public String user_id;
+		public String currency_id;
+		public int balance;
+	}
+	
+	public static class CurrencyBalancesReply
+	{
+		public String user_id;
+		public Map<String,Integer> balances;
+	}
 
 }

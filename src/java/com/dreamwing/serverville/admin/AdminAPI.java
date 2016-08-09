@@ -18,10 +18,13 @@ import javax.script.ScriptException;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.classic.ParseException;
+
+import com.dreamwing.serverville.CurrencyInfoManager;
 import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.agent.AgentKeyManager;
 import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.data.AgentKey;
+import com.dreamwing.serverville.data.CurrencyInfo;
 import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
@@ -42,6 +45,7 @@ import com.dreamwing.serverville.serialize.JsonDataDecoder;
 import com.dreamwing.serverville.test.SelfTest;
 import com.dreamwing.serverville.test.SelfTest.TestStatus;
 import com.dreamwing.serverville.util.PasswordUtil;
+
 import okhttp3.MediaType;
 
 import io.netty.channel.ChannelFuture;
@@ -879,6 +883,130 @@ public class AdminAPI {
 		
 		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, JsonDataType.fromString(dataType), value);
 		KeyDataManager.saveKey(id, item);
+		
+		return HttpHelpers.sendSuccess(req);
+	}
+	
+	public static class AdminCurrencyInfo
+	{
+		public String id;
+		public double starting;
+		public Double min;
+		public Double max;
+		public double rate;
+		public boolean keep_history;
+		
+		public AdminCurrencyInfo(CurrencyInfo info)
+		{
+			id = info.CurrencyId;
+			starting = info.Starting;
+			min = info.Min == null ? null : info.Min.doubleValue();
+			max = info.Max == null ? null : info.Max.doubleValue();
+			rate = info.Rate;
+			keep_history = info.KeepHistory;
+		}
+	}
+	
+	public static class AdminCurrencyInfoList
+	{
+		public List<AdminCurrencyInfo> currencies;
+	}
+	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
+	public static ChannelFuture currencies(HttpRequestInfo req) throws SQLException, JsonApiException
+	{
+		List<CurrencyInfo> currencies = CurrencyInfoManager.reloadCurrencies();
+		AdminCurrencyInfoList reply = new AdminCurrencyInfoList();
+		reply.currencies = new ArrayList<AdminCurrencyInfo>(currencies.size());
+		
+		for(CurrencyInfo currency : currencies)
+		{
+			reply.currencies.add(new AdminCurrencyInfo(currency));
+		}
+		
+		return HttpHelpers.sendJson(req, reply);
+	}
+	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
+	public static ChannelFuture currency(HttpRequestInfo req) throws SQLException, JsonApiException
+	{
+		String id = req.getOneQuery("id");
+
+		if(id == null || id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a currency id");
+		
+		CurrencyInfo currency = CurrencyInfoManager.reloadCurrencyInfo(id);
+		if(currency == null)
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
+		
+		AdminCurrencyInfo reply = new AdminCurrencyInfo(currency);
+		
+		return HttpHelpers.sendJson(req, reply);
+	}
+	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
+	public static ChannelFuture addCurrency(HttpRequestInfo req) throws SQLException, JsonApiException
+	{
+		CurrencyInfo currency = new CurrencyInfo();
+		
+		currency.CurrencyId = req.getOneBody("id");
+		if(currency.CurrencyId == null || currency.CurrencyId.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a currency id");
+		
+		if(!CurrencyInfo.isValidCurrencyId(currency.CurrencyId))
+			throw new JsonApiException(ApiErrors.INVALID_INPUT, "Invalid currency id: "+currency.CurrencyId);
+		
+		currency.Starting = req.getOneBodyAsInt("starting", 0);
+		currency.Rate = req.getOneBodyAsDouble("rate", 0.0);
+		
+		String minStr = req.getOneBody("min", null);
+		if(minStr != null)
+		{
+			try
+			{
+				currency.Min = Integer.parseInt(minStr);
+			}
+			catch(Exception e)
+			{
+				throw new JsonApiException(ApiErrors.INVALID_INPUT, "Min is not a valid integer: "+minStr);
+			}
+			
+			if(currency.Starting < currency.Min)
+			{
+				throw new JsonApiException(ApiErrors.INVALID_INPUT, "Starting value is less than minimun value");
+			}
+		}
+		
+		String maxStr = req.getOneBody("max", null);
+		if(maxStr != null)
+		{
+			try
+			{
+				currency.Max =  Integer.parseInt(maxStr);
+			}
+			catch(Exception e)
+			{
+				throw new JsonApiException(ApiErrors.INVALID_INPUT, "Max is not a valid integer: "+maxStr);
+			}
+			
+			if(currency.Starting > currency.Max)
+			{
+				throw new JsonApiException(ApiErrors.INVALID_INPUT, "Starting value is more than maximum value");
+			}
+		}
+		
+		if(currency.Max != null && currency.Min != null && currency.Min > currency.Max)
+		{
+			throw new JsonApiException(ApiErrors.INVALID_INPUT, "Currency min can't be more than currency max");
+		}
+		
+		String historyStr = req.getOneBody("keep_history", null);
+		if(historyStr != null)
+		{
+			currency.KeepHistory = Boolean.parseBoolean(historyStr);
+		}
+		
+		CurrencyInfoManager.addCurrency(currency);
 		
 		return HttpHelpers.sendSuccess(req);
 	}
