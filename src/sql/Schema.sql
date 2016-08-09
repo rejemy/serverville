@@ -81,6 +81,60 @@ CREATE TABLE `agent_key` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `currency`
+--
+
+DROP TABLE IF EXISTS `currency`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `currency` (
+  `userid` varchar(255) NOT NULL,
+  `currency` varchar(255) NOT NULL,
+  `balance` int(11) NOT NULL,
+  `remainder` double NOT NULL DEFAULT '0',
+  `modified` bigint(20) NOT NULL,
+  PRIMARY KEY (`userid`,`currency`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `currency_history`
+--
+
+DROP TABLE IF EXISTS `currency_history`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `currency_history` (
+  `userid` varchar(255) NOT NULL,
+  `currency` varchar(255) NOT NULL,
+  `before` int(11) NOT NULL,
+  `delta` int(11) NOT NULL,
+  `after` int(11) NOT NULL,
+  `action` varchar(255) NOT NULL,
+  `modified` bigint(20) NOT NULL,
+  KEY `UserIndex` (`userid`,`modified`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `currency_info`
+--
+
+DROP TABLE IF EXISTS `currency_info`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `currency_info` (
+  `id` varchar(255) NOT NULL,
+  `starting` int(11) NOT NULL DEFAULT '0',
+  `min` int(11) DEFAULT NULL,
+  `max` int(11) DEFAULT NULL,
+  `rate` double NOT NULL DEFAULT '0',
+  `history` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `invite`
 --
 
