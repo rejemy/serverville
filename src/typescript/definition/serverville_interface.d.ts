@@ -1,4 +1,3 @@
-
 /// <reference path="serverville_int.d.ts" />
 
 declare class KeyData

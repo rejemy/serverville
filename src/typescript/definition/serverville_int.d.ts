@@ -104,4 +104,9 @@ declare namespace api
 	function deleteTransientValue(id:string, key:string):void;
 	function deleteTransientValues(id:string, keys:string[]):void;
 	function deleteAllTransientValues(id:string):void;
+
+	function getCurrencyBalance(userId:string, currencyId:string):number;
+	function getCurrencyBalances(userId:string):{[currencyId:string]:number};
+	function addCurrency(userId:string, currencyId:string, amount:number, reason:string):number;
+	function subtractCurrency(userId:string, currencyId:string, amount:number, reason:string):number;
 }

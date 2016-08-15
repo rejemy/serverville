@@ -148,7 +148,7 @@ public class AgentMessages
 	{
 		public String user_id;
 		public String currency_id;
-		public int delta;
+		public int amount;
 		public String reason;
 	}
 	

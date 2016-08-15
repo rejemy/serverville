@@ -295,7 +295,8 @@ public abstract class BaseResident
 		TransientDataItem value = MostRecentValue;
 		while(value != null && value.modified >= since)
 		{
-			values.put(value.key, value.value);
+			if(!value.deleted)
+				values.put(value.key, value.value);
 			value = value.nextItem;
 		}
 		

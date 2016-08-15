@@ -1,5 +1,5 @@
 /// <reference path="nashorn.d.ts" />
-/// <reference path="serverville_int.d.ts" />
+/// <reference path="../definition/serverville_int.d.ts" />
 // Javascript to setup a Serverville javascript context
 delete quit;
 delete exit;

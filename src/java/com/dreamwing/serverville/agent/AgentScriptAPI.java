@@ -505,7 +505,7 @@ public class AgentScriptAPI
 		return CurrencyInfoManager.getCurrencyBalances(user);
 	}
 	
-	public int addCurrency(String userid, String currencyId, int delta, String reason) throws JsonApiException, SQLException
+	public int addCurrency(String userid, String currencyId, int amount, String reason) throws JsonApiException, SQLException
 	{
 		if(userid == null || userid.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "userid");
@@ -516,7 +516,7 @@ public class AgentScriptAPI
 		if(reason == null || reason.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "reason");
 		
-		if(delta <= 0)
+		if(amount <= 0)
 		{
 			throw new JsonApiException(ApiErrors.INVALID_INPUT, "can only add positive values to currency balances");
 		}
@@ -529,10 +529,10 @@ public class AgentScriptAPI
 		if(currency == null)
 			throw new JsonApiException(ApiErrors.NOT_FOUND, "currency not found");
 		
-		return CurrencyInfoManager.changeCurrencyBalance(user, currency, delta, reason);
+		return CurrencyInfoManager.changeCurrencyBalance(user, currency, amount, reason);
 	}
 	
-	public int subtractCurrency(String userid, String currencyId, int delta, String reason) throws JsonApiException, SQLException
+	public int subtractCurrency(String userid, String currencyId, int amount, String reason) throws JsonApiException, SQLException
 	{
 		if(userid == null || userid.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "userid");
@@ -543,7 +543,7 @@ public class AgentScriptAPI
 		if(reason == null || reason.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "reason");
 		
-		if(delta <= 0)
+		if(amount <= 0)
 		{
 			throw new JsonApiException(ApiErrors.INVALID_INPUT, "can only subtract positive values from currency balances");
 		}
@@ -556,6 +556,6 @@ public class AgentScriptAPI
 		if(currency == null)
 			throw new JsonApiException(ApiErrors.NOT_FOUND, "currency not found");
 		
-		return CurrencyInfoManager.changeCurrencyBalance(user, currency, -delta, reason);
+		return CurrencyInfoManager.changeCurrencyBalance(user, currency, -amount, reason);
 	}
 }

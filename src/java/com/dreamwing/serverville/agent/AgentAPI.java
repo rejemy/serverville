@@ -243,7 +243,7 @@ public class AgentAPI
 		reply.user_id = request.user_id;
 		reply.currency_id = request.currency_id;
 		
-		reply.balance = ApiInst.addCurrency(request.user_id, request.currency_id, request.delta, request.reason);
+		reply.balance = ApiInst.addCurrency(request.user_id, request.currency_id, request.amount, request.reason);
 		
 		return reply;
 	}
@@ -254,7 +254,7 @@ public class AgentAPI
 		reply.user_id = request.user_id;
 		reply.currency_id = request.currency_id;
 		
-		reply.balance = ApiInst.subtractCurrency(request.user_id, request.currency_id, request.delta, request.reason);
+		reply.balance = ApiInst.subtractCurrency(request.user_id, request.currency_id, request.amount, request.reason);
 		
 		return reply;
 	}
