@@ -126,6 +126,27 @@ public class HttpRequestInfo {
 		}
 	}
 	
+	public Long getOneQueryAsLong(String query, Long defValue)
+	{
+		if(QueryParams == null)
+			return defValue;
+		
+		List<String> queries = QueryParams.get(query);
+		if(queries == null || queries.size() == 0)
+			return defValue;
+		
+		String val = queries.get(0);
+		
+		try
+		{
+			return Long.parseLong(val);
+		}
+		catch(Exception e)
+		{
+			return defValue;
+		}
+	}
+	
 	public double getOneQueryAsDouble(String query, double defValue)
 	{
 		if(QueryParams == null)

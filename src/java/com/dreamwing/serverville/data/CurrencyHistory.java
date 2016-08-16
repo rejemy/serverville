@@ -42,16 +42,46 @@ public class CurrencyHistory
 				.eq("userid", userId).query();
 	}
 	
-	public static List<CurrencyHistory> loadAllForUser(String userId, Date since) throws SQLException
+	public static List<CurrencyHistory> loadAllForUser(String userId, Long since) throws SQLException
 	{
+		if(since == null)
+			return loadAllForUser(userId);
+		
 		return DatabaseManager.CurrencyHistoryDao.queryBuilder().where()
 				.eq("userid", userId).and().gt("modified", since).query();
 	}
 	
-	public static List<CurrencyHistory> loadAllForUser(String userId, Date from, Date to) throws SQLException
+	public static List<CurrencyHistory> loadAllForUser(String userId, Long from, Long to) throws SQLException
 	{
+		if(to == null)
+			return loadAllForUser(userId, from);
+		
 		return DatabaseManager.CurrencyHistoryDao.queryBuilder().where()
 				.eq("userid", userId).and().gt("modified", from).and().lt("modified", to).query();
+	}
+	
+	public static List<CurrencyHistory> loadForUser(String userId, String currencyId) throws SQLException
+	{
+		return DatabaseManager.CurrencyHistoryDao.queryBuilder().where()
+				.eq("userid", userId).and().eq("currency", currencyId).query();
+	}
+	
+	public static List<CurrencyHistory> loadForUser(String userId, String currencyId, Long since) throws SQLException
+	{
+		if(since == null)
+			return loadForUser(userId, currencyId);
+		
+		return DatabaseManager.CurrencyHistoryDao.queryBuilder().where()
+				.eq("userid", userId).and().eq("currency", currencyId).and().gt("modified", since).query();
+	}
+	
+	public static List<CurrencyHistory> loadForUser(String userId, String currencyId, Long from, Long to) throws SQLException
+	{
+		if(to == null)
+			return loadForUser(userId, currencyId, from);
+		
+		return DatabaseManager.CurrencyHistoryDao.queryBuilder().where()
+				.eq("userid", userId).and().eq("currency", currencyId).and().gt("modified", from).and().lt("modified", to).query();
 	}
 	
 	public void create() throws SQLException, JsonApiException

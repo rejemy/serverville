@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,6 +25,7 @@ import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.agent.AgentKeyManager;
 import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.data.AgentKey;
+import com.dreamwing.serverville.data.CurrencyHistory;
 import com.dreamwing.serverville.data.CurrencyInfo;
 import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.JsonDataType;
@@ -1009,5 +1011,68 @@ public class AdminAPI {
 		CurrencyInfoManager.addCurrency(currency);
 		
 		return HttpHelpers.sendSuccess(req);
+	}
+	
+	public static class UserCurrencyHistoryRecord
+	{
+		public double when;
+		public String currency_id;
+		public double before;
+		public double delta;
+		public double after;
+		public String action;
+	}
+	
+	public static class UserCurrencyHistoryReply
+	{
+		public List<UserCurrencyHistoryRecord> history;
+	}
+	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
+	public static ChannelFuture userCurrencyHistory(HttpRequestInfo req) throws SQLException, JsonApiException
+	{
+		String userId = req.getOneQuery("user_id");
+		String currencyId = req.getOneQuery("currency_id", null);
+		
+		Long from = req.getOneQueryAsLong("from", null);
+		Long to = req.getOneQueryAsLong("to", null);
+		
+		ServervilleUser user = ServervilleUser.findById(userId);
+		if(user == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user id not found");
+		
+		if(currencyId != null)
+		{
+			CurrencyInfo currency = CurrencyInfoManager.getCurrencyInfo(currencyId);
+			if(currency == null)
+				throw new JsonApiException(ApiErrors.NOT_FOUND, "currency id not found");
+		}
+		
+		List<CurrencyHistory> history = null;
+		if(currencyId != null)
+			history = CurrencyHistory.loadForUser(userId, currencyId, from, to);
+		else
+			history = CurrencyHistory.loadAllForUser(userId, from, to);
+		
+		Collections.sort(history, (CurrencyHistory h1, CurrencyHistory h2) -> h1.Modified.compareTo(h2.Modified));
+		
+		UserCurrencyHistoryReply reply = new UserCurrencyHistoryReply();
+		
+		reply.history = new ArrayList<UserCurrencyHistoryRecord>(history.size());
+		
+		for(CurrencyHistory historyRecord : history)
+		{
+			UserCurrencyHistoryRecord record = new UserCurrencyHistoryRecord();
+			reply.history.add(record);
+			
+			record.when = historyRecord.Modified.getTime();
+			record.currency_id = historyRecord.CurrencyId;
+			record.before = historyRecord.Before;
+			record.delta = historyRecord.Delta;
+			record.after = historyRecord.After;
+			record.action = historyRecord.Action;
+		}
+		
+		return HttpHelpers.sendJson(req, reply);
 	}
 }
