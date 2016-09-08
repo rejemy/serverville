@@ -193,6 +193,50 @@ CREATE TABLE `keydata_item` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `product`
+--
+
+DROP TABLE IF EXISTS `product`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `product` (
+  `id` varchar(255) NOT NULL,
+  `text` text,
+  `price` text,
+  `currencies` text,
+  `keydata` text,
+  `script` varchar(255) DEFAULT NULL,
+  `created` bigint(20) NOT NULL,
+  `modified` bigint(20) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `purchase`
+--
+
+DROP TABLE IF EXISTS `purchase`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `purchase` (
+  `id` varchar(255) NOT NULL,
+  `userid` varchar(255) NOT NULL,
+  `created` bigint(20) NOT NULL,
+  `modified` bigint(20) NOT NULL,
+  `productid` varchar(255) NOT NULL,
+  `method` varchar(255) NOT NULL,
+  `transactionid` varchar(255) DEFAULT NULL,
+  `currency` varchar(255) DEFAULT NULL,
+  `price` int(11) DEFAULT NULL,
+  `success` tinyint(4) NOT NULL,
+  `error` text,
+  PRIMARY KEY (`id`),
+  KEY `user` (`userid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `script`
 --
 
