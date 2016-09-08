@@ -17,6 +17,7 @@ import com.dreamwing.serverville.net.HttpHelpers;
 import com.dreamwing.serverville.net.ApiError;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpConnectionInfo;
+import com.dreamwing.serverville.net.HttpDispatcher;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.residents.OnlineUser;
 import com.dreamwing.serverville.serialize.SerializeUtil;
@@ -50,7 +51,8 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	
 	private static final String WEBSOCKET_PATH = "/websocket";
 	
-	private ClientDispatcher Dispatcher;
+	private ClientDispatcher JsonDispatcher;
+	private HttpDispatcher FormDispatcher;
 	private WebSocketServerHandshaker Handshaker;
 	
 	private HttpConnectionInfo Info;
@@ -60,11 +62,12 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	private boolean WebsocketConnected = false;
 	private boolean BinaryConnected = false;
 
-	public ClientConnectionHandler(ClientDispatcher dispatcher)
+	public ClientConnectionHandler(ClientDispatcher jsonDispatcher, HttpDispatcher formDispatcher)
 	{
 		super();
 		
-		Dispatcher = dispatcher;
+		JsonDispatcher = jsonDispatcher;
+		FormDispatcher = formDispatcher;
 	}
 	
 	public ServervilleUser getUser()
@@ -371,7 +374,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			info.User = Info.User;
 			info.UserPresence = UserPresence;
 			
-			Object reply = Dispatcher.dispatch(messageType, messageBody, info);
+			Object reply = JsonDispatcher.dispatch(messageType, messageBody, info);
 			if(reply instanceof ApiError)
 			{
 				ApiError error = (ApiError)reply;
@@ -382,6 +385,32 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 				return HttpHelpers.sendJson(currRequest, reply);
 			}
 
+		}
+		else if(uriPath.startsWith("/form/"))
+		{
+			// Invoking a non-Json form post API
+		
+			try {
+				return FormDispatcher.dispatch(currRequest);
+			}
+			catch(JsonProcessingException e)
+			{
+				return HttpHelpers.sendError(currRequest, ApiErrors.JSON_ERROR, e.getMessage());
+			}
+			catch(SQLException e)
+			{
+				l.warn("Database error: ", e);
+				return HttpHelpers.sendError(currRequest, ApiErrors.DB_ERROR, e.getMessage());
+			}
+			catch(JsonApiException e)
+			{
+				return HttpHelpers.sendErrorJson(currRequest, e.Error, e.HttpStatus);
+			}
+			catch(Exception e)
+			{
+				l.error("Internal server error: ", e);
+				return HttpHelpers.sendError(currRequest, ApiErrors.INTERNAL_SERVER_ERROR, e.getMessage());
+			}
 		}
 		
 		return HttpHelpers.sendError(currRequest, ApiErrors.NOT_FOUND);
@@ -431,7 +460,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		info.User = Info.User;
 		info.UserPresence = UserPresence;
 		
-		Object replyObj = Dispatcher.dispatch(messageType, messageBody, info);
+		Object replyObj = JsonDispatcher.dispatch(messageType, messageBody, info);
 		String sendType = replyObj instanceof ApiError ? "E" : "R";
 		
 		String replyStr;
@@ -465,7 +494,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		info.User = Info.User;
 		info.UserPresence = UserPresence;
 		
-		Object replyObj = Dispatcher.dispatch(message.Api, message.RequestJson, info);
+		Object replyObj = JsonDispatcher.dispatch(message.Api, message.RequestJson, info);
 		char sendType = replyObj instanceof ApiError ? 'E' : 'R';
 		
 		String replyStr;

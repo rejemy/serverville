@@ -176,7 +176,8 @@ public class HttpHelpers {
     public static ChannelFuture sendRedirect(HttpRequestInfo req, String newUri) {
         FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.FOUND);
         response.headers().set(HttpHeaderNames.LOCATION, newUri);
-
+        response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+        
         return req.Connection.Ctx.writeAndFlush(response);
     }
     

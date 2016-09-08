@@ -79,30 +79,7 @@ public class ClientDispatcher {
 		Methods.put(method.getName(), action);
 	}
 	
-	/*
-	public String dispatch(String messageType, String messageNum, String messageData, ClientMessageInfo info) throws Exception
-	{
-		Object reply = invokeMethod(messageType, messageData, info);
-		
-		if(reply == null)
-			return null;
-		
-		String isError = reply instanceof ApiError ? "E" : "R";
-		
-		String messageStr = ":"+messageNum+":"+isError+":"+JSON.serializeToString(reply);
-		
-		return messageStr;
-	}
-	
-	public ByteBuf dispatch(String messageType, String messageData, ClientMessageInfo info) throws Exception
-	{
-		ClientMessageEnvelope<Object> envelope = new ClientMessageEnvelope<Object>();
-		
-		envelope.message = invokeMethod(messageType, messageData, info);
 
-		return JSON.serializeToByteBuf(envelope);
-	}
-	*/
 	
 	public Object dispatch(String messageType, String messageData, ClientMessageInfo info)
 	{

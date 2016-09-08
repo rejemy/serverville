@@ -34,8 +34,11 @@ import com.dreamwing.serverville.log.IndexedFileManager;
 import com.dreamwing.serverville.net.SslProtocolDetector;
 import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.scripting.ScriptManager;
+import com.dreamwing.serverville.stripe.StripeInterface;
 import com.dreamwing.serverville.test.SelfTest;
+import com.dreamwing.serverville.util.CurrencyUtil;
 import com.dreamwing.serverville.util.JSON;
+import com.dreamwing.serverville.util.LocaleUtil;
 
 
 public class ServervilleMain {
@@ -73,6 +76,9 @@ public class ServervilleMain {
 		DefaultProperties.setProperty("agent_ssl_only", "false");
 		DefaultProperties.setProperty("client_ssl_only", "false");
 		DefaultProperties.setProperty("hostname", "localhost");
+		DefaultProperties.setProperty("stripe_api_key", "");
+		DefaultProperties.setProperty("default_language", "en-US");
+		DefaultProperties.setProperty("default_currency", "USD");
 	}
 	
 	private static Logger l;
@@ -191,11 +197,19 @@ public class ServervilleMain {
     	
     	RequireInvite = Boolean.parseBoolean(ServerProperties.getProperty("require_invite"));
     	
+    	CurrencyUtil.DefaultCurrency = ServervilleMain.ServerProperties.getProperty("default_currency").toUpperCase();
+    	if(!CurrencyUtil.isValidCurrency(CurrencyUtil.DefaultCurrency))
+    		throw new Exception("Invalid default currency: "+CurrencyUtil.DefaultCurrency);
+    	
+    	LocaleUtil.DefaultLanguage = ServervilleMain.ServerProperties.getProperty("default_language");
+    	
+    	StripeInterface.init();
     	SslProtocolDetector.init();
     	JSON.init();
     	DatabaseManager.init();
     	KeyDataManager.init();
     	CurrencyInfoManager.init();
+    	ProductManager.init();
     	ResidentManager.init();
     	UserManager.init();
     	ScriptManager.init();

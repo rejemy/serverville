@@ -7,7 +7,6 @@ import java.util.Map;
 import com.dreamwing.serverville.data.JsonDataType;
 
 
-
 public class ClientMessages {
 
 	public static class EmptyClientRequest
@@ -23,6 +22,8 @@ public class ClientMessages {
 	public static class CreateAnonymousAccount
 	{
 		public String invite_code;
+		public String language;
+		public String country;
 	}
 	
 	public static class GetUserInfo
@@ -36,6 +37,8 @@ public class ClientMessages {
 		public String email;
 		public String password;
 		public String invite_code;
+		public String language;
+		public String country;
 	}
 
 	public static class ValidateSessionRequest
@@ -57,6 +60,8 @@ public class ClientMessages {
 		public String email;
 		public String session_id;
 		public double admin_level;
+		public String language;
+		public String country;
 		public double time;
 	}
 	
@@ -72,6 +77,12 @@ public class ClientMessages {
 	public static class ServerTime
 	{
 		public double time;
+	}
+	
+	public static class SetLocaleRequest
+	{
+		public String country;
+		public String language;
 	}
 	
 	public static class SetUserDataRequest
@@ -281,6 +292,44 @@ public class ClientMessages {
 	public static class CurrencyBalancesReply
 	{
 		public Map<String,Integer> balances;
+	}
+	
+	public static class GetProductsRequest
+	{
+
+	}
+	
+	public static class GetProductRequest
+	{
+		public String product_id;
+	}
+	
+	public static class ProductInfo
+	{
+		public String id;
+		public String name;
+		public String description;
+		public String image_url;
+		public double price;
+		public String display_price;
+	}
+	
+	public static class ProductInfoList
+	{
+		public List<ProductInfo> products;
+	}
+	
+	public static class StripeCheckoutRequest
+	{
+		public String stripe_token;
+		public String product_id;
+	}
+	
+	public static class ProductPurchasedReply
+	{
+		public String product_id;
+		public double price;
+		public Map<String,Integer> currencies;
 	}
 	
 }

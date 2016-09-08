@@ -10,6 +10,7 @@ import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataResultHandlers.IntResultSetHandler;
+import com.dreamwing.serverville.net.JsonApiException;
 
 public class UserManager {
 
@@ -77,9 +78,12 @@ public class UserManager {
 		l.info("Creating admin account with password \"admin\", please log in and change ASAP");
 
 		try {
-			ServervilleUser.create("admin", "admin", null, ServervilleUser.AdminLevel_Admin);
+			ServervilleUser.create("admin", "admin", null, ServervilleUser.AdminLevel_Admin, null, null);
 		} catch (SQLException e) {
 			l.error("SQL error trying create bootstap admin account", e);
+			return;
+		} catch (JsonApiException e) {
+			l.error("API error trying create bootstap admin account", e);
 			return;
 		}
 	}

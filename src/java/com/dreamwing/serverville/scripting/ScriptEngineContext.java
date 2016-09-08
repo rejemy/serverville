@@ -243,6 +243,14 @@ public class ScriptEngineContext {
 		}
 	}
 	
+	public String[] getCallbackHandlerList()
+	{
+		if(CallbackHandlers == null)
+			return null;
+		
+		return CallbackHandlers.getOwnKeys(false);
+	}
+	
 	public Object invokeCallbackHandler(String handlerName, final Object... args) throws NoSuchMethodException, ScriptException
 	{
 		return Engine.invokeMethod(CallbackHandlers, handlerName, args);

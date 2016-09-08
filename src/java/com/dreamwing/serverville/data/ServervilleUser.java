@@ -3,12 +3,14 @@ package com.dreamwing.serverville.data;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mindrot.jbcrypt.BCrypt;
 
+import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.client.ClientConnectionHandler;
 import com.dreamwing.serverville.client.ClientSessionManager;
 import com.dreamwing.serverville.data.AdminUserSession.AdminUserSessionLookup;
@@ -17,6 +19,7 @@ import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
+import com.dreamwing.serverville.util.CurrencyUtil;
 import com.dreamwing.serverville.util.SVID;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
@@ -52,6 +55,12 @@ public class ServervilleUser {
 	
 	@DatabaseField(columnName="passwdhash")
 	public String PasswordHash;
+	
+	@DatabaseField(columnName="lang")
+	public String Language;
+	
+	@DatabaseField(columnName="country")
+	public String Country;
 	
 	@DatabaseField(columnName="created", dataType=DataType.DATE_LONG, canBeNull=false)
 	public Date Created;
@@ -100,12 +109,17 @@ public class ServervilleUser {
 		return PasswordHash == null && Email == null && Username == null;
 	}
 	
-	public static ServervilleUser create(String password, String username, String email, int adminLevel) throws SQLException
+	public static ServervilleUser create(String password, String username, String email, int adminLevel, String language, String country) throws SQLException, JsonApiException
 	{
+		if(country != null && !CurrencyUtil.isValidCountry(country))
+			throw new JsonApiException(ApiErrors.INVALID_COUNTRY_CODE);
+		
 		ServervilleUser user = new ServervilleUser();
 		user.Id = SVID.makeSVID();
 		user.Username = username;
 		user.Email = email;
+		user.Language = language;
+		user.Country = country;
 		user.Created = new Date();
 		user.Modified = user.Created;
 		user.AdminLevel = adminLevel;
@@ -457,6 +471,19 @@ public class ServervilleUser {
 		return BCrypt.checkpw(cleartext, PasswordHash);
 	}
 	
+	public void setLocale(String country, String language) throws JsonApiException, SQLException
+	{
+		if(country != null && !CurrencyUtil.isValidCountry(country))
+			throw new JsonApiException(ApiErrors.INVALID_COUNTRY_CODE);
+		
+		if(country != null)
+			Country = country;
+		if(language != null)
+			Language = language;
+		
+		update();
+	}
+	
 	public void delete() throws SQLException
 	{
 		
@@ -543,4 +570,18 @@ public class ServervilleUser {
 		return this.Id.equals(user.Id);
 	}
 	
+	public String getLanguage()
+	{
+		if(Language != null)
+			return Language;
+		return ServervilleMain.ServerProperties.getProperty("default_language");
+	}
+	
+	public Locale getLocale()
+	{
+		Locale.Builder builder = new Locale.Builder().setLanguageTag(getLanguage());
+		if(Country != null)
+			builder.setRegion(Country);
+		return builder.build();
+	}
 }

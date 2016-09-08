@@ -221,6 +221,8 @@ CREATE TABLE `user` (
   `username` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `passwdhash` varchar(255) DEFAULT NULL,
+  `lang` varchar(255) DEFAULT NULL,
+  `country` varchar(255) DEFAULT NULL,
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
   `admin` int(11) NOT NULL DEFAULT '0',

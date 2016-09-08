@@ -25,6 +25,8 @@ public enum ApiErrors {
 	SESSION_EXPIRED(19, "Your session has expired, call ValidateSession to renew it", HttpResponseStatus.FORBIDDEN),
 	INVITE_REQUIRED(20, "An invite code is required to create a new account"),
 	INVALID_INVITE_CODE(21, "This invite code is not valid"),
+	INVALID_COUNTRY_CODE(22, "The country code was not in the ISO 3166 recognized list"),
+	INVALID_URL(23, "The supplied url could not be parsed"),
 	
 	INVALID_QUERY(100, "Invalid lucene query"),
 	INVALID_KEY_NAME(101, "Invalid key name"),
@@ -36,6 +38,8 @@ public enum ApiErrors {
 	ALREADY_JOINED(107, "The user has already joined this channel"),
 	CURRENCY_LIMIT(108, "The requested currency operation would put the user under the minimum or over the maximum"),
 	CURRENCY_OVERFLOW(109, "The requested currency operation would cause the user's currency balance to wrap around"),
+	
+	CHARGE_ERROR(200, "Could not create a charge to purchase a product"),
 	
 	UNKNOWN(Integer.MAX_VALUE, "Unknown error");
 	

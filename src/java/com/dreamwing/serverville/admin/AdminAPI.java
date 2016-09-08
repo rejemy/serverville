@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.script.ScriptException;
 
@@ -21,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.classic.ParseException;
 
 import com.dreamwing.serverville.CurrencyInfoManager;
+import com.dreamwing.serverville.ProductManager;
 import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.agent.AgentKeyManager;
 import com.dreamwing.serverville.data.AdminUserSession;
@@ -30,8 +32,10 @@ import com.dreamwing.serverville.data.CurrencyInfo;
 import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
+import com.dreamwing.serverville.data.Product;
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.data.ServervilleUser;
+import com.dreamwing.serverville.data.Product.ProductText;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.log.IndexedFileManager.LogSearchHits;
 import com.dreamwing.serverville.net.ApiErrors;
@@ -46,6 +50,8 @@ import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.serialize.JsonDataDecoder;
 import com.dreamwing.serverville.test.SelfTest;
 import com.dreamwing.serverville.test.SelfTest.TestStatus;
+import com.dreamwing.serverville.util.CurrencyUtil;
+import com.dreamwing.serverville.util.JSON;
 import com.dreamwing.serverville.util.PasswordUtil;
 
 import okhttp3.MediaType;
@@ -305,6 +311,8 @@ public class AdminAPI {
 		public double created;
 		public double modified;
 		public double admin_level;
+		public String language;
+		public String country;
 	}
 	
 	private static UserInfo getUserInfo(ServervilleUser user)
@@ -317,6 +325,8 @@ public class AdminAPI {
 		info.created = user.Created.getTime();
 		info.modified = user.Modified.getTime();
 		info.admin_level = user.AdminLevel;
+		info.language = user.Language;
+		info.country = user.Country;
 		
 		return info;
 	}
@@ -353,6 +363,8 @@ public class AdminAPI {
 		String username = req.getOneBody("username");
 		String password = req.getOneBody("password");
 		String email = req.getOneBody("email");
+		String language = req.getOneBody("language", null);
+		String country = req.getOneBody("country", null);
 		
 		String adminLevelStr = req.getOneBody("admin_level", "user");
 		int adminLevel = ServervilleUser.parseAdminLevel(adminLevelStr);
@@ -362,7 +374,7 @@ public class AdminAPI {
 		if(!PasswordUtil.validatePassword(password))
 			return HttpHelpers.sendError(req, ApiErrors.INVALID_INPUT, "password is not a valid password");
 		
-		ServervilleUser newuser = ServervilleUser.create(password, username, email, adminLevel);
+		ServervilleUser newuser = ServervilleUser.create(password, username, email, adminLevel, language, country);
 		
 		UserInfo info = getUserInfo(newuser);
 		
@@ -461,6 +473,24 @@ public class AdminAPI {
 		
 		user.AdminLevel = adminLevel;
 		user.update();
+		
+		return HttpHelpers.sendSuccess(req);
+	}
+	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
+	public static ChannelFuture setUserLocale(HttpRequestInfo req) throws JsonApiException, SQLException
+	{
+		String userId = req.getOneBody("user_id");
+		String country = req.getOneBody("country", null);
+		String language = req.getOneBody("language", null);
+		
+		ServervilleUser user = ServervilleUser.findById(userId);
+		if(user == null)
+		{
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
+		}
+		
+		user.setLocale(country, language);
 		
 		return HttpHelpers.sendSuccess(req);
 	}
@@ -897,6 +927,8 @@ public class AdminAPI {
 		public Double max;
 		public double rate;
 		public boolean keep_history;
+		public double created;
+		public double modified;
 		
 		public AdminCurrencyInfo(CurrencyInfo info)
 		{
@@ -906,6 +938,8 @@ public class AdminAPI {
 			max = info.Max == null ? null : info.Max.doubleValue();
 			rate = info.Rate;
 			keep_history = info.KeepHistory;
+			created = info.Created.getTime();
+			modified = info.Modified.getTime();
 		}
 	}
 	
@@ -957,6 +991,17 @@ public class AdminAPI {
 		
 		if(!CurrencyInfo.isValidCurrencyId(currency.CurrencyId))
 			throw new JsonApiException(ApiErrors.INVALID_INPUT, "Invalid currency id: "+currency.CurrencyId);
+		
+		CurrencyInfo oldCurrency = CurrencyInfoManager.getCurrencyInfo(currency.CurrencyId);
+		if(oldCurrency != null)
+		{
+			currency.Created = oldCurrency.Created;
+			currency.Modified = oldCurrency.Modified;
+		}
+		else
+		{
+			currency.Created = new Date();
+		}
 		
 		currency.Starting = req.getOneBodyAsInt("starting", 0);
 		currency.Rate = req.getOneBodyAsDouble("rate", 0.0);
@@ -1075,4 +1120,170 @@ public class AdminAPI {
 		
 		return HttpHelpers.sendJson(req, reply);
 	}
+	
+	public static class AdminProductInfo
+	{
+		public String id;
+		public Map<String,ProductText> text;
+		public Map<String,Integer> price;
+		public Map<String,Integer> currencies;
+		public Map<String,Object> keydata;
+		public String script;
+		public double created;
+		public double modified;
+		
+		public AdminProductInfo(Product prod)
+		{
+			id = prod.ProductId;
+			text = prod.Text;
+			price = prod.Price;
+			currencies = prod.Currencies;
+			keydata = prod.KeyData;
+			script = prod.Script;
+			created = prod.Created.getTime();
+			modified = prod.Created.getTime();
+		}
+	}
+	
+	public static class AdminProductInfoList
+	{
+		public List<AdminProductInfo> products;
+	}
+	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
+	public static ChannelFuture products(HttpRequestInfo req) throws SQLException, JsonApiException
+	{
+		List<Product> products = ProductManager.reloadProducts();
+		AdminProductInfoList reply = new AdminProductInfoList();
+		reply.products = new ArrayList<AdminProductInfo>(products.size());
+		
+		for(Product prod : products)
+		{
+			reply.products.add(new AdminProductInfo(prod));
+		}
+		
+		return HttpHelpers.sendJson(req, reply);
+	}
+	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
+	public static ChannelFuture product(HttpRequestInfo req) throws SQLException, JsonApiException
+	{
+		String id = req.getOneQuery("id");
+
+		if(id == null || id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a product id");
+		
+		Product prod = ProductManager.reloadProduct(id);
+		if(prod == null)
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
+		
+		AdminProductInfo reply = new AdminProductInfo(prod);
+		
+		return HttpHelpers.sendJson(req, reply);
+	}
+	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
+	public static ChannelFuture addProduct(HttpRequestInfo req) throws SQLException, JsonApiException
+	{
+		Product prod = new Product();
+		
+		prod.ProductId = req.getOneBody("id");
+		if(prod.ProductId == null || prod.ProductId.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a product id");
+		
+		Product oldProd = ProductManager.getProduct(prod.ProductId);
+		if(oldProd != null)
+		{
+			prod.Created = oldProd.Created;
+			prod.Modified = oldProd.Modified;
+		}
+		else
+		{
+			prod.Created = new Date();
+		}
+		
+		String textJson = req.getOneBody("text", null);
+		try {
+			prod.Text = JSON.deserialize(textJson, JSON.StringProductTextMapType);
+		} catch (IOException e) {
+			throw new JsonApiException(ApiErrors.INVALID_INPUT, "Product text could not be deserialized: "+e.getMessage());
+		}
+		
+		String priceJson = req.getOneBody("price", null);
+		try {
+			prod.Price = JSON.deserialize(priceJson, JSON.StringIntegerMapType);
+		} catch (IOException e) {
+			throw new JsonApiException(ApiErrors.INVALID_INPUT, "Product price could not be deserialized: "+e.getMessage());
+		}
+		
+		for(Map.Entry<String,Integer> priceEntry : prod.Price.entrySet())
+		{
+			String currencyCode = priceEntry.getKey();
+			if(!CurrencyUtil.isValidCurrency(currencyCode))
+			{
+				throw new JsonApiException(ApiErrors.INVALID_INPUT, "Price in "+currencyCode+" is not a valid currency");
+			}
+			
+			Integer value = priceEntry.getValue();
+			if(value == null || value < 0)
+			{
+				throw new JsonApiException(ApiErrors.INVALID_INPUT, "Price in "+currencyCode+" has invalid value: "+value);
+			}
+		}
+		
+		String currenciesJson = req.getOneBody("currencies", null);
+		if(currenciesJson != null)
+		{
+			try {
+				prod.Currencies = JSON.deserialize(currenciesJson, JSON.StringIntegerMapType);
+			} catch (IOException e) {
+				throw new JsonApiException(ApiErrors.INVALID_INPUT, "Product currencies could not be deserialized: "+e.getMessage());
+			}
+			
+			for(String currencyId : prod.Currencies.keySet())
+			{
+				if(CurrencyInfoManager.getCurrencyInfo(currencyId) == null)
+					throw new JsonApiException(ApiErrors.INVALID_INPUT, "Unknown virtual currency: "+currencyId);
+				
+				Integer value = prod.Currencies.get(currencyId);
+				if(value == null || value <= 0)
+				{
+					throw new JsonApiException(ApiErrors.INVALID_INPUT, "Currency "+currencyId+" has invalid value: "+value);
+				}
+			}
+		}
+		
+		
+		
+		String keydataJson = req.getOneBody("keydata", null);
+		if(keydataJson != null)
+		{
+			try {
+				prod.KeyData = JSON.deserialize(keydataJson, JSON.StringObjectMapType);
+			} catch (IOException e) {
+				throw new JsonApiException(ApiErrors.INVALID_INPUT, "Product keydata could not be deserialized: "+e.getMessage());
+			}
+			
+			for(String key : prod.KeyData.keySet())
+			{
+				if(!KeyDataItem.isValidServerKeyname(key))
+					throw new JsonApiException(ApiErrors.INVALID_INPUT, "Invalid keydata key name: "+key);
+			}
+		}
+		
+		prod.Script = req.getOneBody("script", null);
+		if(prod.Script != null)
+		{
+			if(!ScriptManager.hasCallbackHandler(prod.Script))
+			{
+				throw new JsonApiException(ApiErrors.INVALID_INPUT, "No script callback function: "+prod.Script);
+			}
+		}
+		
+		
+		ProductManager.addProduct(prod);
+		
+		return HttpHelpers.sendSuccess(req);
+	}
+	
 }

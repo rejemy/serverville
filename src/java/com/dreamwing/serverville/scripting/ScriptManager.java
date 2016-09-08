@@ -32,6 +32,7 @@ public class ScriptManager
 	
 	private static Map<String,Boolean> ClientHandlers;
 	private static Set<String> AgentHandlers;
+	private static Set<String> CallbackHandlers;
 	private static boolean HasListenToChannelHandler;
 	private static boolean HasStopListenToChannelHandler;
 	
@@ -187,6 +188,20 @@ public class ScriptManager
 		
 		AgentHandlers = agentHandlers;
 		
+		
+		Set<String> callbackHandlers = new HashSet<String>();
+		
+		String[] callbackHandlerList = ctx.getCallbackHandlerList();
+		if(callbackHandlerList != null)
+		{
+			for(String handlerName : callbackHandlerList)
+			{
+				callbackHandlers.add(handlerName);
+			}
+		}
+		
+		CallbackHandlers = callbackHandlers;
+		
 		HasListenToChannelHandler = ctx.getCallbackHandler("onListenToChannel") != null;
 		HasStopListenToChannelHandler = ctx.getCallbackHandler("onStopListenToChannel") != null;
 	}
@@ -199,6 +214,11 @@ public class ScriptManager
 	public static boolean hasAgentHandler(String apiType)
 	{
 		return AgentHandlers.contains(apiType);
+	}
+	
+	public static boolean hasCallbackHandler(String apiType)
+	{
+		return CallbackHandlers.contains(apiType);
 	}
 	
 	public static void onListenToChannel(Channel channel, MessageListener listener)

@@ -1,6 +1,7 @@
 package com.dreamwing.serverville.client;
 
 import com.dreamwing.serverville.ServervilleMain;
+import com.dreamwing.serverville.net.HttpDispatcher;
 import com.dreamwing.serverville.net.SslProtocolDetector;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -20,14 +21,18 @@ public class ClientSocketInitializer extends ChannelInitializer<SocketChannel> {
 	private static EventLoopGroup BossGroup;
 	private static EventLoopGroup WorkerGroup;
 	
-	private ClientDispatcher Dispatcher;
+	protected ClientDispatcher JsonDispatcher;
+	protected HttpDispatcher FormDispatcher;
 	
 	public static String URL;
 	
 	public ClientSocketInitializer() throws Exception
 	{
-		Dispatcher = new ClientDispatcher();
-		Dispatcher.addAllMethods(ClientAPI.class);
+		JsonDispatcher = new ClientDispatcher();
+		JsonDispatcher.addAllMethods(ClientAPI.class);
+		
+		FormDispatcher = new HttpDispatcher(new ClientFormAuthenticator());
+		FormDispatcher.addAllStaticMethods("/form/", ClientFormAPI.class);
 	}
 	
 	@Override
@@ -50,7 +55,7 @@ public class ClientSocketInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast("httpAggregator", new HttpObjectAggregator(65536));
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
         pipeline.addLast(new IdleStateHandler(0, 0, 120));
-        pipeline.addLast(new ClientConnectionHandler(Dispatcher));
+        pipeline.addLast(new ClientConnectionHandler(JsonDispatcher, FormDispatcher));
 	}
 
 	public static void startListener(int port) throws Exception

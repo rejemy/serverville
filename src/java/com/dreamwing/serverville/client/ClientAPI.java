@@ -3,14 +3,17 @@ package com.dreamwing.serverville.client;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.dreamwing.serverville.CurrencyInfoManager;
+import com.dreamwing.serverville.ProductManager;
 import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.client.ClientMessages.*;
 import com.dreamwing.serverville.data.CurrencyInfo;
@@ -18,6 +21,7 @@ import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataRecord;
+import com.dreamwing.serverville.data.Product;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.data.TransientDataItem;
 import com.dreamwing.serverville.data.UserSession;
@@ -29,6 +33,9 @@ import com.dreamwing.serverville.residents.Channel;
 import com.dreamwing.serverville.residents.Resident;
 import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.serialize.JsonDataDecoder;
+import com.dreamwing.serverville.stripe.StripeInterface;
+import com.dreamwing.serverville.util.CurrencyUtil;
+import com.dreamwing.serverville.util.LocaleUtil;
 import com.dreamwing.serverville.util.PasswordUtil;
 
 public class ClientAPI {
@@ -63,6 +70,8 @@ public class ClientAPI {
 		reply.user_id = user.getId();
 		reply.session_id = user.getSessionId();
 		reply.admin_level = user.AdminLevel;
+		reply.country = user.Country;
+		reply.language = user.Language;
 		
 		reply.time = System.currentTimeMillis();
 		
@@ -100,6 +109,8 @@ public class ClientAPI {
 		reply.user_id = user.getId();
 		reply.session_id = user.getSessionId();
 		reply.admin_level = user.AdminLevel;
+		reply.country = user.Country;
+		reply.language = user.Language;
 		
 		reply.time = System.currentTimeMillis();
 		
@@ -120,7 +131,7 @@ public class ClientAPI {
 				throw new JsonApiException(ApiErrors.INVALID_INVITE_CODE, "Invalid invite code: "+request.invite_code);
 		}
 		
-		ServervilleUser user = ServervilleUser.create(null, null, null, ServervilleUser.AdminLevel_User);
+		ServervilleUser user = ServervilleUser.create(null, null, null, ServervilleUser.AdminLevel_User, request.language, request.country);
 		
 		if(invite != null)
 		{
@@ -136,6 +147,8 @@ public class ClientAPI {
 		reply.email = null;
 		reply.session_id = user.getSessionId();
 		reply.admin_level = user.AdminLevel;
+		reply.country = user.Country;
+		reply.language = user.Language;
 		
 		reply.time = System.currentTimeMillis();
 		
@@ -162,7 +175,7 @@ public class ClientAPI {
 				throw new JsonApiException(ApiErrors.INVALID_INVITE_CODE, "Invalid invite code: "+request.invite_code);
 		}
 		
-		ServervilleUser user = ServervilleUser.create(request.password, request.username, request.email, ServervilleUser.AdminLevel_User);
+		ServervilleUser user = ServervilleUser.create(request.password, request.username, request.email, ServervilleUser.AdminLevel_User, request.language, request.country);
 		
 		if(invite != null)
 		{
@@ -178,6 +191,8 @@ public class ClientAPI {
 		reply.email = user.getEmail();
 		reply.session_id = user.getSessionId();
 		reply.admin_level = user.AdminLevel;
+		reply.country = user.Country;
+		reply.language = user.Language;
 		
 		reply.time = System.currentTimeMillis();
 		
@@ -204,6 +219,8 @@ public class ClientAPI {
 		reply.email = info.User.getEmail();
 		reply.session_id = info.User.getSessionId();
 		reply.admin_level = info.User.AdminLevel;
+		reply.country = info.User.Country;
+		reply.language = info.User.Language;
 		
 		reply.time = System.currentTimeMillis();
 		
@@ -228,6 +245,13 @@ public class ClientAPI {
 		reply.session_id = info.User.getSessionId();
 		
 		return reply;
+	}
+	
+	public static EmptyClientReply SetLocale(SetLocaleRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		info.User.setLocale(request.country, request.language);
+		
+		return new EmptyClientReply();
 	}
 	
 	public static SetDataReply SetUserKey(SetUserDataRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
@@ -840,6 +864,122 @@ public class ClientAPI {
 		CurrencyBalancesReply reply = new CurrencyBalancesReply();
 		
 		reply.balances = CurrencyInfoManager.getCurrencyBalances(info.User);
+		
+		return reply;
+	}
+	
+	public static ProductInfoList GetProducts(GetProductsRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		String currencyCode = CurrencyUtil.getCurrency(info.User.Country);
+		
+		ProductInfoList reply = new ProductInfoList();
+		
+		Collection<Product> products = ProductManager.getProductList();
+		
+		reply.products = new ArrayList<ProductInfo>(products.size());
+		
+		String lang = info.User.getLanguage();
+		Locale loc = info.User.getLocale();
+		
+		for(Product prod : products)
+		{
+			Integer price = prod.Price.get(currencyCode);
+			if(price == null)
+			{
+				if(!CurrencyUtil.DefaultCurrency.equals(currencyCode))
+				{
+					currencyCode = CurrencyUtil.DefaultCurrency;
+					price = prod.Price.get(currencyCode);
+				}
+				
+				if(price == null)
+					throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have prices in "+CurrencyUtil.DefaultCurrency);
+			}
+			
+			Product.ProductText text = LocaleUtil.getLocalized(lang, prod.Text);
+			if(text == null)
+				throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have text in "+lang);
+			
+			ProductInfo prodInfo = new ProductInfo();
+			prodInfo.id = prod.ProductId;
+			prodInfo.name = text.name;
+			prodInfo.description = text.desc;
+			prodInfo.image_url = text.image_url;
+			prodInfo.price = price;
+			prodInfo.display_price = CurrencyUtil.getDisplayPrice(loc, currencyCode, price);
+			
+			reply.products.add(prodInfo);
+		}
+		
+		return reply;
+	}
+	
+	public static ProductInfo GetProduct(GetProductRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		String currencyCode = CurrencyUtil.getCurrency(info.User.Country);
+		
+		if(request.product_id == null || request.product_id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "product_id");
+		
+		Product prod = ProductManager.getProduct(request.product_id);
+		
+		Integer price = prod.Price.get(currencyCode);
+		if(price == null)
+		{
+			if(!CurrencyUtil.DefaultCurrency.equals(currencyCode))
+			{
+				currencyCode = CurrencyUtil.DefaultCurrency;
+				price = prod.Price.get(currencyCode);
+			}
+			
+			if(price == null)
+				throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have prices in "+CurrencyUtil.DefaultCurrency);
+		}
+		
+		String lang = info.User.getLanguage();
+		Product.ProductText text = LocaleUtil.getLocalized(lang, prod.Text);
+		if(text == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have text in "+lang);
+		
+		ProductInfo prodInfo = new ProductInfo();
+		prodInfo.id = prod.ProductId;
+		prodInfo.name = text.name;
+		prodInfo.description = text.desc;
+		prodInfo.image_url = text.image_url;
+		prodInfo.price = price;
+		prodInfo.display_price = CurrencyUtil.getDisplayPrice(info.User.getLocale(), currencyCode, price);
+		
+		return prodInfo;
+	}
+	
+	public static ProductPurchasedReply stripeCheckout(StripeCheckoutRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		if(request.product_id == null || request.product_id.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "product_id");
+		
+		if(request.stripe_token == null || request.stripe_token.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "stripe_token");
+		
+		String currencyCode = CurrencyUtil.getCurrency(info.User.Country);
+		
+		Product prod = ProductManager.getProduct(request.product_id);
+		if(prod == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "product "+request.product_id+" not found");
+		}
+		
+		if(!prod.Price.containsKey(currencyCode))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "product doesn't have a price in currency "+currencyCode);
+		}
+		
+		StripeInterface.makePurchase(info.User, prod, currencyCode, request.stripe_token);
+		
+		ProductPurchasedReply reply = new ProductPurchasedReply();
+		
+		reply.product_id = request.product_id;
+		reply.price = prod.Price.get(currencyCode);
+		reply.currencies = prod.Currencies;
 		
 		return reply;
 	}

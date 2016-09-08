@@ -1,11 +1,13 @@
 package com.dreamwing.serverville.data;
 
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import com.dreamwing.serverville.db.DatabaseManager;
+import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
@@ -29,6 +31,12 @@ public class CurrencyInfo
 	
 	@DatabaseField(columnName="history", canBeNull=false)
 	public boolean KeepHistory;
+	
+	@DatabaseField(columnName="created", dataType=DataType.DATE_LONG, canBeNull=false)
+	public Date Created;
+	
+	@DatabaseField(columnName="modified", dataType=DataType.DATE_LONG, canBeNull=false, version=true)
+	public Date Modified;
 	
 	private static final Predicate<String> ValidCurrencyIdRegex = Pattern.compile("^[a-zA-Z_][0-9a-zA-Z_\\$]*$").asPredicate();
 	

@@ -73,7 +73,7 @@ public class AdminTests {
 	}
 	
 	@Test(order=1)
-	public void LogTestInfo() throws SQLException
+	public void LogTestInfo() throws SQLException, JsonApiException
 	{
 		// Start with fresh connections
 		HttpHelpers.resetHttpClient();
@@ -91,7 +91,7 @@ public class AdminTests {
 		AdminUsername = "SelftestAdmin_"+SVID.makeSVID();
 		AdminPassword = Long.toHexString(Rand.nextLong())+Long.toHexString(Rand.nextLong());
 		
-		ServervilleUser tempAdmin = ServervilleUser.create(AdminPassword, AdminUsername, null, ServervilleUser.AdminLevel_Admin);
+		ServervilleUser tempAdmin = ServervilleUser.create(AdminPassword, AdminUsername, null, ServervilleUser.AdminLevel_Admin, null, null);
 		Assert.assertNotNull(tempAdmin);
 		AdminUserId = tempAdmin.getId();
 		

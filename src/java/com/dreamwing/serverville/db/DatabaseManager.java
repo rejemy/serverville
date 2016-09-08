@@ -17,6 +17,8 @@ import com.dreamwing.serverville.data.CurrencyInfo;
 import com.dreamwing.serverville.data.CurrencyRecord;
 import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.KeyDataRecord;
+import com.dreamwing.serverville.data.Product;
+import com.dreamwing.serverville.data.Purchase;
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.data.UserSession;
@@ -54,6 +56,9 @@ public class DatabaseManager {
 	public static Dao<CurrencyRecord, Void> CurrencyDao;
 	public static Dao<CurrencyHistory, Void> CurrencyHistoryDao;
 	public static Dao<CurrencyInfo, String> CurrencyInfoDao;
+	
+	public static Dao<Product, String> ProductDao;
+	public static Dao<Purchase, String> PurchaseDao;
 	
 	public static void init() throws Exception
 	{
@@ -120,6 +125,9 @@ public class DatabaseManager {
 		CurrencyDao = DaoManager.createDao(cs, CurrencyRecord.class);
 		CurrencyHistoryDao = DaoManager.createDao(cs, CurrencyHistory.class);
 		CurrencyInfoDao = DaoManager.createDao(cs, CurrencyInfo.class);
+		
+		ProductDao = DaoManager.createDao(cs, Product.class);
+		PurchaseDao = DaoManager.createDao(cs, Purchase.class);
 		
 		initAgentKeyPurger();
 	}
