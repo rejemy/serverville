@@ -2,6 +2,7 @@ package com.dreamwing.serverville.data;
 
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.List;
 
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.util.PasswordUtil;
@@ -47,6 +48,11 @@ public class InviteCode
 	public String getFriendlyId()
 	{
 		return Id.substring(0, 3)+"-"+Id.substring(3, 6)+"-"+Id.substring(6, 9)+"-"+Id.substring(9, 12);
+	}
+	
+	public static List<InviteCode> getAll() throws SQLException
+	{
+		return DatabaseManager.InviteCodeDao.queryForAll();
 	}
 	
 	public boolean delete() throws SQLException

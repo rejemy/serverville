@@ -521,6 +521,22 @@ public class AdminAPI {
 		return HttpHelpers.sendJson(req, reply);
 	}
 	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
+	public static ChannelFuture inviteCodes(HttpRequestInfo req) throws SQLException
+	{
+		List<InviteCode> unusedCodes = InviteCode.getAll();
+		
+		InviteCodeList reply = new InviteCodeList();
+		reply.codes = new ArrayList<String>(unusedCodes.size());
+		
+		for(InviteCode code : unusedCodes)
+		{
+			reply.codes.add(code.getFriendlyId());
+		}
+		
+		return HttpHelpers.sendJson(req, reply);
+	}
+	
 	public static class AgentKeyInfo
 	{
 		public String key;
