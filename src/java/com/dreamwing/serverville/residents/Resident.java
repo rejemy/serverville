@@ -9,9 +9,9 @@ public class Resident extends BaseResident
 {
 	protected ConcurrentMap<String,Channel> Channels;
 	
-	public Resident(String id)
+	public Resident(String id, String userId)
 	{
-		super(id);
+		super(id, userId);
 		
 		Channels = new ConcurrentHashMap<String,Channel>();
 	}

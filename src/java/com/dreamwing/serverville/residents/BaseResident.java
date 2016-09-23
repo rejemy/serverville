@@ -24,6 +24,7 @@ public abstract class BaseResident
 	protected static final Logger l = LogManager.getLogger(BaseResident.class);
 	
 	protected String Id;
+	protected String UserId;
 	
 	protected ConcurrentMap<String,TransientDataItem> TransientValues;
 	protected TransientDataItem MostRecentValue;
@@ -31,15 +32,17 @@ public abstract class BaseResident
 	protected ConcurrentMap<String,MessageListener> Listeners;
 	
 	
-	public BaseResident(String id)
+	public BaseResident(String id, String userId)
 	{
 		Id = id;
+		UserId = userId;
 		TransientValues = new ConcurrentHashMap<String,TransientDataItem>();
 		Listeners = new ConcurrentHashMap<String,MessageListener>();
 		
 	}
 	
 	public String getId() { return Id; }
+	public String getUserId() { return UserId; }
 	
 	public void destroy()
 	{

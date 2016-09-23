@@ -17,7 +17,7 @@ public class Channel extends BaseResident
 	
 	public Channel(String id)
 	{
-		super(id);
+		super(id, null);
 		
 		Members = new ConcurrentHashMap<String,Resident>();
 	}

@@ -22,7 +22,7 @@ public class OnlineUser extends BaseListener
 		
 		Aliases = new HashMap<String,Resident>();
 		
-		DefaultAlias = new Resident(User.getId());
+		DefaultAlias = new Resident(User.getId(), User.getId());
 		ResidentManager.addResident(DefaultAlias);
 	}
 
@@ -55,7 +55,7 @@ public class OnlineUser extends BaseListener
 		Resident alias = Aliases.get(name);
 		if(alias == null)
 		{
-			alias = new Resident(User.getId()+"/"+name);
+			alias = new Resident(User.getId()+"/"+name, User.getId());
 			Aliases.put(name, alias);
 			ResidentManager.addResident(alias);
 		}

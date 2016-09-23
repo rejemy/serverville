@@ -552,6 +552,9 @@ public class ClientAPI {
 	{
 		BaseResident resident = null;
 		
+		if(!KeyDataItem.isValidUserReadKeyname(request.key))
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
+		
 		if(request.id != null)
 		{
 			resident = ResidentManager.getResident(request.id);
@@ -566,8 +569,11 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, request.id+" / "+request.alias);
 		}
 		
-		//if(!KeyDataItem.isValidKeyname(request.key))
-		//	throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
+		if(!info.User.getId().equals(resident.getUserId()) && !KeyDataItem.isPublicKeyname(request.key))
+			throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
+		
+		if(request.key.startsWith("$$"))
+				throw new JsonApiException(ApiErrors.NOT_FOUND);
 		
 		TransientDataItem item = resident.getTransientValue(request.key);
 		if(item == null)
@@ -599,8 +605,16 @@ public class ClientAPI {
 		
 		Map<String,Object> values = new HashMap<String,Object>();
 		
+		boolean isMe = info.User.getId().equals(resident.getUserId());
+		
 		for(String key : request.keys)
 		{
+			if(!KeyDataItem.isValidUserReadKeyname(key))
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
+			
+			if(!isMe && !KeyDataItem.isPublicKeyname(key))
+				throw new JsonApiException(ApiErrors.PRIVATE_DATA, key);
+			
 			TransientDataItem item = resident.getTransientValue(key);
 			if(item != null)
 			{
@@ -633,8 +647,16 @@ public class ClientAPI {
 		
 		Map<String,Object> values = new HashMap<String,Object>();
 		
+		boolean isMe = info.User.getId().equals(resident.getUserId());
+		
 		for(TransientDataItem item : resident.getAllTransientValues())
 		{
+			if(!KeyDataItem.isValidUserReadKeyname(item.key))
+				continue;
+			
+			if(!isMe && !KeyDataItem.isPublicKeyname(item.key))
+				continue;
+			
 			values.put(item.key, item);
 		}
 		
