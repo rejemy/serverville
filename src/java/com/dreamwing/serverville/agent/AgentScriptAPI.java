@@ -1,7 +1,13 @@
 package com.dreamwing.serverville.agent;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +16,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.dreamwing.serverville.CurrencyInfoManager;
+import com.dreamwing.serverville.WritableDirectories;
 import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
 import com.dreamwing.serverville.data.CurrencyInfo;
@@ -29,7 +36,9 @@ import com.dreamwing.serverville.residents.Resident;
 import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.serialize.JsonDataDecoder;
+import com.dreamwing.serverville.util.FileUtil;
 import com.dreamwing.serverville.util.SVID;
+
 
 public class AgentScriptAPI
 {
@@ -557,5 +566,85 @@ public class AgentScriptAPI
 			throw new JsonApiException(ApiErrors.NOT_FOUND, "currency not found");
 		
 		return CurrencyInfoManager.changeCurrencyBalance(user, currency, -amount, reason);
+	}
+	
+	public byte[] base64decode(String data)
+	{
+		if(data == null)
+			return null;
+		
+		byte[] bytes = Base64.getDecoder().decode(data);
+		
+		return bytes;
+	}
+	
+	public String base64encode(byte[] data)
+	{
+		if(data == null)
+			return null;
+		
+		return Base64.getEncoder().encodeToString(data);
+	}
+	
+	File getWritableFile(String location, String filename) throws Exception
+	{
+		if(filename == null || filename.length() == 0)
+			throw new Exception("Must provide a filename");
+		
+		Path f = WritableDirectories.getDirectory(location);
+		if(f == null)
+			throw new Exception("Writable file location "+location+" not found");
+		
+		if(filename.startsWith("/"))
+			filename = filename.substring(1);
+		
+		Path p = f.resolve(filename).normalize();
+		if(!p.startsWith(f))
+			throw new Exception("filename is outside of the writable directory");
+		
+		return p.toFile();
+	}
+	
+	public void writeFile(String location, String filename, String contents) throws Exception
+	{
+		File f = getWritableFile(location, filename);
+		
+		FileUtil.writeStringToFile(f, contents, StandardCharsets.UTF_8);
+	}
+	
+	public void writeFile(String location, String filename, byte[] contents) throws Exception
+	{
+		File f = getWritableFile(location, filename);
+		
+		FileOutputStream writer = new FileOutputStream(f);
+		writer.write(contents);
+		writer.close();
+	}
+	
+	public String readTextFile(String location, String filename) throws Exception
+	{
+		File f = getWritableFile(location, filename);
+		
+		if(!f.exists() || !f.canRead())
+			throw new Exception("Can't read file "+filename);
+		
+		String data = FileUtil.readFileToString(f, StandardCharsets.UTF_8);
+		return data;
+	}
+	
+	public byte[] readBinaryFile(String location, String filename) throws Exception
+	{
+		File f = getWritableFile(location, filename);
+		
+		if(!f.exists() || !f.canRead())
+			throw new Exception("Can't read file "+filename);
+		
+		byte[] data = new byte[(int)f.length()];
+		
+		FileInputStream reader = new FileInputStream(f);
+		reader.read(data);
+		reader.close();
+		
+		return null;
 	}
 }

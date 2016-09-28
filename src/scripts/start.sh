@@ -1,6 +1,6 @@
 #!/bin/bash
 
-javabin=/usr/local/java/jdk1.8.0_92/bin/java
+javabin=/usr/local/java/jdk1.8.0_102/bin/java
 pidfile=serverville.pid
 logdir=data/logs
 jarfile=serverville.jar

@@ -20,7 +20,6 @@ import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.NashornScriptEngine;
 
-@SuppressWarnings("restriction")
 public class ScriptEngineContext {
 
 	private static final Logger l = LogManager.getLogger(ScriptEngineContext.class);

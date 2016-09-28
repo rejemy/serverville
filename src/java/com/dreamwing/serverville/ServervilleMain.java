@@ -79,12 +79,14 @@ public class ServervilleMain {
 		DefaultProperties.setProperty("stripe_api_key", "");
 		DefaultProperties.setProperty("default_language", "en-US");
 		DefaultProperties.setProperty("default_currency", "USD");
+		DefaultProperties.setProperty("writeable_directories", "");
 	}
 	
 	private static Logger l;
 	
 	public static ServervilleMain Singleton;
 	
+	public static Path WorkingPath;
 	public static Path DataRoot;
 	public static Path ResRoot;
 	
@@ -172,10 +174,10 @@ public class ServervilleMain {
 		
 		String workingDir = System.getProperty("user.dir");
 		
-		Path workingRoot = Paths.get(workingDir);
+		WorkingPath = Paths.get(workingDir);
 		String dataPath = ServerProperties.getProperty("data_root");
 		
-		DataRoot = workingRoot.resolve(dataPath).normalize();
+		DataRoot = WorkingPath.resolve(dataPath).normalize();
 		l.info("Data root is: "+DataRoot);
 		File dataRootFile = DataRoot.toFile();
 		if(dataRootFile.exists())
@@ -190,7 +192,7 @@ public class ServervilleMain {
 		}
 		
 		String resPath = ServerProperties.getProperty("res_root");
-		ResRoot = workingRoot.resolve(resPath).normalize();
+		ResRoot = WorkingPath.resolve(resPath).normalize();
 		File resRootFile = ResRoot.toFile();
     	if(!resRootFile.exists() || !resRootFile.canRead() || !resRootFile.isDirectory())
     		throw new Exception("Invalid res root: "+ResRoot);
@@ -203,6 +205,7 @@ public class ServervilleMain {
     	
     	LocaleUtil.DefaultLanguage = ServervilleMain.ServerProperties.getProperty("default_language");
     	
+    	WritableDirectories.init();
     	StripeInterface.init();
     	SslProtocolDetector.init();
     	JSON.init();

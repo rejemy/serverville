@@ -18,7 +18,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
-@SuppressWarnings("restriction")
 public abstract class BaseResident
 {
 	protected static final Logger l = LogManager.getLogger(BaseResident.class);

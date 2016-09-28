@@ -109,4 +109,11 @@ declare namespace api
 	function getCurrencyBalances(userId:string):{[currencyId:string]:number};
 	function addCurrency(userId:string, currencyId:string, amount:number, reason:string):number;
 	function subtractCurrency(userId:string, currencyId:string, amount:number, reason:string):number;
+
+	function base64decode(data:string):number[];
+	function base64encode(data:any):string;
+
+	function writeFile(location:string, filename:string, contents:string|number[]):void;
+	function readTextFile(location:string, filename:string):string;
+	function readBinaryFile(location:string, filename:string):number[];
 }

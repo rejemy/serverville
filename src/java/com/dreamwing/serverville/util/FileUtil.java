@@ -45,9 +45,22 @@ public class FileUtil {
 		return readStreamToString(new FileInputStream(filename), encoding);
 	}
 	
+	public static String readFileToString(File file, Charset encoding) throws IOException
+	{
+		return readStreamToString(new FileInputStream(file), encoding);
+	}
+	
 	public static void writeStringToFile(String filename, String contents, Charset encoding) throws IOException
 	{
 		try(Writer out = new OutputStreamWriter(new FileOutputStream(filename), encoding))
+		{
+			out.write(contents);
+		}
+	}
+	
+	public static void writeStringToFile(File file, String contents, Charset encoding) throws IOException
+	{
+		try(Writer out = new OutputStreamWriter(new FileOutputStream(file), encoding))
 		{
 			out.write(contents);
 		}

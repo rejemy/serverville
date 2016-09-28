@@ -2,7 +2,6 @@ package com.dreamwing.serverville.data;
 
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
-@SuppressWarnings("restriction")
 public class TransientDataItem
 {
 	public String key;
