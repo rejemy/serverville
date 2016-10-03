@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.dreamwing.serverville.agent.AgentMessages.*;
 import com.dreamwing.serverville.client.ClientMessages.AllGlobalKeysRequest;
+import com.dreamwing.serverville.client.ClientMessages.ChannelInfo;
 import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
 import com.dreamwing.serverville.client.ClientMessages.GlobalKeyRequest;
 import com.dreamwing.serverville.client.ClientMessages.GlobalKeysRequest;
@@ -127,6 +128,14 @@ public class AgentAPI
 		return reply;
 	}
 	
+	public static UserAliasReply GetUserAliasId(UserAliasRequest request) throws JsonApiException
+	{
+		UserAliasReply reply = new UserAliasReply();
+		
+		reply.alias_id = ApiInst.getUserAliasId(request.user_id, request.alias);
+		return reply;
+	}
+	
 	public static EmptyReply AddResident(AddResidentRequest request) throws JsonApiException
 	{
 		ApiInst.addResident(request.channel_id, request.resident_id);
@@ -143,7 +152,34 @@ public class AgentAPI
 		return reply;
 	}
 	
+	public static EmptyReply AddListener(AddListenerRequest request) throws JsonApiException
+	{
+		ApiInst.addListener(request.user_id, request.channel_id);
+		return new EmptyReply();
+	}
+	
+	public static EmptyReply RemoveListener(AddListenerRequest request) throws JsonApiException
+	{
+		ApiInst.removeListener(request.user_id, request.channel_id);
+		return new EmptyReply();
+	}
+	
+	public static ChannelInfo UserJoinChannel(JoinChannelRequest request) throws JsonApiException
+	{
+		return ApiInst.userJoinChannel(request.user_id, request.channel_id, request.alias, request.values);
+	}
+	
+	public static EmptyReply UserLeaveChannel(LeaveChannelRequest request) throws JsonApiException
+	{
+		ApiInst.userLeaveChannel(request.user_id, request.channel_id, request.alias, request.final_values);
+		return new EmptyReply();
+	}
 
+	public static ChannelInfo GetChannelInfo(GetChannelInfoRequest request) throws JsonApiException
+	{
+		return ApiInst.getChannelInfo(request.channel_id, request.since);
+	}
+	
 	public static EmptyReply SetTransientValue(SetTransientDataRequest request) throws JsonApiException
 	{
 		ApiInst.setTransientValue(request.id, request.key, request.value);
@@ -213,6 +249,12 @@ public class AgentAPI
 	public static EmptyReply DeleteAllTransientValues(DeleteAllTransientDataRequest request) throws JsonApiException
 	{
 		ApiInst.deleteAllTransientValues(request.id);
+		return new EmptyReply();
+	}
+	
+	public static EmptyReply SendServerMessage(ServerMessageRequest request) throws JsonApiException, SQLException
+	{
+		ApiInst.sendServerMessage(request.to, request.from, request.alias, request.messageType, request.value);
 		return new EmptyReply();
 	}
 	

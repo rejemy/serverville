@@ -103,6 +103,17 @@ public class AgentMessages
 		public String id;
 	}
 	
+	public static class UserAliasRequest
+	{
+		public String user_id;
+		public String alias;
+	}
+	
+	public static class UserAliasReply
+	{
+		public String alias_id;
+	}
+	
 	public static class AddResidentRequest
 	{
 		public String channel_id;
@@ -114,6 +125,34 @@ public class AgentMessages
 		public String channel_id;
 		public String resident_id;
 		public Map<String,Object> final_values;
+	}
+	
+	public static class AddListenerRequest
+	{
+		public String user_id;
+		public String channel_id;
+	}
+	
+	public static class JoinChannelRequest
+	{
+		public String user_id;
+		public String channel_id;
+		public String alias;
+		public Map<String,Object> values;
+	}
+	
+	public static class LeaveChannelRequest
+	{
+		public String user_id;
+		public String channel_id;
+		public String alias;
+		public Map<String,Object> final_values;
+	}
+	
+	public static class GetChannelInfoRequest
+	{
+		public String channel_id;
+		public double since;
 	}
 	
 	public static class GetTransientValueRequest
@@ -131,6 +170,15 @@ public class AgentMessages
 	public static class GetAllTransientValuesRequest
 	{
 		public String id;
+	}
+	
+	public static class ServerMessageRequest
+	{
+		public String to;
+		public String from;
+		public String alias;
+		public String messageType;
+		public Object value;
 	}
 	
 	public static class CurrencyBalanceRequest

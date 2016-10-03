@@ -24,7 +24,6 @@ public class UserManager {
 	{
 		bootstrapAdminAccount();
 		
-		
 		final Runnable adminLogPurger = new Runnable()
 		{
 			public void run()
@@ -107,4 +106,5 @@ public class UserManager {
 		
 		AdminUserSession.deleteSessionsInactiveSince(since);
 	}
+
 }

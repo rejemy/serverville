@@ -83,9 +83,11 @@ public abstract class BaseResident
 		if(messageType == null || messageType.length() == 0 || messageType.charAt(0) == '_' || messageType.indexOf(':') >= 0)
 			throw new IllegalArgumentException("Invalid message type: "+messageType);
 		
+		Channel via = this instanceof Channel ? (Channel)this : null;
+		
 		for(MessageListener listener : Listeners.values())
 		{
-			listener.onMessage(messageType, messageBody, sender.Id, null);
+			listener.onMessage(messageType, messageBody, sender.Id, via);
 		}
 	}
 	

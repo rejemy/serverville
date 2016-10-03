@@ -58,7 +58,21 @@ interface KeyDataRecord
 	Modified:number;
 }
 
+interface ChannelMemberInfo
+{
+	id:string;
+	values:{[key:string]:any};
+}
+
+interface ChannelInfo
+{
+	id:string;
+	values:{[key:string]:any};
+	members:{[key:string]:ChannelMemberInfo};
+}
+
 declare type DataItemInfoMap = {[key:string]:DataItemInfo};
+declare type TransientValueMap = {[key:string]:any};
 
 declare var client:any;
 declare var agent:any;
@@ -94,16 +108,24 @@ declare namespace api
 
 	function createChannel(channelId:string):string;
 	function deleteChannel(channelId:string):void;
+	function getUserAliasId(userId:string, alias:string):string;
+	function userJoinChannel(userId:string, channelId:string, alias:string, values?:TransientValueMap):ChannelInfo;
+	function userLeaveChannel(userId:string, channelId:string, alias:string, finalValues?:TransientValueMap):ChannelInfo;
+	function getChannelInfo(channelId:string, since:number):ChannelInfo;
 	function addResident(channelId:string,residentId:string):void;
-	function removeResident(channelId:string,residentId:string):void;
+	function removeResident(channelId:string,residentId:string, finalValues?:TransientValueMap):void;
+	function addListener(userId:string, channelId:string):void;
+	function removeListener(userId:string, channelId:string):void;
+
 	function setTransientValue(id:string, key:String, value:any):void;
-	function setTransientValues(id:string, keys:{[key:string]:any}):void;
+	function setTransientValues(id:string, keys:TransientValueMap):void;
 	function getTransientValue(id:string, key:String):any;
-	function getTransientValues(id:string, keys:String[]):{[key:string]:any};
-	function getAllTransientValues(id:string):{[key:string]:any};
+	function getTransientValues(id:string, keys:String[]):TransientValueMap;
+	function getAllTransientValues(id:string):TransientValueMap;
 	function deleteTransientValue(id:string, key:string):void;
 	function deleteTransientValues(id:string, keys:string[]):void;
 	function deleteAllTransientValues(id:string):void;
+	function sendServerMessage(to:string, from:string, alias:string, messageType:string, value:Object);
 
 	function getCurrencyBalance(userId:string, currencyId:string):number;
 	function getCurrencyBalances(userId:string):{[currencyId:string]:number};

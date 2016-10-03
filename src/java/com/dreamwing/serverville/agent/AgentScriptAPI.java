@@ -18,7 +18,11 @@ import org.apache.log4j.Logger;
 import com.dreamwing.serverville.CurrencyInfoManager;
 import com.dreamwing.serverville.WritableDirectories;
 import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
+import com.dreamwing.serverville.client.ClientConnectionHandler;
+import com.dreamwing.serverville.client.ClientMessages.ChannelInfo;
 import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
+import com.dreamwing.serverville.client.ClientMessages.TransientClientMessage;
+import com.dreamwing.serverville.client.ClientSessionManager;
 import com.dreamwing.serverville.data.CurrencyInfo;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyData;
@@ -32,6 +36,7 @@ import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.residents.BaseResident;
 import com.dreamwing.serverville.residents.Channel;
+import com.dreamwing.serverville.residents.OnlineUser;
 import com.dreamwing.serverville.residents.Resident;
 import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
@@ -293,6 +298,24 @@ public class AgentScriptAPI
 		
 		res.destroy();
 	}
+
+	public String getUserAliasId(String userId, String alias) throws JsonApiException
+	{
+		if(userId == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, userId);
+		
+		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(userId);
+		if(client == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		OnlineUser user = client.getPresence();
+		if(user == null)
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
+		
+		Resident userAlias = user.getAlias(alias);
+		
+		return userAlias.getId();
+	}
 	
 	public void addResident(String channelId, String residentId) throws JsonApiException
 	{
@@ -316,6 +339,60 @@ public class AgentScriptAPI
 		Resident resident = (Resident)listener;
 		
 		channel.addResident(resident);
+	}
+	
+	public void addListener(String userId, String channelId) throws JsonApiException
+	{
+		if(userId == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, userId);
+		
+		if(channelId == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
+		
+		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(userId);
+		if(client == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		OnlineUser user = client.getPresence();
+		if(user == null)
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
+		
+		BaseResident source = ResidentManager.getResident(channelId);
+		if(source == null || !(source instanceof Channel))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, channelId);
+		}
+		
+		Channel channel = (Channel)source;
+		
+		channel.addListener(user);
+	}
+	
+	public void removeListener(String userId, String channelId) throws JsonApiException
+	{
+		if(userId == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, userId);
+		
+		if(channelId == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
+		
+		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(userId);
+		if(client == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		OnlineUser user = client.getPresence();
+		if(user == null)
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
+		
+		BaseResident source = ResidentManager.getResident(channelId);
+		if(source == null || !(source instanceof Channel))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, channelId);
+		}
+		
+		Channel channel = (Channel)source;
+		
+		channel.removeListener(user);
 	}
 	
 
@@ -344,6 +421,94 @@ public class AgentScriptAPI
 
 		if(finalValues != null)
 			resident.setTransientValues(finalValues);
+	}
+	
+	public ChannelInfo userJoinChannel(String userId, String channelId, String alias, Map<String,Object> values) throws JsonApiException
+	{
+		if(userId == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, userId);
+		
+		if(channelId == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
+		
+		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(userId);
+		if(client == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		OnlineUser user = client.getPresence();
+		if(user == null)
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
+		
+		BaseResident source = ResidentManager.getResident(channelId);
+		if(source == null || !(source instanceof Channel))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, channelId);
+		}
+		Channel channel = (Channel)source;
+		
+		Resident userAlias = user.getOrCreateAlias(alias);
+		
+		if(values != null)
+		{
+			userAlias.setTransientValues(values, true);
+		}
+		
+		channel.addResident(userAlias);
+		channel.addListener(user);
+		
+
+		return channel.getChannelInfo(0);
+	}
+	
+	public void userLeaveChannel(String userId, String channelId, String alias, Map<String,Object> finalValues) throws JsonApiException
+	{
+		if(userId == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, userId);
+		
+		if(channelId == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
+		
+		BaseResident listener = ResidentManager.getResident(userId);
+		if(listener == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, userId);
+		}
+		
+		BaseResident source = ResidentManager.getResident(channelId);
+		if(source == null || !(source instanceof Channel))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, channelId);
+		}
+		Channel channel = (Channel)source;
+		
+		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(userId);
+		if(client == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		OnlineUser user = client.getPresence();
+		if(user == null)
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
+		
+		Resident userAlias = user.getAlias(alias);
+		if(alias == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, alias);
+		}
+		
+		channel.removeResident(userAlias, finalValues);
+		channel.removeListener(user);
+	}
+	
+	public ChannelInfo getChannelInfo(String channelId, double since) throws JsonApiException
+	{
+		BaseResident source = ResidentManager.getResident(channelId);
+		if(source == null || !(source instanceof Channel))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, channelId);
+		}
+		Channel channel = (Channel)source;
+		
+		return channel.getChannelInfo((long)since);
 	}
 	
 	public void setTransientValue(String id, String key, Object value) throws JsonApiException
@@ -481,6 +646,52 @@ public class AgentScriptAPI
 			throw new JsonApiException(ApiErrors.NOT_FOUND, id);
 		
 		res.deleteAllTransientValues();
+	}
+	
+	public void sendServerMessage(String to, String from, String alias, String messageType, Object value) throws JsonApiException, SQLException
+	{
+		if(from == null || from.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "from");
+		
+		if(messageType == null || messageType.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "messageType");
+		
+		if(value == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "value");
+		
+		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(from);
+		if(client == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		OnlineUser user = client.getPresence();
+		if(user == null)
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
+		
+		Resident userAlias = user.getAlias(alias);
+		if(userAlias == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, alias);
+		}
+		
+		TransientClientMessage message = new TransientClientMessage();
+		message.message_type = messageType;
+		message.value = value;
+		
+		if(to != null)
+		{
+			BaseResident listener = ResidentManager.getResident(to);
+			if(listener == null)
+			{
+				throw new JsonApiException(ApiErrors.NOT_FOUND, to);
+			}
+			
+			listener.sendMessageFrom("serverMessage", message, userAlias);
+		}
+		else
+		{
+			userAlias.sendMessage("serverMessage", message);
+		}
+		
 	}
 	
 	public int getCurrencyBalance(String userid, String currencyId) throws JsonApiException, SQLException

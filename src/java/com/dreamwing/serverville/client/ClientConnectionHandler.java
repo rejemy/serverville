@@ -633,6 +633,10 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		return future;
 	}
 	
+	public OnlineUser getPresence()
+	{
+		return UserPresence;
+	}
 	
 
 }
