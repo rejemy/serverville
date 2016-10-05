@@ -650,27 +650,28 @@ public class AgentScriptAPI
 	
 	public void sendServerMessage(String to, String from, String alias, String messageType, Object value) throws JsonApiException, SQLException
 	{
-		if(from == null || from.length() == 0)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, "from");
-		
 		if(messageType == null || messageType.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "messageType");
 		
 		if(value == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "value");
 		
-		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(from);
-		if(client == null)
-			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
-		
-		OnlineUser user = client.getPresence();
-		if(user == null)
-			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
-		
-		Resident userAlias = user.getAlias(alias);
-		if(userAlias == null)
+		Resident fromResident = null;
+		if(from != null)
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, alias);
+			ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(from);
+			if(client == null)
+				throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+			
+			OnlineUser user = client.getPresence();
+			if(user == null)
+				throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
+			
+			fromResident = user.getAlias(alias);
+			if(fromResident == null)
+			{
+				throw new JsonApiException(ApiErrors.NOT_FOUND, alias);
+			}
 		}
 		
 		TransientClientMessage message = new TransientClientMessage();
@@ -685,11 +686,14 @@ public class AgentScriptAPI
 				throw new JsonApiException(ApiErrors.NOT_FOUND, to);
 			}
 			
-			listener.sendMessageFrom("serverMessage", message, userAlias);
+			if(fromResident != null)
+				listener.sendMessageFrom("serverMessage", message, fromResident);
+			else
+				listener.sendMessage("serverMessage", message);
 		}
 		else
 		{
-			userAlias.sendMessage("serverMessage", message);
+			fromResident.sendMessage("serverMessage", message);
 		}
 		
 	}
