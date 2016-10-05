@@ -85,6 +85,7 @@ public class AgentShared
 		info.created = user.Created.getTime();
 		info.modified = user.Modified.getTime();
 		info.admin_level = ServervilleUser.adminLevelToString(user.AdminLevel);
+		info.admin_privs = user.AdminLevel;
 		
 		return info;
 	}

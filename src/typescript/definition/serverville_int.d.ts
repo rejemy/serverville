@@ -21,6 +21,7 @@ interface UserInfo
 	created:number;
 	modified:number;
 	admin_level:string;
+	admin_privs:number;
 }
 
 interface UserLookupRequest
