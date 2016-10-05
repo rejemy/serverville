@@ -650,28 +650,27 @@ public class AgentScriptAPI
 	
 	public void sendServerMessage(String to, String from, String alias, String messageType, Object value) throws JsonApiException, SQLException
 	{
+		if(from == null || from.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "from");
+		
 		if(messageType == null || messageType.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "messageType");
 		
 		if(value == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "value");
 		
-		Resident fromResident = null;
-		if(from != null)
+		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(from);
+		if(client == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		OnlineUser user = client.getPresence();
+		if(user == null)
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
+		
+		Resident userAlias = user.getAlias(alias);
+		if(userAlias == null)
 		{
-			ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(from);
-			if(client == null)
-				throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
-			
-			OnlineUser user = client.getPresence();
-			if(user == null)
-				throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
-			
-			fromResident = user.getAlias(alias);
-			if(fromResident == null)
-			{
-				throw new JsonApiException(ApiErrors.NOT_FOUND, alias);
-			}
+			throw new JsonApiException(ApiErrors.NOT_FOUND, alias);
 		}
 		
 		TransientClientMessage message = new TransientClientMessage();
@@ -686,16 +685,43 @@ public class AgentScriptAPI
 				throw new JsonApiException(ApiErrors.NOT_FOUND, to);
 			}
 			
-			if(fromResident != null)
-				listener.sendMessageFrom("serverMessage", message, fromResident);
-			else
-				listener.sendMessage("serverMessage", message);
+			listener.sendMessageFrom("serverMessage", message, userAlias);
 		}
 		else
 		{
-			fromResident.sendMessage("serverMessage", message);
+			userAlias.sendMessage("serverMessage", message);
 		}
+	}
+	
+	public boolean sendServerMessageToOnlineUser(String to, String from, String messageType, Object value) throws JsonApiException, SQLException
+	{
+		if(to == null || to.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "to");
 		
+		if(from == null || from.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "from");
+		
+		if(messageType == null || messageType.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "messageType");
+		
+		if(value == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "value");
+		
+		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(to);
+		if(client == null)
+			return false;
+		
+		OnlineUser user = client.getPresence();
+		if(user == null)
+			return false;
+		
+		TransientClientMessage message = new TransientClientMessage();
+		message.message_type = messageType;
+		message.value = value;
+		
+		user.onMessage("serverMessage", message, from, null);
+		
+		return true;
 	}
 	
 	public int getCurrencyBalance(String userid, String currencyId) throws JsonApiException, SQLException

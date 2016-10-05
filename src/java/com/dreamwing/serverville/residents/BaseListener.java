@@ -107,6 +107,19 @@ public abstract class BaseListener implements MessageListener
 			view.lastTimestamp = timestamp;
 	}
 	
+	public void onMessage(String messageType, Object message, String fromId, Channel viaChannel)
+	{
+		String messageBody = null;
+		try {
+			messageBody = JSON.serializeToString(message);
+		} catch (JsonProcessingException e) {
+			l.error("Error encoding directed message", e);
+			return;
+		}
+		
+		onMessage(messageType, messageBody, fromId, viaChannel);
+	}
+	
 	/*
 	@Override
 	public void onResidentJoinedChannel(String channelId, Resident resident)

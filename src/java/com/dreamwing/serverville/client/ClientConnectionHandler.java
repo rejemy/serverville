@@ -580,6 +580,10 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	
 	private ChannelFuture sendWSMessage(String messageType, String serializedMessageBody, String from, String via)
 	{
+		if(from == null)
+			from = "";
+		if(via == null)
+			via = "";
 		String messageStr = "M:"+messageType+":"+from+":"+via+":"+serializedMessageBody;
 		
 		return write(messageStr);
@@ -594,7 +598,10 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		try
 		{
 			SerializeUtil.writeUTF(messageType, messageBuf);
-			SerializeUtil.writeUTF(from, messageBuf);
+			if(from == null)
+				SerializeUtil.writeUTF("", messageBuf);
+			else
+				SerializeUtil.writeUTF(from, messageBuf);
 			if(via == null)
 				SerializeUtil.writeUTF("", messageBuf);
 			else

@@ -126,7 +126,8 @@ declare namespace api
 	function deleteTransientValue(id:string, key:string):void;
 	function deleteTransientValues(id:string, keys:string[]):void;
 	function deleteAllTransientValues(id:string):void;
-	function sendServerMessage(to:string, from:string, alias:string, messageType:string, value:Object);
+	function sendServerMessage(to:string, from:string, alias:string, messageType:string, value:Object):void;
+	function sendServerMessageToOnlineUser(to:string, from:string, messageType:string, value:Object):boolean;
 
 	function getCurrencyBalance(userId:string, currencyId:string):number;
 	function getCurrencyBalances(userId:string):{[currencyId:string]:number};
