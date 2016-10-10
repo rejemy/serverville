@@ -561,7 +561,7 @@ public class AgentScriptAPI
 		
 		TransientDataItem item = res.getTransientValue(key);
 		if(item == null)
-			throw new JsonApiException(ApiErrors.NOT_FOUND);
+			return null;
 		
 		return item.value;
 	}
