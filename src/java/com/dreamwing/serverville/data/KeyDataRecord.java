@@ -9,6 +9,7 @@ import com.dreamwing.serverville.db.KeyDataManager;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.stmt.QueryBuilder;
+import com.j256.ormlite.stmt.Where;
 import com.j256.ormlite.table.DatabaseTable;
 
 @DatabaseTable(tableName = "keydata")
@@ -56,6 +57,33 @@ public class KeyDataRecord {
 	{
 		QueryBuilder<KeyDataRecord, String> queryBuilder = DatabaseManager.KeyDataRecordDao.queryBuilder();
 		return queryBuilder.where().eq("type", typeId).query();
+	}
+	
+	public static List<KeyDataRecord> query(String ownerId, String typeId, String parentId) throws SQLException
+	{
+		Where<KeyDataRecord, String> queryBuilder = DatabaseManager.KeyDataRecordDao.queryBuilder().where();
+		boolean and=false;
+		if(ownerId != null)
+		{
+			queryBuilder.eq("owner", ownerId);
+			and = true;
+		}
+		if(typeId != null)
+		{
+			if(and)
+				queryBuilder.and();
+			queryBuilder.eq("type", typeId);
+			and = true;
+		}
+		if(parentId != null)
+		{
+			if(and)
+				queryBuilder.and();
+			queryBuilder.eq("parent", parentId);
+			and = true;
+		}
+		
+		return queryBuilder.query();
 	}
 	
 	public static void delete(String id) throws SQLException

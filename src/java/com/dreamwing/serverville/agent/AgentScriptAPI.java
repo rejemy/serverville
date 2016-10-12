@@ -173,7 +173,7 @@ public class AgentScriptAPI
 		
 		KeyDataItem item = KeyDataManager.loadKey(id, key);
 		if(item == null)
-			throw new JsonApiException(ApiErrors.NOT_FOUND);
+			return null;
 		
 		return AgentShared.KeyDataItemToDataItemReply(id, item, Context);
 	}

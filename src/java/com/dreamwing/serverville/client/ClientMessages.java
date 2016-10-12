@@ -182,6 +182,17 @@ public class ClientMessages {
 		public double modified;
 	}
 	
+	public static class KeyDataRecordsRequest
+	{
+		public String type;
+		public String parent;
+	}
+	
+	public static class KeyDataRecords
+	{
+		public List<KeyDataInfo> records;
+	}
+	
 	public static class SetGlobalDataRequest
 	{
 		public String id;

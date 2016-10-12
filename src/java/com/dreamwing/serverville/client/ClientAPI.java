@@ -37,6 +37,7 @@ import com.dreamwing.serverville.stripe.StripeInterface;
 import com.dreamwing.serverville.util.CurrencyUtil;
 import com.dreamwing.serverville.util.LocaleUtil;
 import com.dreamwing.serverville.util.PasswordUtil;
+import com.dreamwing.serverville.util.StringUtil;
 
 public class ClientAPI {
 	
@@ -158,7 +159,7 @@ public class ClientAPI {
 	@ClientHandlerOptions(auth=false)
 	public static SignInReply CreateAccount(CreateAccount request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		if(request.username == null || request.email == null)
+		if(StringUtil.isNullOrEmpty(request.username) || StringUtil.isNullOrEmpty(request.email))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must set a username and email to create an account");
 		
 		if(!PasswordUtil.validatePassword(request.password))
@@ -204,7 +205,7 @@ public class ClientAPI {
 		if(info.User.getUsername() != null)
 			throw new JsonApiException(ApiErrors.ALREADY_REGISTERED, "Account is already converted");
 		
-		if(request.username == null || request.email == null)
+		if(StringUtil.isNullOrEmpty(request.username) || StringUtil.isNullOrEmpty(request.email))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must set a username and email to create an account");
 		
 		if(!PasswordUtil.validatePassword(request.password))
@@ -377,7 +378,7 @@ public class ClientAPI {
 	
 	public static DataItemReply GetDataKey(GlobalKeyRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		if(request.id == null || request.id.length() == 0)
+		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 
 		if(!KeyDataItem.isValidUserReadKeyname(request.key))
@@ -399,7 +400,7 @@ public class ClientAPI {
 	
 	public static UserDataReply GetDataKeys(GlobalKeysRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		if(request.id == null || request.id.length() == 0)
+		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		boolean isMe = request.id.equals(info.User.getId());
@@ -433,7 +434,7 @@ public class ClientAPI {
 	
 	public static UserDataReply GetAllDataKeys(AllGlobalKeysRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		if(request.id == null || request.id.length() == 0)
+		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		List<KeyDataItem> items = KeyDataManager.loadAllUserVisibleKeysSince(request.id, (long)request.since, request.include_deleted);
@@ -460,15 +461,8 @@ public class ClientAPI {
 		return reply;
 	}
 	
-	public static KeyDataInfo GetKeyDataRecord(KeyDataRecordRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	static KeyDataInfo keyDataRecordToInfo(KeyDataRecord record)
 	{
-		if(request.id == null || request.id.length() == 0)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
-		
-		KeyDataRecord record = KeyDataRecord.load(request.id);
-		if(record == null)
-			throw new JsonApiException(ApiErrors.NOT_FOUND);
-		
 		KeyDataInfo keyInfo = new KeyDataInfo();
 		
 		keyInfo.id = record.Id;
@@ -478,8 +472,37 @@ public class ClientAPI {
 		keyInfo.version = record.Version;
 		keyInfo.created = record.Created.getTime();
 		keyInfo.modified = record.Modified.getTime();
+		
+		return keyInfo;
+	}
+	
+	public static KeyDataInfo GetKeyDataRecord(KeyDataRecordRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		if(StringUtil.isNullOrEmpty(request.id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
+		
+		KeyDataRecord record = KeyDataRecord.load(request.id);
+		if(record == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND);
+		
+		KeyDataInfo keyInfo = keyDataRecordToInfo(record);
 
 		return keyInfo;
+	}
+	
+	public static KeyDataRecords GetKeyDataRecords(KeyDataRecordsRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		List<KeyDataRecord> records = KeyDataRecord.query(info.User.getId(), request.type, request.parent);
+		
+		KeyDataRecords reply = new KeyDataRecords();
+	
+		reply.records = new ArrayList<KeyDataInfo>(records.size());
+		for(KeyDataRecord record : records)
+		{
+			reply.records.add(keyDataRecordToInfo(record));
+		}
+		
+		return reply;
 	}
 
 	public static SetDataReply SetDataKeys(SetGlobalDataRequest request, ClientMessageInfo info) throws SQLException, JsonApiException
@@ -667,7 +690,7 @@ public class ClientAPI {
 	
 	public static ChannelInfo JoinChannel(JoinChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(request.id == null)
+		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
 		
 		if(info.UserPresence == null)
@@ -698,7 +721,7 @@ public class ClientAPI {
 	
 	public static EmptyClientReply LeaveChannel(LeaveChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(request.id == null)
+		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
 		
 		
@@ -729,7 +752,7 @@ public class ClientAPI {
 	
 	public static EmptyClientReply AddAliasToChannel(JoinChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(request.id == null)
+		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
 		
 		if(info.UserPresence == null)
@@ -758,7 +781,7 @@ public class ClientAPI {
 	
 	public static EmptyClientReply RemoveAliasFromChannel(LeaveChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(request.id == null)
+		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
 		
 		
@@ -788,7 +811,7 @@ public class ClientAPI {
 	
 	public static ChannelInfo ListenToChannel(ListenToResidentRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(request.id == null)
+		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
 		
 		if(info.UserPresence == null)
@@ -810,7 +833,7 @@ public class ClientAPI {
 	
 	public static EmptyClientReply StopListenToChannel(StopListenToResidentRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(request.id == null)
+		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
 		
 		BaseResident listener = ResidentManager.getResident(info.User.getId());
@@ -833,7 +856,7 @@ public class ClientAPI {
 	
 	public static EmptyClientReply SendClientMessage(TransientMessageRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(request.message_type == null)
+		if(StringUtil.isNullOrEmpty(request.message_type))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "message_type");
 		if(request.value == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "value");
@@ -868,7 +891,7 @@ public class ClientAPI {
 	
 	public static CurrencyBalanceReply GetCurrencyBalance(CurrencyBalanceRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		if(request.currency_id == null || request.currency_id.length() == 0)
+		if(StringUtil.isNullOrEmpty(request.currency_id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "currency_id");
 		
 		CurrencyInfo currency = CurrencyInfoManager.getCurrencyInfo(request.currency_id);
@@ -940,7 +963,7 @@ public class ClientAPI {
 	{
 		String currencyCode = CurrencyUtil.getCurrency(info.User.Country);
 		
-		if(request.product_id == null || request.product_id.length() == 0)
+		if(StringUtil.isNullOrEmpty(request.product_id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "product_id");
 		
 		Product prod = ProductManager.getProduct(request.product_id);
@@ -976,10 +999,10 @@ public class ClientAPI {
 	
 	public static ProductPurchasedReply stripeCheckout(StripeCheckoutRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		if(request.product_id == null || request.product_id.length() == 0)
+		if(StringUtil.isNullOrEmpty(request.product_id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "product_id");
 		
-		if(request.stripe_token == null || request.stripe_token.length() == 0)
+		if(StringUtil.isNullOrEmpty(request.stripe_token))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "stripe_token");
 		
 		String currencyCode = CurrencyUtil.getCurrency(info.User.Country);
