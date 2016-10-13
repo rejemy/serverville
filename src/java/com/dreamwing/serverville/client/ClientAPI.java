@@ -384,10 +384,14 @@ public class ClientAPI {
 		if(!KeyDataItem.isValidUserReadKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
-		// If it's not our data, we can't see it
+		
+		
+		// If it's not our data, load the keydata record to see if we can get it
 		if(!request.id.equals(info.User.getId()) && !KeyDataItem.isPublicKeyname(request.key))
 		{
-			throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
+			KeyDataRecord record = KeyDataRecord.load(request.id);
+			if(record == null || !record.Owner.equals(info.User.getId()))
+				throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
 		}
 		
 		KeyDataItem item = KeyDataManager.loadKey(request.id, request.key);
@@ -404,6 +408,12 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		boolean isMe = request.id.equals(info.User.getId());
+		if(!isMe)
+		{
+			KeyDataRecord record = KeyDataRecord.load(request.id);
+			if(record != null && record.Owner.equals(info.User.getId()))
+				isMe = true;
+		}
 		
 		for(String keyname : request.keys)
 		{
@@ -446,6 +456,12 @@ public class ClientAPI {
 		reply.values = new HashMap<String,DataItemReply>();
 		
 		boolean isMe = request.id.equals(info.User.getId());
+		if(!isMe)
+		{
+			KeyDataRecord record = KeyDataRecord.load(request.id);
+			if(record != null && record.Owner.equals(info.User.getId()))
+				isMe = true;
+		}
 		
 		for(KeyDataItem item : items)
 		{
