@@ -73,13 +73,16 @@ class KeyData
 		return new KeyData(record);
 	}
 	
-	static load(id:string):KeyData
+	static load(id:string, keys?:string[]):KeyData
 	{
 		var data:KeyData = KeyData.find(id);
 		if(data == null)
 			return null;
 		
-		data.loadAll();
+		if(keys == undefined)
+			data.loadAll();
+		else
+			data.loadKeys(keys);
 		return data;
 	}
 	

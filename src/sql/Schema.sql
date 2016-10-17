@@ -130,6 +130,8 @@ CREATE TABLE `currency_info` (
   `max` int(11) DEFAULT NULL,
   `rate` double NOT NULL DEFAULT '0',
   `history` tinyint(1) NOT NULL DEFAULT '0',
+  `created` bigint(20) NOT NULL,
+  `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;

@@ -7,7 +7,7 @@ declare class KeyData
 
 	static find(id:string):KeyData;
 	static findOrCreate(id:string, type:string, owner:string, parent?:string):KeyData;
-	static load(id:string):KeyData;
+	static load(id:string, keys?:string[]):KeyData;
 	
 	getId():string;
 	getType():string;

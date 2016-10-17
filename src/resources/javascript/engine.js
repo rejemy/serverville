@@ -46,11 +46,14 @@ var KeyData = (function () {
         var record = api.findOrCreateKeyDataRecord(id, type, owner, parent);
         return new KeyData(record);
     };
-    KeyData.load = function (id) {
+    KeyData.load = function (id, keys) {
         var data = KeyData.find(id);
         if (data == null)
             return null;
-        data.loadAll();
+        if (keys == undefined)
+            data.loadAll();
+        else
+            data.loadKeys(keys);
         return data;
     };
     KeyData.prototype.getId = function () { return this.id; };
