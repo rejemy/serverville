@@ -85,6 +85,17 @@ public class ClientMessages {
 		public String language;
 	}
 	
+	public static class GetUserDataComboRequest
+	{
+		public double since;
+	}
+	
+	public static class GetUserDataComboReply
+	{
+		public Map<String,DataItemReply> values;
+		public Map<String,Integer> balances;
+	}
+	
 	public static class SetUserDataRequest
 	{
 		public String key;

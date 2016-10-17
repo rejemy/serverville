@@ -255,6 +255,27 @@ public class ClientAPI {
 		return new EmptyClientReply();
 	}
 	
+	public static GetUserDataComboReply GetUserDataCombo(GetUserDataComboRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		List<KeyDataItem> items = KeyDataManager.loadAllUserVisibleKeysSince(info.User.getId(), (long)request.since);
+		if(items == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND);
+		
+		GetUserDataComboReply reply = new GetUserDataComboReply();
+		
+		reply.values = new HashMap<String,DataItemReply>();
+		
+		for(KeyDataItem item : items)
+		{
+			DataItemReply data = KeyDataItemToDataItemReply(info.User.getId(), item);
+			reply.values.put(data.key, data);
+		}
+		
+		reply.balances = CurrencyInfoManager.getCurrencyBalances(info.User);
+		
+		return reply;
+	}
+	
 	public static SetDataReply SetUserKey(SetUserDataRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		SetDataReply reply = new SetDataReply();
