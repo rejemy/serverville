@@ -334,6 +334,7 @@ public class ClientMessages {
 		public String image_url;
 		public double price;
 		public String display_price;
+		public String currency;
 	}
 	
 	public static class ProductInfoList

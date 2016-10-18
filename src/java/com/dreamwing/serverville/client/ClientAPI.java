@@ -989,6 +989,7 @@ public class ClientAPI {
 			prodInfo.image_url = text.image_url;
 			prodInfo.price = price;
 			prodInfo.display_price = CurrencyUtil.getDisplayPrice(loc, currencyCode, price);
+			prodInfo.currency = currencyCode;
 			
 			reply.products.add(prodInfo);
 		}
@@ -1030,6 +1031,7 @@ public class ClientAPI {
 		prodInfo.image_url = text.image_url;
 		prodInfo.price = price;
 		prodInfo.display_price = CurrencyUtil.getDisplayPrice(info.User.getLocale(), currencyCode, price);
+		prodInfo.currency = currencyCode;
 		
 		return prodInfo;
 	}
