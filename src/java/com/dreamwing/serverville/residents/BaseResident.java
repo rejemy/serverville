@@ -103,6 +103,10 @@ public abstract class BaseResident
 
 		updateTransientValueInList(item);
 		
+		// Server read only key, don't send notification
+		if(key.startsWith("$$"))
+			return;
+		
 		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
 		
 		changeMessage.values = new HashMap<String,Object>();
@@ -138,11 +142,13 @@ public abstract class BaseResident
 
 			updateTransientValueInList(item);
 			
-			changeMessage.values.put(key, value);
+			if(!key.startsWith("$$"))
+				changeMessage.values.put(key, value);
 
 		}
 		
-		onStateChanged(changeMessage, currTime);
+		if(!changeMessage.values.isEmpty())
+			onStateChanged(changeMessage, currTime);
 	}
 	
 	
