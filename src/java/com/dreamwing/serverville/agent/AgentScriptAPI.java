@@ -648,7 +648,7 @@ public class AgentScriptAPI
 		res.deleteAllTransientValues();
 	}
 	
-	public void sendServerMessage(String to, String from, String alias, String messageType, Object value) throws JsonApiException, SQLException
+	public void sendServerMessageForUser(String to, String from, String alias, String messageType, Object value) throws JsonApiException, SQLException
 	{
 		if(from == null || from.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "from");
@@ -691,6 +691,31 @@ public class AgentScriptAPI
 		{
 			userAlias.sendMessage("serverMessage", message);
 		}
+	}
+	
+	public void sendServerMessage(String to, String messageType, Object value) throws JsonApiException, SQLException
+	{
+		if(to == null || to.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "to");
+		
+		if(messageType == null || messageType.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "messageType");
+		
+		if(value == null)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "value");
+		
+		TransientClientMessage message = new TransientClientMessage();
+		message.message_type = messageType;
+		message.value = value;
+		
+		BaseResident listener = ResidentManager.getResident(to);
+		if(listener == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, to);
+		}
+		
+		listener.sendMessage("serverMessage", message);
+		
 	}
 	
 	public boolean sendServerMessageToOnlineUser(String to, String from, String messageType, Object value) throws JsonApiException, SQLException

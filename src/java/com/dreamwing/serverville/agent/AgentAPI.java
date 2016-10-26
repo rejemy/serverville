@@ -252,9 +252,21 @@ public class AgentAPI
 		return new EmptyReply();
 	}
 	
-	public static EmptyReply SendServerMessage(ServerMessageRequest request) throws JsonApiException, SQLException
+	public static EmptyReply SendServerMessageForUser(SendServerMessageForUserRequest request) throws JsonApiException, SQLException
 	{
-		ApiInst.sendServerMessage(request.to, request.from, request.alias, request.messageType, request.value);
+		ApiInst.sendServerMessageForUser(request.to, request.from, request.alias, request.messageType, request.value);
+		return new EmptyReply();
+	}
+	
+	public static EmptyReply SendServerMessageToOnlineUser(SendServerMessageToOnlineUserRequest request) throws JsonApiException, SQLException
+	{
+		ApiInst.sendServerMessageToOnlineUser(request.to, request.from, request.messageType, request.value);
+		return new EmptyReply();
+	}
+	
+	public static EmptyReply SendServerMessage(SendServerMessageRequest request) throws JsonApiException, SQLException
+	{
+		ApiInst.sendServerMessage(request.to, request.messageType, request.value);
 		return new EmptyReply();
 	}
 	

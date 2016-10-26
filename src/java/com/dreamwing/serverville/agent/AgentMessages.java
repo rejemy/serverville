@@ -173,11 +173,26 @@ public class AgentMessages
 		public String id;
 	}
 	
-	public static class ServerMessageRequest
+	public static class SendServerMessageForUserRequest
 	{
 		public String to;
 		public String from;
 		public String alias;
+		public String messageType;
+		public Object value;
+	}
+	
+	public static class SendServerMessageToOnlineUserRequest
+	{
+		public String to;
+		public String from;
+		public String messageType;
+		public Object value;
+	}
+	
+	public static class SendServerMessageRequest
+	{
+		public String to;
 		public String messageType;
 		public Object value;
 	}
