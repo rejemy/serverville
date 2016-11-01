@@ -44,6 +44,8 @@ import com.dreamwing.serverville.serialize.JsonDataDecoder;
 import com.dreamwing.serverville.util.FileUtil;
 import com.dreamwing.serverville.util.SVID;
 
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
+
 
 public class AgentScriptAPI
 {
@@ -675,7 +677,7 @@ public class AgentScriptAPI
 		
 		TransientClientMessage message = new TransientClientMessage();
 		message.message_type = messageType;
-		message.value = value;
+		message.value = ScriptObjectMirror.wrapAsJSONCompatible(value, null);
 		
 		if(to != null)
 		{
@@ -706,7 +708,7 @@ public class AgentScriptAPI
 		
 		TransientClientMessage message = new TransientClientMessage();
 		message.message_type = messageType;
-		message.value = value;
+		message.value = ScriptObjectMirror.wrapAsJSONCompatible(value, null);
 		
 		BaseResident listener = ResidentManager.getResident(to);
 		if(listener == null)
@@ -742,7 +744,7 @@ public class AgentScriptAPI
 		
 		TransientClientMessage message = new TransientClientMessage();
 		message.message_type = messageType;
-		message.value = value;
+		message.value = ScriptObjectMirror.wrapAsJSONCompatible(value, null);
 		
 		user.onMessage("serverMessage", message, from, null);
 		

@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
 import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.data.Product;
@@ -56,17 +57,20 @@ public final class JSON {
 	
 	public static byte[] serializeToBytes(Object data) throws JsonProcessingException
 	{
+		data = ScriptObjectMirror.wrapAsJSONCompatible(data, null);
 		return JsonMapper.writeValueAsBytes(data);
 	}
 	
 	public static ByteBuf serializeToByteBuf(Object data) throws JsonProcessingException
 	{
+		data = ScriptObjectMirror.wrapAsJSONCompatible(data, null);
 		byte jsonData[] = JsonMapper.writeValueAsBytes(data);
 		return Unpooled.wrappedBuffer(jsonData);
 	}
 	
 	public static String serializeToString(Object data) throws JsonProcessingException
 	{
+		data = ScriptObjectMirror.wrapAsJSONCompatible(data, null);
 		return JsonMapper.writeValueAsString(data);
 	}
 	
@@ -114,6 +118,7 @@ public final class JSON {
 	public static String serializeToStringLogError(Object data)
 	{
 		try {
+			data = ScriptObjectMirror.wrapAsJSONCompatible(data, null);
 			return JsonMapper.writeValueAsString(data);
 		} catch (JsonProcessingException e) {
 			l.error("Error serializing json", e);

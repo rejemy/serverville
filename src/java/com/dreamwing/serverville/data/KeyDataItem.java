@@ -17,6 +17,8 @@ import com.dreamwing.serverville.serialize.ByteEncoder;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
+
 
 public class KeyDataItem
 {
@@ -315,6 +317,7 @@ public class KeyDataItem
 			}
 			else
 			{
+				val = ScriptObjectMirror.wrapAsJSONCompatible(val, null);
 				value = JSON.serializeToString(val);
 			}
 			datatype = KeyDataTypes.JSON;
