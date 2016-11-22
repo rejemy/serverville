@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
@@ -33,6 +34,8 @@ import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.Product;
+import com.dreamwing.serverville.data.PropertyPermissions;
+import com.dreamwing.serverville.data.PropertyPermissionsManager;
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.data.Product.ProductText;
@@ -53,6 +56,8 @@ import com.dreamwing.serverville.test.SelfTest.TestStatus;
 import com.dreamwing.serverville.util.CurrencyUtil;
 import com.dreamwing.serverville.util.JSON;
 import com.dreamwing.serverville.util.PasswordUtil;
+import com.dreamwing.serverville.util.StringUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import okhttp3.MediaType;
 
@@ -921,7 +926,7 @@ public class AdminAPI {
 
 		if(id == null || id.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a data id");
-		if(!KeyDataItem.isValidServerKeyname(key))
+		if(!KeyDataItem.isValidKeyname(key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 
 		
@@ -1282,7 +1287,7 @@ public class AdminAPI {
 			
 			for(String key : prod.KeyData.keySet())
 			{
-				if(!KeyDataItem.isValidServerKeyname(key))
+				if(!KeyDataItem.isValidKeyname(key))
 					throw new JsonApiException(ApiErrors.INVALID_INPUT, "Invalid keydata key name: "+key);
 			}
 		}
@@ -1301,5 +1306,86 @@ public class AdminAPI {
 		
 		return HttpHelpers.sendSuccess(req);
 	}
+	
+	public static class AdminPropertyPermissionsInfo
+	{
+		public String record_type;
+		public Map<String,String> properties;
+		public double created;
+		public double modified;
+
+	}
+	
+	public static class AdminPropertyPermissionsInfoList
+	{
+		public List<AdminPropertyPermissionsInfo> permissions;
+	}
+	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
+	public static ChannelFuture propertyPermissions(HttpRequestInfo req) throws SQLException, JsonApiException
+	{
+		Collection<PropertyPermissions> permissions = PropertyPermissionsManager.reloadPermissions();
+		AdminPropertyPermissionsInfoList reply = new AdminPropertyPermissionsInfoList();
+		reply.permissions = new ArrayList<AdminPropertyPermissionsInfo>(permissions.size());
+		
+		for(PropertyPermissions perms : permissions)
+		{
+			reply.permissions.add(perms.getPermissionsInfo());
+		}
+		
+		return HttpHelpers.sendJson(req, reply);
+	}
+	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
+	public static ChannelFuture propertyPermission(HttpRequestInfo req) throws SQLException, JsonApiException
+	{
+		String recordType = req.getOneQuery("record_type");
+
+		if(recordType == null || recordType.length() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a permissions record type");
+		
+		PropertyPermissions perms = PropertyPermissionsManager.reloadPermissions(recordType);
+		if(perms == null)
+			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
+		
+		AdminPropertyPermissionsInfo reply = perms.getPermissionsInfo();
+		
+		return HttpHelpers.sendJson(req, reply);
+	}
+	
+	@HttpHandlerOptions(method=HttpHandlerOptions.Method.POST)
+	public static ChannelFuture addPropertyPermissions(HttpRequestInfo req) throws SQLException, JsonApiException
+	{
+		String recordType = req.getOneBody("record_type");
+		if(StringUtil.isNullOrEmpty(recordType))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must supply a record type");
+		
+		String propertiesJson = req.getOneBody("properties");
+		if(StringUtil.isNullOrEmpty(propertiesJson))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "Must property permissions");
+		
+		PropertyPermissions permissions;
+		try {
+			permissions = new PropertyPermissions(recordType, propertiesJson);
+		} catch (IOException e) {
+			throw new JsonApiException(ApiErrors.INVALID_INPUT, "Error decoding property permissions: "+e.getMessage());
+		}
+		
+		PropertyPermissions oldPermissions = PropertyPermissionsManager.getPermissions(recordType);
+		if(oldPermissions != null)
+		{
+			permissions.Created = oldPermissions.Created;
+			permissions.Modified = oldPermissions.Modified;
+		}
+	
+		try {
+			PropertyPermissionsManager.addPermissions(permissions);
+		} catch (JsonProcessingException e) {
+			throw new JsonApiException(ApiErrors.INTERNAL_SERVER_ERROR, "Server couldn't encode json for some reason: "+e.getMessage());
+		}
+		
+		return HttpHelpers.sendSuccess(req);
+	}
+	
 	
 }

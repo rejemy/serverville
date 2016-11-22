@@ -138,7 +138,7 @@ public class KeyData {
 	
 	public KeyDataItem getOrCreateKeyData(String key)
 	{
-		if(!KeyDataItem.isValidServerKeyname(key))
+		if(!KeyDataItem.isValidKeyname(key))
 			throw new IllegalArgumentException("Illegal key name");
 		
 		KeyDataItem data = Keys.get(key);

@@ -525,62 +525,6 @@ public class KeyDataManager {
 		}
 	}
 	
-	public static List<KeyDataItem> loadAllUserVisibleKeys(String id) throws SQLException
-	{
-		return loadAllUserVisibleKeys(id, false);
-	}
-	
-	public static List<KeyDataItem> loadAllUserVisibleKeys(String id, boolean includeDeleted) throws SQLException
-	{
-		if(id == null || id.length() == 0)
-		{
-			l.error("Data item has invalid id: "+id);
-			throw new IllegalArgumentException("Invalid id");
-		}
-		
-		try {
-			List<KeyDataItem> results = null;
-			if(includeDeleted)
-				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `key`>=\"$0\";", ItemListHandler, id);
-			else
-				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `key`>=\"$0\" AND `deleted` IS NULL;", ItemListHandler, id);
-			return results;
-		} catch (SQLException e) {
-			l.error("Error loading item "+id+" to database ", e);
-			throw e;
-		}
-
-	}
-	
-	public static List<KeyDataItem> loadAllUserVisibleKeysSince(String id, long time) throws SQLException
-	{
-		return loadAllUserVisibleKeysSince(id, time, false);
-	}
-	
-	public static List<KeyDataItem> loadAllUserVisibleKeysSince(String id, long time, boolean includeDeleted) throws SQLException
-	{
-		if(time <= 0)
-			return loadAllUserVisibleKeys(id, includeDeleted);
-		
-		if(id == null || id.length() == 0)
-		{
-			l.error("Data item has invalid id: "+id);
-			throw new IllegalArgumentException("Invalid id");
-		}
-
-		try {
-			List<KeyDataItem> results = null;
-			if(includeDeleted)
-				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `key`>=\"$0\" AND `modified`>?", ItemListHandler, id, time);
-			else
-				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `key`>=\"$0\" AND `modified`>? AND `deleted` IS NULL;", ItemListHandler, id, time);
-			return results;
-		} catch (SQLException e) {
-			l.error("Error loading item "+id+" to database ", e);
-			throw e;
-		}
-	}
-	
 	public static long deleteKey(String id, String key) throws SQLException
 	{
 		if(id == null || id.length() == 0)

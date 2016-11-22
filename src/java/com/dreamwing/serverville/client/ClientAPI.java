@@ -22,6 +22,8 @@ import com.dreamwing.serverville.data.JsonDataType;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataRecord;
 import com.dreamwing.serverville.data.Product;
+import com.dreamwing.serverville.data.PropertyPermissions;
+import com.dreamwing.serverville.data.PropertyPermissionsManager;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.data.TransientDataItem;
 import com.dreamwing.serverville.data.UserSession;
@@ -257,7 +259,7 @@ public class ClientAPI {
 	
 	public static GetUserDataComboReply GetUserDataCombo(GetUserDataComboRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		List<KeyDataItem> items = KeyDataManager.loadAllUserVisibleKeysSince(info.User.getId(), (long)request.since);
+		List<KeyDataItem> items = KeyDataManager.loadAllKeysSince(info.User.getId(), (long)request.since);
 		if(items == null)
 			throw new JsonApiException(ApiErrors.NOT_FOUND);
 		
@@ -267,6 +269,9 @@ public class ClientAPI {
 		
 		for(KeyDataItem item : items)
 		{
+			if(!PropertyPermissionsManager.UserPermissions.isOwnerReadable(item.key))
+				continue;
+			
 			DataItemReply data = KeyDataItemToDataItemReply(info.User.getId(), item);
 			reply.values.put(data.key, data);
 		}
@@ -280,8 +285,10 @@ public class ClientAPI {
 	{
 		SetDataReply reply = new SetDataReply();
 		
-		if(!KeyDataItem.isValidUserWriteKeyname(request.key))
+		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
+		if(!PropertyPermissionsManager.UserPermissions.isOwnerWritable(request.key))
+			throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
 		
 		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(request.key, request.data_type, request.value);
 		long updateTime = KeyDataManager.saveKey(info.User.getId(), item);
@@ -298,8 +305,10 @@ public class ClientAPI {
 		
 		for(SetUserDataRequest data : request.values)
 		{
-			if(!KeyDataItem.isValidUserWriteKeyname(data.key))
+			if(!KeyDataItem.isValidKeyname(data.key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
+			if(!PropertyPermissionsManager.UserPermissions.isOwnerWritable(data.key))
+				throw new JsonApiException(ApiErrors.PRIVATE_DATA, data.key);
 			
 			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
 			itemList.add(item);
@@ -343,8 +352,10 @@ public class ClientAPI {
 	
 	public static DataItemReply GetUserKey(KeyRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		if(!KeyDataItem.isValidUserReadKeyname(request.key))
+		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
+		if(!PropertyPermissionsManager.UserPermissions.isOwnerReadable(request.key))
+			throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
 		
 		KeyDataItem item = KeyDataManager.loadKey(info.User.getId(), request.key);
 		if(item == null)
@@ -357,8 +368,10 @@ public class ClientAPI {
 	{
 		for(String key : request.keys)
 		{
-			if(!KeyDataItem.isValidUserReadKeyname(key))
+			if(!KeyDataItem.isValidKeyname(key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
+			if(!PropertyPermissionsManager.UserPermissions.isOwnerReadable(key))
+				throw new JsonApiException(ApiErrors.PRIVATE_DATA, key);
 		}
 		
 		List<KeyDataItem> items = KeyDataManager.loadKeysSince(info.User.getId(), request.keys, (long)request.since);
@@ -380,7 +393,7 @@ public class ClientAPI {
 	
 	public static UserDataReply GetAllUserKeys(AllKeysRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		List<KeyDataItem> items = KeyDataManager.loadAllUserVisibleKeysSince(info.User.getId(), (long)request.since);
+		List<KeyDataItem> items = KeyDataManager.loadAllKeysSince(info.User.getId(), (long)request.since);
 		if(items == null)
 			throw new JsonApiException(ApiErrors.NOT_FOUND);
 		
@@ -390,6 +403,9 @@ public class ClientAPI {
 		
 		for(KeyDataItem item : items)
 		{
+			if(!PropertyPermissionsManager.UserPermissions.isOwnerReadable(item.key))
+				continue;
+			
 			DataItemReply data = KeyDataItemToDataItemReply(info.User.getId(), item);
 			reply.values.put(data.key, data);
 		}
@@ -402,18 +418,31 @@ public class ClientAPI {
 		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 
-		if(!KeyDataItem.isValidUserReadKeyname(request.key))
+		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
-		
-		
-		// If it's not our data, load the keydata record to see if we can get it
-		if(!request.id.equals(info.User.getId()) && !KeyDataItem.isPublicKeyname(request.key))
+		if(request.id.equals(info.User.getId()))
 		{
-			KeyDataRecord record = KeyDataRecord.load(request.id);
-			if(record == null || !record.Owner.equals(info.User.getId()))
+			if(!PropertyPermissionsManager.UserPermissions.isOwnerReadable(request.key))
 				throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
 		}
+		else
+		{
+			// If it's not our data, load the keydata record to see if we can get it
+			KeyDataRecord record = KeyDataRecord.load(request.id);
+			PropertyPermissions perms = PropertyPermissionsManager.getPermissions(record);
+			if(record != null && record.Owner.equals(info.User.getId()))
+			{
+				if(!perms.isOwnerReadable(request.key))
+					throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
+			}
+			else
+			{
+				if(!perms.isGlobalReadable(request.key))
+					throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
+			}
+		}
+		
 		
 		KeyDataItem item = KeyDataManager.loadKey(request.id, request.key);
 		if(item == null)
@@ -428,20 +457,24 @@ public class ClientAPI {
 		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
+		PropertyPermissions perms = PropertyPermissionsManager.UserPermissions;
 		boolean isMe = request.id.equals(info.User.getId());
 		if(!isMe)
 		{
 			KeyDataRecord record = KeyDataRecord.load(request.id);
 			if(record != null && record.Owner.equals(info.User.getId()))
 				isMe = true;
+			perms = PropertyPermissionsManager.getPermissions(record);
 		}
 		
 		for(String keyname : request.keys)
 		{
-			if(!KeyDataItem.isValidUserReadKeyname(keyname))
+			if(!KeyDataItem.isValidKeyname(keyname))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, keyname);
 			
-			if(!isMe && !KeyDataItem.isPublicKeyname(keyname))
+			if(isMe && !perms.isOwnerReadable(keyname))
+				throw new JsonApiException(ApiErrors.PRIVATE_DATA, keyname);
+			else if(!isMe && !perms.isGlobalReadable(keyname))
 				throw new JsonApiException(ApiErrors.PRIVATE_DATA, keyname);
 		}
 		
@@ -468,7 +501,7 @@ public class ClientAPI {
 		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
-		List<KeyDataItem> items = KeyDataManager.loadAllUserVisibleKeysSince(request.id, (long)request.since, request.include_deleted);
+		List<KeyDataItem> items = KeyDataManager.loadAllKeysSince(request.id, (long)request.since, request.include_deleted);
 		if(items == null)
 			items = new ArrayList<KeyDataItem>();
 		
@@ -476,20 +509,23 @@ public class ClientAPI {
 		
 		reply.values = new HashMap<String,DataItemReply>();
 		
+		PropertyPermissions perms = PropertyPermissionsManager.UserPermissions;
 		boolean isMe = request.id.equals(info.User.getId());
 		if(!isMe)
 		{
 			KeyDataRecord record = KeyDataRecord.load(request.id);
 			if(record != null && record.Owner.equals(info.User.getId()))
 				isMe = true;
+			perms = PropertyPermissionsManager.getPermissions(record);
 		}
+		
 		
 		for(KeyDataItem item : items)
 		{
-			if(!isMe && !KeyDataItem.isPublicKeyname(item.key))
-			{
+			if(isMe && !perms.isOwnerReadable(item.key))
 				continue;
-			}
+			else if(!isMe && !perms.isGlobalReadable(item.key))
+				continue;
 			
 			DataItemReply data = KeyDataItemToDataItemReply(request.id, item);
 			reply.values.put(data.key, data);
@@ -555,8 +591,10 @@ public class ClientAPI {
 		
 		for(SetUserDataRequest data : request.values)
 		{
-			if(!KeyDataItem.isValidUserWriteKeyname(data.key))
+			if(!KeyDataItem.isValidKeyname(data.key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
+			if(!PropertyPermissionsManager.UserPermissions.isOwnerWritable(data.key))
+				throw new JsonApiException(ApiErrors.FORBIDDEN, data.key);
 			
 			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
 			itemList.add(item);
@@ -577,7 +615,7 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
 		}
 		
-		if(!KeyDataItem.isValidUserWriteKeyname(request.key))
+		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 
 		Resident resident = info.UserPresence.getOrCreateAlias(request.alias);
@@ -596,7 +634,7 @@ public class ClientAPI {
 		
 		for(String keyname : request.values.keySet())
 		{
-			if(!KeyDataItem.isValidUserWriteKeyname(keyname))
+			if(!KeyDataItem.isValidKeyname(keyname))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, keyname);
 		}
 		
@@ -612,7 +650,7 @@ public class ClientAPI {
 	{
 		BaseResident resident = null;
 		
-		if(!KeyDataItem.isValidUserReadKeyname(request.key))
+		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
 		if(request.id != null)
@@ -629,11 +667,14 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, request.id+" / "+request.alias);
 		}
 		
-		if(!info.User.getId().equals(resident.getUserId()) && !KeyDataItem.isPublicKeyname(request.key))
-			throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
+		if(!KeyDataItem.isValidKeyname(request.key))
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
-		if(request.key.startsWith("$$"))
-				throw new JsonApiException(ApiErrors.NOT_FOUND);
+		//if(!info.User.getId().equals(resident.getUserId()) && !KeyDataItem.isPublicKeyname(request.key))
+		//	throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
+		
+		//if(request.key.startsWith("$$"))
+		//	throw new JsonApiException(ApiErrors.NOT_FOUND);
 		
 		TransientDataItem item = resident.getTransientValue(request.key);
 		if(item == null)
@@ -665,15 +706,15 @@ public class ClientAPI {
 		
 		Map<String,Object> values = new HashMap<String,Object>();
 		
-		boolean isMe = info.User.getId().equals(resident.getUserId());
+		//boolean isMe = info.User.getId().equals(resident.getUserId());
 		
 		for(String key : request.keys)
 		{
-			if(!KeyDataItem.isValidUserReadKeyname(key))
+			if(!KeyDataItem.isValidKeyname(key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 			
-			if(!isMe && !KeyDataItem.isPublicKeyname(key))
-				throw new JsonApiException(ApiErrors.PRIVATE_DATA, key);
+			//if(!isMe && !KeyDataItem.isPublicKeyname(key))
+			//	throw new JsonApiException(ApiErrors.PRIVATE_DATA, key);
 			
 			TransientDataItem item = resident.getTransientValue(key);
 			if(item != null)
@@ -707,15 +748,15 @@ public class ClientAPI {
 		
 		Map<String,Object> values = new HashMap<String,Object>();
 		
-		boolean isMe = info.User.getId().equals(resident.getUserId());
+		//boolean isMe = info.User.getId().equals(resident.getUserId());
 		
 		for(TransientDataItem item : resident.getAllTransientValues())
 		{
-			if(!KeyDataItem.isValidUserReadKeyname(item.key))
+			if(!KeyDataItem.isValidKeyname(item.key))
 				continue;
 			
-			if(!isMe && !KeyDataItem.isPublicKeyname(item.key))
-				continue;
+			//if(!isMe && !KeyDataItem.isPublicKeyname(item.key))
+			//	continue;
 			
 			values.put(item.key, item);
 		}

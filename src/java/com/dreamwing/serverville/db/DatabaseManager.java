@@ -18,6 +18,7 @@ import com.dreamwing.serverville.data.CurrencyRecord;
 import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.KeyDataRecord;
 import com.dreamwing.serverville.data.Product;
+import com.dreamwing.serverville.data.PropertyPermissionsManager;
 import com.dreamwing.serverville.data.Purchase;
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.data.ServervilleUser;
@@ -51,6 +52,7 @@ public class DatabaseManager {
 	public static Dao<AgentKey, String> AgentKeyDao;
 	
 	public static Dao<KeyDataRecord, String> KeyDataRecordDao;
+	public static Dao<PropertyPermissionsManager.PropertyPermissionsRecord, String> PropertyPermissionsRecordDao;
 	public static Dao<InviteCode, String> InviteCodeDao;
 	
 	public static Dao<CurrencyRecord, Void> CurrencyDao;
@@ -119,6 +121,7 @@ public class DatabaseManager {
 		AgentKeyDao = DaoManager.createDao(cs, AgentKey.class);
 		
 		KeyDataRecordDao = DaoManager.createDao(cs, KeyDataRecord.class);
+		PropertyPermissionsRecordDao = DaoManager.createDao(cs, PropertyPermissionsManager.PropertyPermissionsRecord.class);
 		
 		InviteCodeDao = DaoManager.createDao(cs, InviteCode.class);
 		

@@ -215,6 +215,22 @@ CREATE TABLE `product` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `property_permissions`
+--
+
+DROP TABLE IF EXISTS `property_permissions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `property_permissions` (
+  `recordtype` varchar(255) NOT NULL,
+  `properties` mediumtext NOT NULL,
+  `created` bigint(20) NOT NULL,
+  `modified` bigint(20) NOT NULL,
+  PRIMARY KEY (`recordtype`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `purchase`
 --
 

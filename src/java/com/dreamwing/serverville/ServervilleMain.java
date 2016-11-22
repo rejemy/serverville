@@ -26,6 +26,7 @@ import com.dreamwing.serverville.admin.AdminServerSocketInitializer;
 import com.dreamwing.serverville.agent.AgentServerSocketInitializer;
 import com.dreamwing.serverville.client.ClientSessionManager;
 import com.dreamwing.serverville.client.ClientSocketInitializer;
+import com.dreamwing.serverville.data.PropertyPermissionsManager;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.launcher.Launcher;
@@ -80,6 +81,7 @@ public class ServervilleMain {
 		DefaultProperties.setProperty("default_language", "en-US");
 		DefaultProperties.setProperty("default_currency", "USD");
 		DefaultProperties.setProperty("writeable_directories", "");
+		DefaultProperties.setProperty("default_property_permission", "w");
 	}
 	
 	private static Logger l;
@@ -211,6 +213,7 @@ public class ServervilleMain {
     	JSON.init();
     	DatabaseManager.init();
     	KeyDataManager.init();
+    	PropertyPermissionsManager.init();
     	CurrencyInfoManager.init();
     	ProductManager.init();
     	ResidentManager.init();

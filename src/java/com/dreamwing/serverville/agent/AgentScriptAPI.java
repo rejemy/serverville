@@ -128,7 +128,7 @@ public class AgentScriptAPI
 		if(id == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
-		if(!KeyDataItem.isValidServerKeyname(key))
+		if(!KeyDataItem.isValidKeyname(key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 		
 		JsonDataType valueType = JsonDataType.fromObject(data_type);
@@ -153,7 +153,7 @@ public class AgentScriptAPI
 			Object value = data.getOrDefault("value", null);
 			JsonDataType valueType = JsonDataType.fromObject(data.getOrDefault("data_type", null));
 			
-			if(!KeyDataItem.isValidServerKeyname(key))
+			if(!KeyDataItem.isValidKeyname(key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 			
 			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(key, valueType, value, Context);
@@ -170,7 +170,7 @@ public class AgentScriptAPI
 		if(id == null || id.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 
-		if(!KeyDataItem.isValidServerKeyname(key))
+		if(!KeyDataItem.isValidKeyname(key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 		
 		KeyDataItem item = KeyDataManager.loadKey(id, key);
@@ -197,7 +197,7 @@ public class AgentScriptAPI
 		
 		for(String key : keys)
 		{
-			if(!KeyDataItem.isValidServerKeyname(key))
+			if(!KeyDataItem.isValidKeyname(key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 		}
 		
@@ -251,7 +251,7 @@ public class AgentScriptAPI
 		if(id == null || id.length() == 0)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
-		if(!KeyDataItem.isValidServerKeyname(key))
+		if(!KeyDataItem.isValidKeyname(key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 		
 		return KeyDataManager.deleteKey(id, key);
@@ -518,7 +518,7 @@ public class AgentScriptAPI
 		if(id == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 
-		if(!KeyDataItem.isValidServerKeyname(key))
+		if(!KeyDataItem.isValidKeyname(key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 		
 		BaseResident res = ResidentManager.getResident(id);
@@ -541,7 +541,7 @@ public class AgentScriptAPI
 		
 		for(String keyname : items.keySet())
 		{
-			if(!KeyDataItem.isValidServerKeyname(keyname))
+			if(!KeyDataItem.isValidKeyname(keyname))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, keyname);
 		}
 		
