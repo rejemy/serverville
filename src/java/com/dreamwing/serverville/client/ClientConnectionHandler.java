@@ -5,11 +5,19 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.dreamwing.serverville.ServervilleMain;
+import com.dreamwing.serverville.client.ClientMessages.PendingNotification;
+import com.dreamwing.serverville.client.ClientMessages.PendingNotificationList;
+import com.dreamwing.serverville.client.ClientMessages.UserMessageNotification;
 import com.dreamwing.serverville.data.ServervilleUser;
+import com.dreamwing.serverville.data.UserMessage;
 import com.dreamwing.serverville.data.UserSession;
 import com.dreamwing.serverville.log.SVLog;
 import com.dreamwing.serverville.net.HttpRequestInfo;
@@ -20,6 +28,7 @@ import com.dreamwing.serverville.net.HttpConnectionInfo;
 import com.dreamwing.serverville.net.HttpDispatcher;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.residents.OnlineUser;
+import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.serialize.SerializeUtil;
 import com.dreamwing.serverville.util.JSON;
 import com.dreamwing.serverville.util.SVID;
@@ -34,6 +43,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
@@ -62,12 +72,16 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	private boolean WebsocketConnected = false;
 	private boolean BinaryConnected = false;
 
+	private List<PendingNotification> Notifications;
+	
 	public ClientConnectionHandler(ClientDispatcher jsonDispatcher, HttpDispatcher formDispatcher)
 	{
 		super();
 		
 		JsonDispatcher = jsonDispatcher;
 		FormDispatcher = formDispatcher;
+		
+		Notifications = new LinkedList<PendingNotification>();
 	}
 	
 	public ServervilleUser getUser()
@@ -149,13 +163,16 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			session.update();
 		}
 		
-		
 		if(WebsocketConnected)
 		{
-			UserPresence = new OnlineUser(user.getId(), this);
+			UserPresence = new OnlineUser(this);
 		}
 		
 		ClientSessionManager.addSession(this);
+		
+		loadGuaranteedMessages();
+		
+		ScriptManager.onUserSignIn(this);
 	}
 	
 	private void signOut()
@@ -167,6 +184,8 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	{
 		if(Info.User != null)
 		{
+			ScriptManager.onUserSignOut(this);
+			
 			if(updateSession)
 			{
 				UserSession session = (UserSession) Info.Session;
@@ -259,7 +278,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		if(WebsocketConnected)
 		{
-			sendMessage("_error", new ApiError(ApiErrors.SESSION_EXPIRED), "", "").addListener(ChannelFutureListener.CLOSE);
+			sendNotification("error", new ApiError(ApiErrors.SESSION_EXPIRED)).addListener(ChannelFutureListener.CLOSE);
 		}
 		else
 		{
@@ -375,16 +394,28 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			info.UserPresence = UserPresence;
 			
 			Object reply = JsonDispatcher.dispatch(messageType, messageBody, info);
+			HttpResponse response;
+			
 			if(reply instanceof ApiError)
 			{
 				ApiError error = (ApiError)reply;
-				return HttpHelpers.sendErrorJson(currRequest, error, error.getHttpStatus());
+				response = HttpHelpers.makeErrorJsonResponse(error, error.getHttpStatus());
 			}
 			else
 			{
-				return HttpHelpers.sendJson(currRequest, reply);
+				response = HttpHelpers.makeJsonResponse(reply);
 			}
-
+			
+			addNotificationHeader(response);
+			
+			return ctx.writeAndFlush(response);
+		}
+		else if(uriPath.equals("/notifications"))
+		{
+			// Request for pending notifications
+			HttpResponse response = getNotifications();
+			
+			return ctx.writeAndFlush(response);
 		}
 		else if(uriPath.startsWith("/form/"))
 		{
@@ -551,15 +582,17 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
         {
         	ApiError ise = new ApiError(ApiErrors.INTERNAL_SERVER_ERROR);
         
-        	HttpHelpers.sendErrorJson(ctx, ise, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+        	HttpResponse response = HttpHelpers.makeErrorJsonResponse(ise, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+        	addNotificationHeader(response);
+        	ctx.writeAndFlush(response);
         }
     }
 	
-	public ChannelFuture sendMessage(String messageType, Object messageBody, String from, String via)
+	public ChannelFuture sendNotification(String notificationType, Object notification)
 	{
 		try
 		{
-			return sendMessage(messageType, JSON.serializeToString(messageBody), from, via);
+			return sendNotification(notificationType, JSON.serializeToString(notification));
 		}
 		catch(JsonProcessingException e)
 		{
@@ -568,45 +601,48 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		}
 	}
 	
-	public ChannelFuture sendMessage(String messageType, String serializedMessageBody, String from, String via)
+	public ChannelFuture sendNotification(String notificationType, String serializedNotification)
 	{
 		if(WebsocketConnected)
-			return sendWSMessage(messageType, serializedMessageBody, from, via);
-		else if(BinaryConnected)
-			return sendBinaryMessage(messageType, serializedMessageBody, from, via);
+		{
+			if(BinaryConnected)
+				return sendBinaryNotification(notificationType, serializedNotification);
+			else
+				return sendWSNotification(notificationType, serializedNotification);
+		}
 		else
+		{
+			// If it's just a normal http connection, store the notification until the next client request
+			PendingNotification pending = new PendingNotification();
+			pending.notification_type = notificationType;
+			pending.body = serializedNotification;
+			
+			synchronized(Notifications)
+			{
+				Notifications.add(pending);
+			}
+			
 			return null;
+		}
 	}
 	
-	private ChannelFuture sendWSMessage(String messageType, String serializedMessageBody, String from, String via)
+	private ChannelFuture sendWSNotification(String notificationType, String serializedNotification)
 	{
-		if(from == null)
-			from = "";
-		if(via == null)
-			via = "";
-		String messageStr = "M:"+messageType+":"+from+":"+via+":"+serializedMessageBody;
+		String messageStr = "N:"+notificationType+":"+serializedNotification;
 		
 		return write(messageStr);
 	}
 	
-	private ChannelFuture sendBinaryMessage(String messageType, String serializedMessageBody, String from, String via)
+	private ChannelFuture sendBinaryNotification(String notificationType, String serializedNotification)
 	{
 		ByteBuf messageBuf = Unpooled.buffer(256);
 		messageBuf.writerIndex(2); // Skip over size header
-		messageBuf.writeChar('M');
+		messageBuf.writeChar('N');
 		
 		try
 		{
-			SerializeUtil.writeUTF(messageType, messageBuf);
-			if(from == null)
-				SerializeUtil.writeUTF("", messageBuf);
-			else
-				SerializeUtil.writeUTF(from, messageBuf);
-			if(via == null)
-				SerializeUtil.writeUTF("", messageBuf);
-			else
-				SerializeUtil.writeUTF(via, messageBuf);
-			SerializeUtil.writeUTF(serializedMessageBody, messageBuf);
+			SerializeUtil.writeUTF(notificationType, messageBuf);
+			SerializeUtil.writeUTF(serializedNotification, messageBuf);
 		}
 		catch(Exception e)
 		{
@@ -643,6 +679,60 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	public OnlineUser getPresence()
 	{
 		return UserPresence;
+	}
+	
+	private void addNotificationHeader(HttpResponse response)
+	{
+		if(!Notifications.isEmpty())
+		{
+			response.headers().set("X-Notifications", "true");
+		}
+	}
+	
+	private HttpResponse getNotifications()
+	{
+		synchronized(Notifications)
+		{
+			PendingNotificationList reply = new PendingNotificationList();
+			reply.notifications = Notifications;
+			
+			HttpResponse response = HttpHelpers.makeJsonResponse(reply);
+			
+			Notifications.clear();
+			
+			return response;
+		}
+
+	}
+	
+	private void loadGuaranteedMessages()
+	{
+		List<UserMessage> messages;
+		try {
+			messages = UserMessage.loadAllToUser(Info.User.getId());
+		} catch (SQLException e) {
+			l.error("Error loading pending guaranteed messages for user "+Info.User.getId(), e);
+			return;
+		}
+		
+
+		if(!messages.isEmpty())
+		{
+			final Runnable sendMessageRunnable = new Runnable()
+			{
+				public void run()
+				{
+					for(UserMessage msg : messages)
+					{
+						UserMessageNotification notification = msg.toNotification();
+						sendNotification("msg", notification);
+					}
+				}
+			};
+			
+			ServervilleMain.ServiceScheduler.schedule(sendMessageRunnable, 1, TimeUnit.SECONDS);
+		}
+		
 	}
 	
 

@@ -91,28 +91,38 @@ public class AgentMessages
 	
 	public static class CreateChannelRequest
 	{
-		public String id;
+		public String channel_id;
+		public String resident_type;
+		public Map<String,Object> values;
 	}
 	
 	public static class CreateChannelReply
 	{
-		public String id;
+		public String channel_id;
 	}
 	
 	public static class DeleteChannelRequest
 	{
-		public String id;
+		public String channel_id;
 	}
 	
-	public static class UserAliasRequest
+	public static class CreateResidentRequest
 	{
-		public String user_id;
-		public String alias;
+		public String resident_id;
+		public String resident_type;
+		public String owner;
+		public Map<String,Object> values;
 	}
 	
-	public static class UserAliasReply
+	public static class DeleteResidentRequest
 	{
-		public String alias_id;
+		public String resident_id;
+		public Map<String,Object> final_values;
+	}
+	
+	public static class CreateResidentReply
+	{
+		public String resident_id;
 	}
 	
 	public static class AddResidentRequest
@@ -121,11 +131,23 @@ public class AgentMessages
 		public String resident_id;
 	}
 	
+	public static class RemoveResidentFromAllChannelsRequest
+	{
+		public String resident_id;
+		public Map<String,Object> final_values;
+	}
+	
 	public static class RemoveResidentRequest
 	{
 		public String channel_id;
 		public String resident_id;
 		public Map<String,Object> final_values;
+	}
+	
+	public static class SetResidentOwnerRequest
+	{
+		public String resident_id;
+		public String user_id;
 	}
 	
 	public static class AddListenerRequest
@@ -138,7 +160,7 @@ public class AgentMessages
 	{
 		public String user_id;
 		public String channel_id;
-		public String alias;
+		public String resident_id;
 		public Map<String,Object> values;
 	}
 	
@@ -146,7 +168,7 @@ public class AgentMessages
 	{
 		public String user_id;
 		public String channel_id;
-		public String alias;
+		public String resident_id;
 		public Map<String,Object> final_values;
 	}
 	
@@ -158,44 +180,38 @@ public class AgentMessages
 	
 	public static class GetTransientValueRequest
 	{
-		public String id;
+		public String resident_id;
 		public String key;
 	}
 	
 	public static class GetTransientValuesRequest
 	{
-		public String id;
+		public String resident_id;
 		public List<String> keys;
 	}
 	
 	public static class GetAllTransientValuesRequest
 	{
-		public String id;
+		public String resident_id;
 	}
 	
-	public static class SendServerMessageForUserRequest
+	public static class TriggerResidentEventRequest
+	{
+		public String resident_id;
+		public String event_type;
+		public String event;
+	}
+	
+	public static class SendUserMessageRequest
 	{
 		public String to;
 		public String from;
-		public String alias;
-		public String messageType;
-		public Object value;
+		public boolean from_user;
+		public boolean guaranteed;
+		public String message_type;
+		public String message;
 	}
-	
-	public static class SendServerMessageToOnlineUserRequest
-	{
-		public String to;
-		public String from;
-		public String messageType;
-		public Object value;
-	}
-	
-	public static class SendServerMessageRequest
-	{
-		public String to;
-		public String messageType;
-		public Object value;
-	}
+
 	
 	public static class CurrencyBalanceRequest
 	{

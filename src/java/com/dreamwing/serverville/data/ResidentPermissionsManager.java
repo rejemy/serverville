@@ -16,26 +16,26 @@ import com.dreamwing.serverville.admin.AdminAPI.AdminPropertyPermissionsInfo;
 import com.dreamwing.serverville.data.PropertyPermissions.PropertyInfo;
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.net.JsonApiException;
+import com.dreamwing.serverville.residents.BaseResident;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
-public class PropertyPermissionsManager
+public class ResidentPermissionsManager
 {
-	private static final Logger l = LogManager.getLogger(PropertyPermissionsManager.class);
+	private static final Logger l = LogManager.getLogger(ResidentPermissionsManager.class);
 	
 	static ConcurrentMap<String,PropertyPermissions> PropertyPermissionsDb;
 	static PropertyPermissions DefaultPermissions;
 	public static PropertyInfo DefaultPermission;
-	public static PropertyPermissions UserPermissions;
 	
-	@DatabaseTable(tableName = "property_permissions")
-	public static class PropertyPermissionsRecord
+	@DatabaseTable(tableName = "resident_permissions")
+	public static class ResidentPermissionsRecord
 	{
-		@DatabaseField(columnName="recordtype", id=true, canBeNull=false)
-		public String RecordType;
+		@DatabaseField(columnName="residenttype", id=true, canBeNull=false)
+		public String ResidentType;
 		
 		@DatabaseField(columnName="properties", canBeNull=false)
 		public String Properties;
@@ -46,24 +46,24 @@ public class PropertyPermissionsManager
 		@DatabaseField(columnName="modified", dataType=DataType.DATE_LONG, canBeNull=false, version=true)
 		public Date Modified;
 		
-		public static List<PropertyPermissionsRecord> loadAllPermissionRecords() throws SQLException
+		public static List<ResidentPermissionsRecord> loadAllPermissionRecords() throws SQLException
 		{
-			return DatabaseManager.PropertyPermissionsRecordDao.queryForAll();
+			return DatabaseManager.ResidentPermissionsRecordDao.queryForAll();
 		}
 		
-		public static PropertyPermissionsRecord loadPermissionRecord(String recordType) throws SQLException
+		public static ResidentPermissionsRecord loadPermissionRecord(String recordType) throws SQLException
 		{
-			return DatabaseManager.PropertyPermissionsRecordDao.queryForId(recordType);
+			return DatabaseManager.ResidentPermissionsRecordDao.queryForId(recordType);
 		}
 		
 		public void save() throws SQLException
 		{
-			DatabaseManager.PropertyPermissionsRecordDao.createOrUpdate(this);
+			DatabaseManager.ResidentPermissionsRecordDao.createOrUpdate(this);
 		}
 		
 		public static void deleteByRecordType(String recordType) throws SQLException
 		{
-			DatabaseManager.PropertyPermissionsRecordDao.deleteById(recordType);
+			DatabaseManager.ResidentPermissionsRecordDao.deleteById(recordType);
 		}
 	}
 	
@@ -85,13 +85,6 @@ public class PropertyPermissionsManager
 			l.error("Exception creating default permissions: ", e);
 		}
 		
-		try {
-			UserPermissions = new PropertyPermissions("user", null);
-		} catch (IOException | JsonApiException e) {
-			// Should not happen
-			l.error("Exception creating default user permissions: ", e);
-		}
-		
 		reloadPermissions();
 	}
 	
@@ -100,18 +93,15 @@ public class PropertyPermissionsManager
 	{
 		ConcurrentMap<String,PropertyPermissions> newDb = new ConcurrentHashMap<String,PropertyPermissions>();
 		
-		List<PropertyPermissionsRecord> recordPermissions = PropertyPermissionsRecord.loadAllPermissionRecords();
-		for(PropertyPermissionsRecord record : recordPermissions)
+		List<ResidentPermissionsRecord> residentPermissions = ResidentPermissionsRecord.loadAllPermissionRecords();
+		for(ResidentPermissionsRecord resident : residentPermissions)
 		{
 			try {
-				PropertyPermissions permissions = new PropertyPermissions(record);
-				newDb.put(record.RecordType, permissions);
-				
-				if(record.RecordType.equals("user"))
-					UserPermissions = permissions;
+				PropertyPermissions permissions = new PropertyPermissions(resident);
+				newDb.put(resident.ResidentType, permissions);
 				
 			} catch (IOException | JsonApiException e) {
-				l.error("Invalid property permissions in database for recordType "+record.RecordType, e);
+				l.error("Invalid property permissions in database for residentType "+resident.ResidentType, e);
 			}
 			
 		}
@@ -121,45 +111,42 @@ public class PropertyPermissionsManager
 		return newDb.values();
 	}
 	
-	public static PropertyPermissions getPermissions(String recordType)
+	public static PropertyPermissions getPermissions(String residentType)
 	{
-		if(recordType == null)
+		if(residentType == null)
 			return DefaultPermissions;
-		PropertyPermissions perms = PropertyPermissionsDb.get(recordType);
+		PropertyPermissions perms = PropertyPermissionsDb.get(residentType);
 		if(perms == null)
 			return DefaultPermissions;
 		return perms;
 	}
 	
-	public static PropertyPermissions getPermissions(KeyDataRecord record)
+	public static PropertyPermissions getPermissions(BaseResident resident)
 	{
-		if(record == null || record.Type == null)
+		if(resident == null || resident.getType() == null)
 			return DefaultPermissions;
-		PropertyPermissions perms = PropertyPermissionsDb.get(record.Type);
+		PropertyPermissions perms = PropertyPermissionsDb.get(resident.getType());
 		if(perms == null)
 			return DefaultPermissions;
 		return perms;
 	}
 	
-	public static PropertyPermissions reloadPermissions(String recordType) throws SQLException
+	public static PropertyPermissions reloadPermissions(String residentType) throws SQLException
 	{
-		PropertyPermissionsRecord record = PropertyPermissionsRecord.loadPermissionRecord(recordType);
+		ResidentPermissionsRecord record = ResidentPermissionsRecord.loadPermissionRecord(residentType);
 		if(record == null)
 		{
-			PropertyPermissionsDb.remove(recordType);
+			PropertyPermissionsDb.remove(residentType);
 		}
 		else
 		{
 			try {
 				PropertyPermissions permissions = new PropertyPermissions(record);
-				PropertyPermissionsDb.put(record.RecordType, permissions);
-				
-				if(record.RecordType.equals("user"))
-					UserPermissions = permissions;
+				PropertyPermissionsDb.put(record.ResidentType, permissions);
 				
 				return permissions;
 			} catch (IOException | JsonApiException e) {
-				l.error("Invalid property permissions in database for recordType "+record.RecordType, e);
+				l.error("Invalid property permissions in database for residentType "+record.ResidentType, e);
 			}
 		}
 		
@@ -169,8 +156,8 @@ public class PropertyPermissionsManager
 	// TODO: send reload message to cluster
 	public static void addPermissions(PropertyPermissions permissions) throws SQLException, JsonProcessingException
 	{
-		PropertyPermissionsRecord record = new PropertyPermissionsRecord();
-		record.RecordType = permissions.RecordType;
+		ResidentPermissionsRecord record = new ResidentPermissionsRecord();
+		record.ResidentType = permissions.DataType;
 		record.Created = permissions.Created;
 		record.Modified = permissions.Modified;
 		
@@ -182,16 +169,14 @@ public class PropertyPermissionsManager
 		
 		permissions.Modified = record.Modified;
 		
-		PropertyPermissionsDb.put(permissions.RecordType, permissions);
+		PropertyPermissionsDb.put(permissions.DataType, permissions);
 		
-		if(record.RecordType.equals("user"))
-			UserPermissions = permissions;
 	}
 	
 	// TODO: send reload message to cluster
-	public static void removePermissions(String recordType) throws SQLException
+	public static void removePermissions(String residentType) throws SQLException
 	{
-		PropertyPermissionsDb.remove(recordType);
-		PropertyPermissionsRecord.deleteByRecordType(recordType);
+		PropertyPermissionsDb.remove(residentType);
+		ResidentPermissionsRecord.deleteByRecordType(residentType);
 	}
 }

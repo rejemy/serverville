@@ -255,6 +255,7 @@ public class ScriptEngineContext {
 		return Engine.invokeMethod(CallbackHandlers, handlerName, args);
 	}
 	
+	/*
 	public Object onListenToChannelHandler(String channelId, String listenerId) throws NoSuchMethodException, ScriptException
 	{
 		return Engine.invokeMethod(CallbackHandlers, "onListenToChannel", channelId, listenerId);
@@ -263,6 +264,6 @@ public class ScriptEngineContext {
 	public Object onStopListenToChannelHandler(String channelId, String listenerId) throws NoSuchMethodException, ScriptException
 	{
 		return Engine.invokeMethod(CallbackHandlers, "onStopListenToChannel", channelId, listenerId);
-	}
+	}*/
 
 }

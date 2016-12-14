@@ -23,9 +23,11 @@ import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataRecord;
 import com.dreamwing.serverville.data.Product;
 import com.dreamwing.serverville.data.PropertyPermissions;
-import com.dreamwing.serverville.data.PropertyPermissionsManager;
+import com.dreamwing.serverville.data.RecordPermissionsManager;
+import com.dreamwing.serverville.data.ResidentPermissionsManager;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.data.TransientDataItem;
+import com.dreamwing.serverville.data.UserMessage;
 import com.dreamwing.serverville.data.UserSession;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
@@ -39,7 +41,9 @@ import com.dreamwing.serverville.stripe.StripeInterface;
 import com.dreamwing.serverville.util.CurrencyUtil;
 import com.dreamwing.serverville.util.LocaleUtil;
 import com.dreamwing.serverville.util.PasswordUtil;
+import com.dreamwing.serverville.util.SVID;
 import com.dreamwing.serverville.util.StringUtil;
+
 
 public class ClientAPI {
 	
@@ -269,7 +273,7 @@ public class ClientAPI {
 		
 		for(KeyDataItem item : items)
 		{
-			if(!PropertyPermissionsManager.UserPermissions.isOwnerReadable(item.key))
+			if(!RecordPermissionsManager.UserPermissions.isOwnerReadable(item.key))
 				continue;
 			
 			DataItemReply data = KeyDataItemToDataItemReply(info.User.getId(), item);
@@ -287,7 +291,7 @@ public class ClientAPI {
 		
 		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
-		if(!PropertyPermissionsManager.UserPermissions.isOwnerWritable(request.key))
+		if(!RecordPermissionsManager.UserPermissions.isOwnerWritable(request.key))
 			throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
 		
 		KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(request.key, request.data_type, request.value);
@@ -307,7 +311,7 @@ public class ClientAPI {
 		{
 			if(!KeyDataItem.isValidKeyname(data.key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
-			if(!PropertyPermissionsManager.UserPermissions.isOwnerWritable(data.key))
+			if(!RecordPermissionsManager.UserPermissions.isOwnerWritable(data.key))
 				throw new JsonApiException(ApiErrors.PRIVATE_DATA, data.key);
 			
 			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
@@ -354,7 +358,7 @@ public class ClientAPI {
 	{
 		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
-		if(!PropertyPermissionsManager.UserPermissions.isOwnerReadable(request.key))
+		if(!RecordPermissionsManager.UserPermissions.isOwnerReadable(request.key))
 			throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
 		
 		KeyDataItem item = KeyDataManager.loadKey(info.User.getId(), request.key);
@@ -370,7 +374,7 @@ public class ClientAPI {
 		{
 			if(!KeyDataItem.isValidKeyname(key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
-			if(!PropertyPermissionsManager.UserPermissions.isOwnerReadable(key))
+			if(!RecordPermissionsManager.UserPermissions.isOwnerReadable(key))
 				throw new JsonApiException(ApiErrors.PRIVATE_DATA, key);
 		}
 		
@@ -403,7 +407,7 @@ public class ClientAPI {
 		
 		for(KeyDataItem item : items)
 		{
-			if(!PropertyPermissionsManager.UserPermissions.isOwnerReadable(item.key))
+			if(!RecordPermissionsManager.UserPermissions.isOwnerReadable(item.key))
 				continue;
 			
 			DataItemReply data = KeyDataItemToDataItemReply(info.User.getId(), item);
@@ -423,14 +427,14 @@ public class ClientAPI {
 		
 		if(request.id.equals(info.User.getId()))
 		{
-			if(!PropertyPermissionsManager.UserPermissions.isOwnerReadable(request.key))
+			if(!RecordPermissionsManager.UserPermissions.isOwnerReadable(request.key))
 				throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
 		}
 		else
 		{
 			// If it's not our data, load the keydata record to see if we can get it
 			KeyDataRecord record = KeyDataRecord.load(request.id);
-			PropertyPermissions perms = PropertyPermissionsManager.getPermissions(record);
+			PropertyPermissions perms = RecordPermissionsManager.getPermissions(record);
 			if(record != null && record.Owner.equals(info.User.getId()))
 			{
 				if(!perms.isOwnerReadable(request.key))
@@ -457,14 +461,14 @@ public class ClientAPI {
 		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
-		PropertyPermissions perms = PropertyPermissionsManager.UserPermissions;
+		PropertyPermissions perms = RecordPermissionsManager.UserPermissions;
 		boolean isMe = request.id.equals(info.User.getId());
 		if(!isMe)
 		{
 			KeyDataRecord record = KeyDataRecord.load(request.id);
 			if(record != null && record.Owner.equals(info.User.getId()))
 				isMe = true;
-			perms = PropertyPermissionsManager.getPermissions(record);
+			perms = RecordPermissionsManager.getPermissions(record);
 		}
 		
 		for(String keyname : request.keys)
@@ -509,14 +513,14 @@ public class ClientAPI {
 		
 		reply.values = new HashMap<String,DataItemReply>();
 		
-		PropertyPermissions perms = PropertyPermissionsManager.UserPermissions;
+		PropertyPermissions perms = RecordPermissionsManager.UserPermissions;
 		boolean isMe = request.id.equals(info.User.getId());
 		if(!isMe)
 		{
 			KeyDataRecord record = KeyDataRecord.load(request.id);
 			if(record != null && record.Owner.equals(info.User.getId()))
 				isMe = true;
-			perms = PropertyPermissionsManager.getPermissions(record);
+			perms = RecordPermissionsManager.getPermissions(record);
 		}
 		
 		
@@ -539,7 +543,7 @@ public class ClientAPI {
 		KeyDataInfo keyInfo = new KeyDataInfo();
 		
 		keyInfo.id = record.Id;
-		keyInfo.type = record.Type;
+		keyInfo.record_type = record.Type;
 		keyInfo.owner = record.Owner;
 		keyInfo.parent = record.Parent;
 		keyInfo.version = record.Version;
@@ -565,7 +569,7 @@ public class ClientAPI {
 	
 	public static KeyDataRecords GetKeyDataRecords(KeyDataRecordsRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
-		List<KeyDataRecord> records = KeyDataRecord.query(info.User.getId(), request.type, request.parent);
+		List<KeyDataRecord> records = KeyDataRecord.query(info.User.getId(), request.record_type, request.parent);
 		
 		KeyDataRecords reply = new KeyDataRecords();
 	
@@ -593,7 +597,7 @@ public class ClientAPI {
 		{
 			if(!KeyDataItem.isValidKeyname(data.key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
-			if(!PropertyPermissionsManager.UserPermissions.isOwnerWritable(data.key))
+			if(!RecordPermissionsManager.UserPermissions.isOwnerWritable(data.key))
 				throw new JsonApiException(ApiErrors.FORBIDDEN, data.key);
 			
 			KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
@@ -608,6 +612,68 @@ public class ClientAPI {
 		return reply;
 	}
 	
+	public static CreateResidentReply CreateResident(CreateResidentRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(request.resident_type))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_type);
+		
+		String id = SVID.makeSVID();
+		
+		Resident resident = info.UserPresence.getOrCreateOwnedResident(id, request.resident_type);
+		
+		if(request.values != null)
+		{
+			resident.setTransientValues(request.values, true);
+		}
+		
+		CreateResidentReply reply = new CreateResidentReply();
+		reply.resident_id = id;
+		
+		return reply;
+	}
+	
+	public static EmptyClientReply DeleteResident(DeleteResidentRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
+		
+		if(info.UserPresence == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
+		}
+		
+		Resident resident = info.UserPresence.getOwnedResident(request.resident_id);
+		if(resident == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
+		}
+		
+		info.UserPresence.deleteResident(request.resident_id, request.final_values);
+		
+		return new EmptyClientReply();
+	}
+	
+	public static EmptyClientReply RemoveResidentFromAllChannels(RemoveResidentFromAllChannelsRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
+		
+		if(info.UserPresence == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
+		}
+		
+		Resident resident = info.UserPresence.getOwnedResident(request.resident_id);
+		if(resident == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
+		}
+		
+		resident.removeFromAllChannels(request.final_values);
+		
+		return new EmptyClientReply();
+	}
+	
 	public static EmptyClientReply SetTransientValue(SetTransientValueRequest request, ClientMessageInfo info) throws JsonApiException
 	{
 		if(info.UserPresence == null)
@@ -615,10 +681,22 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
 		}
 		
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
 		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 
-		Resident resident = info.UserPresence.getOrCreateAlias(request.alias);
+		Resident resident = info.UserPresence.getOwnedResident(request.resident_id);
+		if(resident == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
+		}
+		
+		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
+		
+		if(!perms.isOwnerWritable(request.key))
+			throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
+		
 		resident.setTransientValue(request.key, request.value);
 		
 		EmptyClientReply reply = new EmptyClientReply();
@@ -632,14 +710,88 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
 		}
 		
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
+		
+		Resident resident = info.UserPresence.getOwnedResident(request.resident_id);
+		if(resident == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
+		}
+		
+		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
+		
 		for(String keyname : request.values.keySet())
 		{
 			if(!KeyDataItem.isValidKeyname(keyname))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, keyname);
+			if(!perms.isOwnerWritable(keyname))
+				throw new JsonApiException(ApiErrors.PRIVATE_DATA, keyname);
 		}
 		
-		Resident resident = info.UserPresence.getOrCreateAlias(request.alias);
 		resident.setTransientValues(request.values);
+		
+		EmptyClientReply reply = new EmptyClientReply();
+		return reply;
+	}
+	
+
+	public static EmptyClientReply DeleteTransientValue(DeleteTransientValueRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(info.UserPresence == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
+		}
+		
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
+		if(!KeyDataItem.isValidKeyname(request.key))
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
+
+		Resident resident = info.UserPresence.getOwnedResident(request.resident_id);
+		if(resident == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
+		}
+		
+		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
+		
+		if(!perms.isOwnerWritable(request.key))
+			throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
+		
+		resident.deleteTransientValue(request.key);
+		
+		EmptyClientReply reply = new EmptyClientReply();
+		return reply;
+	}
+	
+	public static EmptyClientReply DeleteTransientValues(DeleteTransientValuesRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(info.UserPresence == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
+		}
+		
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
+		
+		Resident resident = info.UserPresence.getOwnedResident(request.resident_id);
+		if(resident == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
+		}
+		
+		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
+		
+		for(String keyname : request.values)
+		{
+			if(!KeyDataItem.isValidKeyname(keyname))
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, keyname);
+			if(!perms.isOwnerWritable(keyname))
+				throw new JsonApiException(ApiErrors.PRIVATE_DATA, keyname);
+		}
+		
+		resident.deleteTransientValues(request.values);
 		
 		EmptyClientReply reply = new EmptyClientReply();
 		return reply;
@@ -648,33 +800,30 @@ public class ClientAPI {
 	
 	public static TransientDataItemReply GetTransientValue(GetTransientValueRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		BaseResident resident = null;
-		
 		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
-		if(request.id != null)
-		{
-			resident = ResidentManager.getResident(request.id);
-		}
-		else if(info.UserPresence != null)
-		{
-			resident = info.UserPresence.getAlias(request.alias);
-		}
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
 		
+		BaseResident resident = ResidentManager.getResident(request.resident_id);
 		if(resident == null)
 		{
-			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, request.id+" / "+request.alias);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
 		}
 		
-		if(!KeyDataItem.isValidKeyname(request.key))
-			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
+		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
 		
-		//if(!info.User.getId().equals(resident.getUserId()) && !KeyDataItem.isPublicKeyname(request.key))
-		//	throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
-		
-		//if(request.key.startsWith("$$"))
-		//	throw new JsonApiException(ApiErrors.NOT_FOUND);
+		if(info.User.getId().equals(resident.getOwnerId()))
+		{
+			if(!perms.isOwnerReadable(request.key))
+				throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
+		}
+		else
+		{
+			if(!perms.isGlobalReadable(request.key))
+				throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
+		}
 		
 		TransientDataItem item = resident.getTransientValue(request.key);
 		if(item == null)
@@ -688,33 +837,36 @@ public class ClientAPI {
 
 	public static TransientDataItemsReply GetTransientValues(GetTransientValuesRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		BaseResident resident = null;
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
 		
-		if(request.id != null)
-		{
-			resident = ResidentManager.getResident(request.id);
-		}
-		else if(info.UserPresence != null)
-		{
-			resident = info.UserPresence.getAlias(request.alias);
-		}
-		
+		BaseResident resident = ResidentManager.getResident(request.resident_id);
 		if(resident == null)
 		{
-			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, request.id+" / "+request.alias);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
 		}
+		
+		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
 		
 		Map<String,Object> values = new HashMap<String,Object>();
 		
-		//boolean isMe = info.User.getId().equals(resident.getUserId());
+		boolean isMe = info.User.getId().equals(resident.getOwnerId());
 		
 		for(String key : request.keys)
 		{
 			if(!KeyDataItem.isValidKeyname(key))
 				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 			
-			//if(!isMe && !KeyDataItem.isPublicKeyname(key))
-			//	throw new JsonApiException(ApiErrors.PRIVATE_DATA, key);
+			if(isMe)
+			{
+				if(!perms.isOwnerReadable(key))
+					throw new JsonApiException(ApiErrors.PRIVATE_DATA, key);
+			}
+			else
+			{
+				if(!perms.isGlobalReadable(key))
+					throw new JsonApiException(ApiErrors.PRIVATE_DATA, key);
+			}
 			
 			TransientDataItem item = resident.getTransientValue(key);
 			if(item != null)
@@ -730,33 +882,33 @@ public class ClientAPI {
 	
 	public static TransientDataItemsReply GetAllTransientValues(GetAllTransientValuesRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		BaseResident resident = null;
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
 		
-		if(request.id != null)
-		{
-			resident = ResidentManager.getResident(request.id);
-		}
-		else if(info.UserPresence != null)
-		{
-			resident = info.UserPresence.getAlias(request.alias);
-		}
-		
+		BaseResident resident = ResidentManager.getResident(request.resident_id);
 		if(resident == null)
 		{
-			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, request.id+" / "+request.alias);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
 		}
+		
+		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
 		
 		Map<String,Object> values = new HashMap<String,Object>();
 		
-		//boolean isMe = info.User.getId().equals(resident.getUserId());
+		boolean isMe = info.User.getId().equals(resident.getOwnerId());
 		
 		for(TransientDataItem item : resident.getAllTransientValues())
 		{
-			if(!KeyDataItem.isValidKeyname(item.key))
-				continue;
-			
-			//if(!isMe && !KeyDataItem.isPublicKeyname(item.key))
-			//	continue;
+			if(isMe)
+			{
+				if(!perms.isOwnerReadable(item.key))
+					continue;
+			}
+			else
+			{
+				if(!perms.isGlobalReadable(item.key))
+					continue;
+			}
 			
 			values.put(item.key, item);
 		}
@@ -768,29 +920,35 @@ public class ClientAPI {
 	
 	public static ChannelInfo JoinChannel(JoinChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(StringUtil.isNullOrEmpty(request.id))
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
+		if(StringUtil.isNullOrEmpty(request.channel_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.channel_id);
 		
 		if(info.UserPresence == null)
 		{
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
 		}
 		
-		BaseResident source = ResidentManager.getResident(request.id);
+		BaseResident source = ResidentManager.getResident(request.channel_id);
 		if(source == null || !(source instanceof Channel))
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.channel_id);
 		}
 		Channel channel = (Channel)source;
 		
-		Resident alias = info.UserPresence.getOrCreateAlias(request.alias);
+		Resident res = info.UserPresence.getOwnedResident(request.resident_id);
+		if(res == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
+		}
 		
 		if(request.values != null)
 		{
-			alias.setTransientValues(request.values, true);
+			res.setTransientValues(request.values, true);
 		}
 		
-		channel.addResident(alias);
+		channel.addResident(res);
 		channel.addListener(info.UserPresence);
 		
 
@@ -799,108 +957,114 @@ public class ClientAPI {
 	
 	public static EmptyClientReply LeaveChannel(LeaveChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(StringUtil.isNullOrEmpty(request.id))
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
+		if(StringUtil.isNullOrEmpty(request.channel_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.channel_id);
 		
-		
-		BaseResident listener = ResidentManager.getResident(info.User.getId());
-		if(listener == null)
+		if(info.UserPresence == null)
 		{
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
 		}
 		
-		BaseResident source = ResidentManager.getResident(request.id);
+		BaseResident source = ResidentManager.getResident(request.channel_id);
 		if(source == null || !(source instanceof Channel))
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.channel_id);
 		}
 		Channel channel = (Channel)source;
 		
-		Resident alias = info.UserPresence.getAlias(request.alias);
-		if(alias == null)
+		Resident res = info.UserPresence.getOwnedResident(request.resident_id);
+		if(res == null)
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, request.alias);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
 		}
 		
-		channel.removeResident(alias, request.final_values);
+		channel.removeResident(res, request.final_values);
 		channel.removeListener(info.UserPresence);
 		
 		return new EmptyClientReply();
 	}
 	
-	public static EmptyClientReply AddAliasToChannel(JoinChannelRequest request, ClientMessageInfo info) throws JsonApiException
+	public static EmptyClientReply AddResidentToChannel(JoinChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(StringUtil.isNullOrEmpty(request.id))
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
+		if(StringUtil.isNullOrEmpty(request.channel_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.channel_id);
 		
 		if(info.UserPresence == null)
 		{
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
 		}
 		
-		BaseResident source = ResidentManager.getResident(request.id);
+		BaseResident source = ResidentManager.getResident(request.channel_id);
 		if(source == null || !(source instanceof Channel))
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.channel_id);
 		}
 		Channel channel = (Channel)source;
 		
-		Resident alias = info.UserPresence.getOrCreateAlias(request.alias);
+		Resident res = info.UserPresence.getOwnedResident(request.resident_id);
+		if(res == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
+		}
 		
 		if(request.values != null)
 		{
-			alias.setTransientValues(request.values, true);
+			res.setTransientValues(request.values, true);
 		}
 		
-		channel.addResident(alias);
+		channel.addResident(res);
 		
 		return new EmptyClientReply();
 	}
 	
-	public static EmptyClientReply RemoveAliasFromChannel(LeaveChannelRequest request, ClientMessageInfo info) throws JsonApiException
+	public static EmptyClientReply RemoveResidentFromChannel(LeaveChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(StringUtil.isNullOrEmpty(request.id))
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
+		if(StringUtil.isNullOrEmpty(request.channel_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.channel_id);
 		
-		
-		BaseResident listener = ResidentManager.getResident(info.User.getId());
-		if(listener == null)
+		if(info.UserPresence == null)
 		{
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
 		}
 		
-		BaseResident source = ResidentManager.getResident(request.id);
+		BaseResident source = ResidentManager.getResident(request.channel_id);
 		if(source == null || !(source instanceof Channel))
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.channel_id);
 		}
 		Channel channel = (Channel)source;
 		
-		Resident alias = info.UserPresence.getAlias(request.alias);
-		if(alias == null)
+		Resident res = info.UserPresence.getOwnedResident(request.resident_id);
+		if(res == null)
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, request.alias);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
 		}
 		
-		channel.removeResident(alias, request.final_values);
+		channel.removeResident(res, request.final_values);
 
 		return new EmptyClientReply();
 	}
 	
-	public static ChannelInfo ListenToChannel(ListenToResidentRequest request, ClientMessageInfo info) throws JsonApiException
+	public static ChannelInfo ListenToChannel(ListenToChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(StringUtil.isNullOrEmpty(request.id))
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
+		if(StringUtil.isNullOrEmpty(request.channel_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.channel_id);
 		
 		if(info.UserPresence == null)
 		{
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
 		}
 		
-		BaseResident source = ResidentManager.getResident(request.id);
+		BaseResident source = ResidentManager.getResident(request.channel_id);
 		if(source == null || !(source instanceof Channel))
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.channel_id);
 		}
 		Channel channel = (Channel)source;
 		
@@ -909,10 +1073,10 @@ public class ClientAPI {
 		return channel.getChannelInfo(0);
 	}
 	
-	public static EmptyClientReply StopListenToChannel(StopListenToResidentRequest request, ClientMessageInfo info) throws JsonApiException
+	public static EmptyClientReply StopListenToChannel(StopListenToChannelRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		if(StringUtil.isNullOrEmpty(request.id))
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.id);
+		if(StringUtil.isNullOrEmpty(request.channel_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.channel_id);
 		
 		BaseResident listener = ResidentManager.getResident(info.User.getId());
 		if(listener == null)
@@ -920,10 +1084,10 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
 		}
 		
-		BaseResident source = ResidentManager.getResident(request.id);
+		BaseResident source = ResidentManager.getResident(request.channel_id);
 		if(source == null || !(source instanceof Channel))
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, request.id);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.channel_id);
 		}
 		Channel channel = (Channel)source;
 		
@@ -932,37 +1096,86 @@ public class ClientAPI {
 		return new EmptyClientReply();
 	}
 	
-	public static EmptyClientReply SendClientMessage(TransientMessageRequest request, ClientMessageInfo info) throws JsonApiException
+	public static EmptyClientReply TriggerResidentEvent(TriggerResidentEventRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
+		if(StringUtil.isNullOrEmpty(request.event_type))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
+		
+		if(info.UserPresence == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
+		}
+		
+		Resident res = info.UserPresence.getOwnedResident(request.resident_id);
+		if(res == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
+		}
+		
+		res.triggerEvent(request.event_type, request.event_data);
+		
+		return new EmptyClientReply();
+	}
+	
+	public static EmptyClientReply SendUserMessage(SendUserMessageRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(StringUtil.isNullOrEmpty(request.message_type))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "message_type");
-		if(request.value == null)
+		if(request.message == null)
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "value");
+		if(StringUtil.isNullOrEmpty(request.to))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "to");
 		
-		Resident alias = info.UserPresence.getAlias(request.alias);
-		if(alias == null)
+		if(ServervilleUser.findById(request.to) == null)
+			return new EmptyClientReply(); // Don't throw error on invalid user to help prevent scanning for valid user ids
+		
+		UserMessage msg = new UserMessage();
+		msg.ToUser = request.to;
+		msg.From = info.User.getId();
+		msg.FromUser = true;
+		msg.MessageType = request.message_type;
+		msg.Content = request.message;
+		
+		UserMessage.deliverUserMessage(msg, request.guaranteed);
+		
+		return new EmptyClientReply();
+	}
+	
+	public static UserMessageList GetPendingMessages(EmptyClientRequest request, ClientMessageInfo info) throws SQLException
+	{
+		List<UserMessage> messages = UserMessage.loadAllToUser(info.User.getId());
+		
+		UserMessageList list = new UserMessageList();
+		list.messages = new ArrayList<UserMessageNotification>(messages.size());
+		
+		for(UserMessage msg : messages)
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, request.alias);
-		}
-		
-		TransientClientMessage message = new TransientClientMessage();
-		message.message_type = request.message_type;
-		message.value = request.value;
-		
-		if(request.to != null)
-		{
-			BaseResident listener = ResidentManager.getResident(request.to);
-			if(listener == null)
-			{
-				throw new JsonApiException(ApiErrors.NOT_FOUND, request.to);
-			}
+			UserMessageNotification messageNotification = new UserMessageNotification();
 			
-			listener.sendMessageFrom("clientMessage", message, alias);
+			messageNotification.id = msg.MessageId;
+			messageNotification.message_type = msg.MessageType;
+			messageNotification.message = msg.Content;
+			messageNotification.from_id = msg.From;
+			messageNotification.sender_is_user = msg.FromUser;
+			
+			list.messages.add(messageNotification);
 		}
-		else
-		{
-			alias.sendMessage("clientMessage", message);
-		}
+		
+		return list;
+	}
+	
+	public static EmptyClientReply ClearPendingMessage(ClearMessageRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		if(StringUtil.isNullOrEmpty(request.id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
+		
+		UserMessage msg = UserMessage.load(request.id);
+		if(msg == null || !info.User.getId().equals(msg.ToUser))
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "message "+request.id+" not found");
+		
+		msg.delete();
 		
 		return new EmptyClientReply();
 	}

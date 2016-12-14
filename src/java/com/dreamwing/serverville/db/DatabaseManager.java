@@ -18,10 +18,12 @@ import com.dreamwing.serverville.data.CurrencyRecord;
 import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.KeyDataRecord;
 import com.dreamwing.serverville.data.Product;
-import com.dreamwing.serverville.data.PropertyPermissionsManager;
+import com.dreamwing.serverville.data.RecordPermissionsManager;
+import com.dreamwing.serverville.data.ResidentPermissionsManager;
 import com.dreamwing.serverville.data.Purchase;
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.data.ServervilleUser;
+import com.dreamwing.serverville.data.UserMessage;
 import com.dreamwing.serverville.data.UserSession;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
@@ -42,6 +44,8 @@ public class DatabaseManager {
 	public static Dao<ServervilleUser.UsernameLookup, String> ServervilleUser_UsernameDao;
 	public static Dao<ServervilleUser.EmailLookup, String> ServervilleUser_EmailDao;
 	
+	public static Dao<UserMessage, String> UserMessageDao;
+	
 	public static Dao<AdminUserSession, String> AdminUserSessionDao;
 	public static Dao<AdminUserSession.AdminUserSessionLookup, Void> AdminUserSession_UserIdDao;
 	
@@ -52,7 +56,8 @@ public class DatabaseManager {
 	public static Dao<AgentKey, String> AgentKeyDao;
 	
 	public static Dao<KeyDataRecord, String> KeyDataRecordDao;
-	public static Dao<PropertyPermissionsManager.PropertyPermissionsRecord, String> PropertyPermissionsRecordDao;
+	public static Dao<RecordPermissionsManager.RecordPermissionsRecord, String> RecordPermissionsRecordDao;
+	public static Dao<ResidentPermissionsManager.ResidentPermissionsRecord, String> ResidentPermissionsRecordDao;
 	public static Dao<InviteCode, String> InviteCodeDao;
 	
 	public static Dao<CurrencyRecord, Void> CurrencyDao;
@@ -111,6 +116,8 @@ public class DatabaseManager {
 		ServervilleUser_UsernameDao = DaoManager.createDao(cs, ServervilleUser.UsernameLookup.class);
 		ServervilleUser_EmailDao = DaoManager.createDao(cs, ServervilleUser.EmailLookup.class);
 		
+		UserMessageDao = DaoManager.createDao(cs, UserMessage.class);
+		
 		AdminUserSessionDao = DaoManager.createDao(cs, AdminUserSession.class);
 		AdminUserSession_UserIdDao = DaoManager.createDao(cs, AdminUserSession.AdminUserSessionLookup.class);
 		
@@ -121,7 +128,8 @@ public class DatabaseManager {
 		AgentKeyDao = DaoManager.createDao(cs, AgentKey.class);
 		
 		KeyDataRecordDao = DaoManager.createDao(cs, KeyDataRecord.class);
-		PropertyPermissionsRecordDao = DaoManager.createDao(cs, PropertyPermissionsManager.PropertyPermissionsRecord.class);
+		RecordPermissionsRecordDao = DaoManager.createDao(cs, RecordPermissionsManager.RecordPermissionsRecord.class);
+		ResidentPermissionsRecordDao = DaoManager.createDao(cs, ResidentPermissionsManager.ResidentPermissionsRecord.class);
 		
 		InviteCodeDao = DaoManager.createDao(cs, InviteCode.class);
 		

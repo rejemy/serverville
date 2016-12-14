@@ -15,9 +15,37 @@ import java.util.Set;
 import com.dreamwing.serverville.client.ClientAPI;
 import com.dreamwing.serverville.client.ClientHandlerOptions;
 import com.dreamwing.serverville.client.ClientMessageInfo;
+import com.dreamwing.serverville.client.ClientMessages;
 
 public class MakeAPIs
 {
+	public static String[] ReservedWords = new String[]
+	{
+		"_", "abstract", "alignas", "alignof", "and", "and_eq", "Any", "any", "arguments",
+		"AS3", "as", "asm", "assert", "associatedtype", "async", "atomic_cancel", "atomic_commit",
+		"atomic_noexcept", "auto", "await", "base", "bitand", "bitor", "bool", "boolean", "break",
+		"byte", "case", "catch", "char", "char16_t", "char32_t", "checked", "class", "compl",
+		"concept", "const", "constexpr", "constructor", "const_cast", "continue", "debugger",
+		"decimal", "declare", "decltype", "default", "defer", "deinit", "delete", "delegate",
+		"do", "double", "dynamic", "dynamic_cast", "each", "else", "enum", "eval", "event",
+		"explicit", "export", "extends", "extension", "extern", "fallthrough", "false",
+		"fileprivate", "final", "finally", "fixed", "flash_proxy", "float", "for", "foreach",
+		"friend", "from", "func", "function", "get", "goto", "guard", "if", "implicit",
+		"implements", "import", "in", "include", "init", "inline", "inout", "instanceof", "int",
+		"interface", "internal", "is", "label", "let", "lock", "long", "module", "mutable",
+		"namespace", "native", "new", "nil", "noexcept", "none", "not", "not_eq", "null",
+		"nullptr", "number", "object", "object_proxy", "open", "operator", "or", "or_eq", "out",
+		"override", "package", "params", "private", "protected", "protocol", "public", "readonly",
+		"ref", "register", "reinterpret_cast", "repeat", "require", "requires", "rethrows",
+		"return", "sbyte", "sealed", "Self", "self", "set", "short", "sizeof", "stackalloc",
+		"static", "static_assert", "static_cast", "strictfp", "string", "struct", "subscript", 
+		"super", "switch", "symbol", "synchronized", "template", "this", "thread_local", "throw", 
+		"throws", "transient", "true", "try", "type", "typealias", "typedef", "typeid", "typename", 
+		"typeof", "uint",  "ulong", "unchecked", "union", "unsigned", "unsafe", "use", "ushort", 
+		"using", "var", "virtual", "void", "volatile", "wchar_t", "while", "with", "xor", "xor_eq", 
+		"yield"
+	};
+	
 	public static abstract class ApiDataType
 	{
 
@@ -89,6 +117,7 @@ public class MakeAPIs
 		public boolean NeedsAuth;
 	}
 	
+	private static Set<String> reservedWordsLookup = new HashSet<String>();
 	private static List<ApiMethodInfo> apiMethods = new ArrayList<ApiMethodInfo>();
 	private static Map<String,ApiCustomTypeInfo> apiMessageLookup = new HashMap<String,ApiCustomTypeInfo>();
 	private static Map<String,ApiCustomTypeInfo> apiMessageNames = new HashMap<String,ApiCustomTypeInfo>();
@@ -119,6 +148,10 @@ public class MakeAPIs
 			BoxedTypes.add(bType);
 		}
 		
+		for(String reservedWord : ReservedWords)
+		{
+			reservedWordsLookup.add(reservedWord);
+		}
 		
 		System.out.println("Generating client APIs");
 		
@@ -141,6 +174,13 @@ public class MakeAPIs
 				// It's a client API
 				addClientMethod(method);
 			}
+			
+			// Add notification classes
+			for(Class<?> notificationClass : ClientMessages.NotificationRegistry)
+			{
+				getMessageInfo(notificationClass);
+			}
+			
 		}
 		catch(Exception e)
 		{
@@ -148,7 +188,7 @@ public class MakeAPIs
 			e.printStackTrace();
 			return;
 		}
-
+		
 		try
 		{
 			BrowserClient.writeBrowserClientApi(apiMethods, apiCustomTypes);
@@ -177,6 +217,10 @@ public class MakeAPIs
 		ApiMethodInfo info = new ApiMethodInfo();
 		
 		info.Name = method.getName();
+		if(reservedWordsLookup.contains(info.Name))
+		{
+			throw new Exception("Invalid api name: "+info.Name);
+		}
 		
 		ClientHandlerOptions options = method.getAnnotation(ClientHandlerOptions.class);
 		if(options != null)
@@ -263,6 +307,10 @@ public class MakeAPIs
 		{
 			ApiMessageField fieldInfo = new ApiMessageField();
 			fieldInfo.Name = field.getName();
+			if(reservedWordsLookup.contains(fieldInfo.Name))
+			{
+				throw new Exception("Invalid parameter name: "+fieldInfo.Name);
+			}
 			
 			fieldInfo.Type = getDataType(field.getGenericType());
 			

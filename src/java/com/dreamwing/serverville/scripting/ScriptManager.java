@@ -12,8 +12,10 @@ import javax.script.ScriptException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.dreamwing.serverville.agent.AgentShared;
+import com.dreamwing.serverville.client.ClientConnectionHandler;
 import com.dreamwing.serverville.residents.Channel;
-import com.dreamwing.serverville.residents.MessageListener;
+import com.dreamwing.serverville.residents.OnlineUser;
 import com.dreamwing.serverville.util.FileUtil;
 
 
@@ -33,8 +35,6 @@ public class ScriptManager
 	private static Map<String,Boolean> ClientHandlers;
 	private static Set<String> AgentHandlers;
 	private static Set<String> CallbackHandlers;
-	private static boolean HasListenToChannelHandler;
-	private static boolean HasStopListenToChannelHandler;
 	
 	public static void init() throws Exception
 	{
@@ -202,8 +202,6 @@ public class ScriptManager
 		
 		CallbackHandlers = callbackHandlers;
 		
-		HasListenToChannelHandler = ctx.getCallbackHandler("onListenToChannel") != null;
-		HasStopListenToChannelHandler = ctx.getCallbackHandler("onStopListenToChannel") != null;
 	}
 	
 	public static Boolean hasClientHandler(String apiType)
@@ -221,16 +219,15 @@ public class ScriptManager
 		return CallbackHandlers.contains(apiType);
 	}
 	
-	public static void onListenToChannel(Channel channel, MessageListener listener)
+	public static void onListenToChannel(Channel channel, OnlineUser listener)
 	{
-		if(!HasListenToChannelHandler)
+		if(!hasCallbackHandler("onListenToChannel"))
 			return;
 		
 		ScriptEngineContext engine = getEngine();
 		try
 		{
 			engine.invokeCallbackHandler("onListenToChannel", channel.getId(), listener.getId());
-			//engine.onListenToChannelHandler(channel.getId(), listener.getId());
 		} catch (Exception e) {
 			l.error("Error executing onListenToChannel handler: ", e);
 		}
@@ -240,18 +237,53 @@ public class ScriptManager
 		}
 	}
 	
-	public static void onStopListenToChannel(Channel channel, MessageListener listener)
+	public static void onStopListenToChannel(Channel channel, OnlineUser listener)
 	{
-		if(!HasStopListenToChannelHandler)
+		if(!hasCallbackHandler("onStopListenToChannel"))
 			return;
 		
 		ScriptEngineContext engine = getEngine();
 		try
 		{
 			engine.invokeCallbackHandler("onStopListenToChannel", channel.getId(), listener.getId());
-			//engine.onStopListenToChannelHandler(channel.getId(), listener.getId());
 		} catch (Exception e) {
 			l.error("Error executing onListenToChannel handler: ", e);
+		}
+		finally
+		{
+			returnEngine(engine);
+		}
+	}
+	
+	public static void onUserSignIn(ClientConnectionHandler connection)
+	{
+		if(!hasCallbackHandler("onUserSignIn"))
+			return;
+		
+		ScriptEngineContext engine = getEngine();
+		try
+		{
+			engine.invokeCallbackHandler("onUserSignIn", AgentShared.userToUserInfo(connection.getUser()), connection.getPresence() != null);
+		} catch (Exception e) {
+			l.error("Error executing onUserSignIn handler: ", e);
+		}
+		finally
+		{
+			returnEngine(engine);
+		}
+	}
+	
+	public static void onUserSignOut(ClientConnectionHandler connection)
+	{
+		if(!hasCallbackHandler("onUserSignOut"))
+			return;
+		
+		ScriptEngineContext engine = getEngine();
+		try
+		{
+			engine.invokeCallbackHandler("onUserSignOut", AgentShared.userToUserInfo(connection.getUser()), connection.getPresence() != null);
+		} catch (Exception e) {
+			l.error("Error executing onUserSignIn handler: ", e);
 		}
 		finally
 		{

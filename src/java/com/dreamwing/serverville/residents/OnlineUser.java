@@ -2,98 +2,190 @@ package com.dreamwing.serverville.residents;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import com.dreamwing.serverville.client.ClientConnectionHandler;
+import com.dreamwing.serverville.client.ClientMessages.ChannelMemberInfo;
+import com.dreamwing.serverville.client.ClientMessages.ResidentJoinedNotification;
 import com.dreamwing.serverville.data.ServervilleUser;
 
-public class OnlineUser extends BaseListener
+
+public class OnlineUser
 {
+
+	static class ResidentStateView
+	{
+		long lastTimestamp;
+	}
+	
+	protected ConcurrentMap<String,BaseResident> ListeningTo;
+	protected ConcurrentMap<String,ResidentStateView> KnownResidents;
+	
 	public ServervilleUser User;
 	public ClientConnectionHandler Connection;
 	
-	private Resident DefaultAlias;
-	private Map<String,Resident> Aliases;
+	private Map<String,Resident> OwnedResidents;
 
-	public OnlineUser(String id, ClientConnectionHandler connection)
+	public OnlineUser(ClientConnectionHandler connection)
 	{
-		super(id);
+		ListeningTo = new ConcurrentHashMap<String,BaseResident>();
+		KnownResidents = new ConcurrentHashMap<String,ResidentStateView>();
+		
 		User = connection.getUser();
 		Connection = connection;
 		
-		Aliases = new HashMap<String,Resident>();
-		
-		DefaultAlias = new Resident(User.getId(), User.getId());
-		ResidentManager.addResident(DefaultAlias);
-	}
-
-	@Override
-	public void onMessage(String messageType, String messageBody, String fromId, Channel viaChannel)
-	{
-		String viaChannelId = viaChannel != null ? viaChannel.Id : null;
-		Connection.sendMessage(messageType, messageBody, fromId, viaChannelId);
-	}
-
-	public synchronized Resident getAlias(String name)
-	{
-		if(name == null || name.length() == 0)
-		{
-			return DefaultAlias;
-		}
-		
-		Resident alias = Aliases.get(name);
-
-		return alias;
-	}
-	
-	public synchronized Resident getOrCreateAlias(String name)
-	{
-		if(name == null || name.length() == 0)
-		{
-			return DefaultAlias;
-		}
-		
-		Resident alias = Aliases.get(name);
-		if(alias == null)
-		{
-			alias = new Resident(User.getId()+"/"+name, User.getId());
-			Aliases.put(name, alias);
-			ResidentManager.addResident(alias);
-		}
-		
-		return alias;
+		OwnedResidents = new HashMap<String,Resident>();
 	}
 	
 	
-	@Override
+	public String getId()
+	{
+		return User.getId();
+	}
+	
+	public void onListeningTo(BaseResident resident)
+	{
+		ListeningTo.put(resident.getId(), resident);
+	}
+	
+	public void onStoppedListeningTo(BaseResident resident)
+	{
+		ListeningTo.remove(resident.getId(), resident);
+	}
+	
+	public void onResidentJoined(BaseResident resident, Channel viaChannel)
+	{
+		long knownTime = lastTimestampForResident(resident.Id);
+		
+		ChannelMemberInfo info = resident.getInfo(knownTime);
+		
+		ResidentJoinedNotification notification = new ResidentJoinedNotification();
+		notification.resident_id = info.resident_id;
+		notification.via_channel = viaChannel.getId();
+		notification.values = info.values;
+		
+		Connection.sendNotification("resJoined", notification);
+
+		long time = resident.getLastModifiedTime();
+		setTimestampForResident(resident.Id, time);
+	}
+	
+	public void onResidentLeft(BaseResident resident, Channel viaChannel, String notificationBody)
+	{
+		Connection.sendNotification("resLeft", notificationBody);
+	}
+	
+	public void onResidentEvent(BaseResident resident, Channel viaChannel, String notificationBody)
+	{
+		Connection.sendNotification("resEvent", notificationBody);
+	}
+	
+	public void onStateChange(BaseResident resident, Channel viaChannel, String notificationBody, long when)
+	{
+		Connection.sendNotification("resUpdate", notificationBody);
+		
+		setTimestampForResident(resident.Id, when);
+	}
+	
+
+	long lastTimestampForResident(String residentId)
+	{
+		ResidentStateView view = KnownResidents.get(residentId);
+		if(view == null)
+			return 0;
+		return view.lastTimestamp;
+	}
+	
+	void setTimestampForResident(String residentId, long timestamp)
+	{
+		ResidentStateView view = KnownResidents.get(residentId);
+		if(view == null)
+		{
+			view = new ResidentStateView();
+			ResidentStateView prev = KnownResidents.putIfAbsent(residentId, view);
+			if(prev != null)
+				view = prev;
+		}
+		
+		if(timestamp > view.lastTimestamp)
+			view.lastTimestamp = timestamp;
+	}
+	
+
 	public void destroy()
 	{
-		super.destroy();
+		for(BaseResident source : ListeningTo.values())
+		{
+			source.Listeners.remove(User.getId());
+		}
 		
-		DefaultAlias.destroy();
-		DefaultAlias = null;
-		
-		for(Resident alias : Aliases.values())
+		ListeningTo.clear();
+
+		for(Resident alias : OwnedResidents.values())
 		{
 			alias.destroy();
 		}
 		
-		Aliases.clear();
+		OwnedResidents.clear();
+	}
+
+	public synchronized Resident getOwnedResident(String id)
+	{
+		if(id == null || id.length() == 0)
+		{
+			return null;
+		}
+		
+		Resident alias = OwnedResidents.get(id);
+
+		return alias;
 	}
 	
-	/*
-	@Override
-	public void sendMessage(String messageType, String messageBody)
+	public synchronized Resident getOrCreateOwnedResident(String id, String residentType)
 	{
-		relayMessage(messageType, messageBody, Id);
+		if(id == null || id.length() == 0)
+		{
+			return null;
+		}
 		
-		super.sendMessage(messageType, messageBody);
+		Resident res = OwnedResidents.get(id);
+		if(res == null)
+		{
+			res = new Resident(id, User.getId(), residentType);
+			OwnedResidents.put(id, res);
+			ResidentManager.addResident(res);
+		}
+		
+		return res;
 	}
 	
-	@Override
-	protected void relayMessage(String messageType, String messageBody, String fromId)
+	public void removeResident(String id)
 	{
-		Connection.sendMessage(messageType, messageBody, fromId);
-		
+		OwnedResidents.remove(id);
 	}
-	*/
+	
+	public void addResident(Resident resident)
+	{
+		resident.setOwnerId(User.getId());
+		OwnedResidents.put(resident.Id, resident);
+	}
+	
+	public void deleteResident(String id)
+	{
+		deleteResident(id, null);
+	}
+	
+	public void deleteResident(String id, Map<String,Object> finalValues)
+	{
+		Resident res = OwnedResidents.remove(id);
+		if(res == null)
+			return;
+		
+		res.removeFromAllChannels(finalValues);
+		res.destroy();
+	}
+	
+	
+
 }

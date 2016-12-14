@@ -76,13 +76,10 @@ public class AgentAPI
 		return reply;
 	}
 	
-	
-	
 	public static DataItemReply GetDataKey(GlobalKeyRequest request) throws JsonApiException, SQLException
 	{
 		return ApiInst.getDataKey(request.id, request.key);
 	}
-	
 	
 	public static UserDataReply GetDataKeys(GlobalKeysRequest request) throws JsonApiException, SQLException
 	{
@@ -116,62 +113,80 @@ public class AgentAPI
 	public static CreateChannelReply CreateChannel(CreateChannelRequest request) throws JsonApiException
 	{
 		CreateChannelReply reply = new CreateChannelReply();
-		reply.id = ApiInst.createChannel(request.id);
+		reply.channel_id = ApiInst.createChannel(request.channel_id, request.resident_type, request.values);
 		return reply;
 	}
 	
 	public static EmptyReply DeleteChannel(DeleteChannelRequest request) throws JsonApiException
 	{
-		ApiInst.deleteChannel(request.id);
+		ApiInst.deleteChannel(request.channel_id);
 		
-		EmptyReply reply = new EmptyReply();
-		return reply;
-	}
-	
-	public static UserAliasReply GetUserAliasId(UserAliasRequest request) throws JsonApiException
-	{
-		UserAliasReply reply = new UserAliasReply();
-		
-		reply.alias_id = ApiInst.getUserAliasId(request.user_id, request.alias);
-		return reply;
-	}
-	
-	public static EmptyReply AddResident(AddResidentRequest request) throws JsonApiException
-	{
-		ApiInst.addResident(request.channel_id, request.resident_id);
-		
-		EmptyReply reply = new EmptyReply();
-		return reply;
-	}
-	
-	public static EmptyReply RemoveResident(RemoveResidentRequest request) throws JsonApiException
-	{
-		ApiInst.removeResident(request.channel_id, request.resident_id, request.final_values);
-		
-		EmptyReply reply = new EmptyReply();
-		return reply;
-	}
-	
-	public static EmptyReply AddListener(AddListenerRequest request) throws JsonApiException
-	{
-		ApiInst.addListener(request.user_id, request.channel_id);
 		return new EmptyReply();
 	}
 	
-	public static EmptyReply RemoveListener(AddListenerRequest request) throws JsonApiException
+	public static CreateResidentReply CreateResident(CreateResidentRequest request) throws JsonApiException
 	{
-		ApiInst.removeListener(request.user_id, request.channel_id);
+		CreateResidentReply reply = new CreateResidentReply();
+		reply.resident_id = ApiInst.createResident(request.resident_id, request.resident_type, request.owner, request.values);
+		return reply;
+	}
+	
+	public static EmptyReply DeleteResident(DeleteResidentRequest request) throws JsonApiException
+	{
+		ApiInst.deleteResident(request.resident_id, request.final_values);
+		
+		return new EmptyReply();
+	}
+	
+	public static EmptyReply RemoveResidentFromAllChannels(RemoveResidentFromAllChannelsRequest request) throws JsonApiException
+	{
+		ApiInst.removeResidentFromAllChannels(request.resident_id, request.final_values);
+		
+		return new EmptyReply();
+	}
+	
+	public static EmptyReply SetResidentOwner(SetResidentOwnerRequest request) throws JsonApiException
+	{
+		ApiInst.setResidentOwner(request.resident_id, request.user_id);
+		
+		return new EmptyReply();
+	}
+	
+	public static EmptyReply AddResidentToChannel(AddResidentRequest request) throws JsonApiException
+	{
+		ApiInst.addResidentToChannel(request.channel_id, request.resident_id);
+		
+		return new EmptyReply();
+	}
+	
+	public static EmptyReply RemoveResidentFromChannel(RemoveResidentRequest request) throws JsonApiException
+	{
+		ApiInst.removeResidentFromChannel(request.channel_id, request.resident_id, request.final_values);
+		
+		EmptyReply reply = new EmptyReply();
+		return reply;
+	}
+	
+	public static EmptyReply AddChannelListener(AddListenerRequest request) throws JsonApiException
+	{
+		ApiInst.addChannelListener(request.channel_id, request.user_id);
+		return new EmptyReply();
+	}
+	
+	public static EmptyReply RemoveChannelListener(AddListenerRequest request) throws JsonApiException
+	{
+		ApiInst.removeChannelListener(request.channel_id, request.user_id);
 		return new EmptyReply();
 	}
 	
 	public static ChannelInfo UserJoinChannel(JoinChannelRequest request) throws JsonApiException
 	{
-		return ApiInst.userJoinChannel(request.user_id, request.channel_id, request.alias, request.values);
+		return ApiInst.userJoinChannel(request.user_id, request.channel_id, request.resident_id, request.values);
 	}
 	
 	public static EmptyReply UserLeaveChannel(LeaveChannelRequest request) throws JsonApiException
 	{
-		ApiInst.userLeaveChannel(request.user_id, request.channel_id, request.alias, request.final_values);
+		ApiInst.userLeaveChannel(request.user_id, request.channel_id, request.resident_id, request.final_values);
 		return new EmptyReply();
 	}
 
@@ -213,7 +228,7 @@ public class AgentAPI
 	public static TransientDataItemReply GetTransientValue(GetTransientValueRequest request) throws JsonApiException
 	{
 		TransientDataItemReply reply = new TransientDataItemReply();
-		Object value = ApiInst.getTransientValue(request.id, request.key);
+		Object value = ApiInst.getTransientValue(request.resident_id, request.key);
 		
 		reply.value = value;
 		return reply;
@@ -223,14 +238,14 @@ public class AgentAPI
 	public static TransientDataItemsReply GetTransientValues(GetTransientValuesRequest request) throws JsonApiException
 	{
 		TransientDataItemsReply reply = new TransientDataItemsReply();
-		reply.values = ApiInst.getTransientValues(request.id, request.keys);
+		reply.values = ApiInst.getTransientValues(request.resident_id, request.keys);
 		return reply;
 	}
 	
 	public static TransientDataItemsReply GetAllTransientValues(GetAllTransientValuesRequest request) throws JsonApiException
 	{
 		TransientDataItemsReply reply = new TransientDataItemsReply();
-		reply.values = ApiInst.getAllTransientValues(request.id);
+		reply.values = ApiInst.getAllTransientValues(request.resident_id);
 		return reply;
 	}
 	
@@ -252,21 +267,15 @@ public class AgentAPI
 		return new EmptyReply();
 	}
 	
-	public static EmptyReply SendServerMessageForUser(SendServerMessageForUserRequest request) throws JsonApiException, SQLException
+	public static EmptyReply TriggerResidentEvent(TriggerResidentEventRequest request) throws JsonApiException, SQLException
 	{
-		ApiInst.sendServerMessageForUser(request.to, request.from, request.alias, request.messageType, request.value);
+		ApiInst.triggerResidentEvent(request.resident_id, request.event_type, request.event);
 		return new EmptyReply();
 	}
 	
-	public static EmptyReply SendServerMessageToOnlineUser(SendServerMessageToOnlineUserRequest request) throws JsonApiException, SQLException
+	public static EmptyReply SendUserMessage(SendUserMessageRequest request) throws JsonApiException, SQLException
 	{
-		ApiInst.sendServerMessageToOnlineUser(request.to, request.from, request.messageType, request.value);
-		return new EmptyReply();
-	}
-	
-	public static EmptyReply SendServerMessage(SendServerMessageRequest request) throws JsonApiException, SQLException
-	{
-		ApiInst.sendServerMessage(request.to, request.messageType, request.value);
+		ApiInst.sendUserMessage(request.to, request.from, request.from_user, request.guaranteed, request.message_type, request.message);
 		return new EmptyReply();
 	}
 	

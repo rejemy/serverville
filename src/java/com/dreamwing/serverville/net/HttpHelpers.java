@@ -104,7 +104,7 @@ public class HttpHelpers {
 		return req.Connection.Ctx.writeAndFlush(response);
 	}
 	
-	public static ChannelFuture sendJson(HttpRequestInfo req, Object data)
+	public static HttpResponse makeJsonResponse(Object data)
 	{
 		ByteBuf content;
 		HttpResponseStatus status = HttpResponseStatus.OK;
@@ -125,6 +125,12 @@ public class HttpHelpers {
 		
 		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 		
+		return response;
+	}
+	
+	public static ChannelFuture sendJson(HttpRequestInfo req, Object data)
+	{
+		HttpResponse response = makeJsonResponse(data);
 		return req.Connection.Ctx.writeAndFlush(response);
 	}
 	
@@ -145,10 +151,12 @@ public class HttpHelpers {
 
 	public static ChannelFuture sendErrorJson(HttpRequestInfo req, ApiError data, HttpResponseStatus status)
 	{
-		return sendErrorJson(req.Connection.Ctx, data, status);
+		HttpResponse response = makeErrorJsonResponse(data, status);
+		
+		return req.Connection.Ctx.writeAndFlush(response);
 	}
 	
-	public static ChannelFuture sendErrorJson(ChannelHandlerContext ctx, ApiError data, HttpResponseStatus status)
+	public static HttpResponse makeErrorJsonResponse(ApiError data, HttpResponseStatus status)
 	{
 		data.isError = true;
 		ByteBuf content;
@@ -170,7 +178,7 @@ public class HttpHelpers {
 		
 		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 		
-		return ctx.writeAndFlush(response);
+		return response;
 	}
 	
     public static ChannelFuture sendRedirect(HttpRequestInfo req, String newUri) {

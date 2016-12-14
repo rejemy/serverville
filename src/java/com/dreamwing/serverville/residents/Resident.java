@@ -1,61 +1,85 @@
 package com.dreamwing.serverville.residents;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import com.dreamwing.serverville.client.ClientMessages.ChannelMemberInfo;
+import com.dreamwing.serverville.client.ClientMessages.ResidentEventNotification;
+import com.dreamwing.serverville.client.ClientMessages.ResidentStateUpdateNotification;
 
 public class Resident extends BaseResident
 {
 	protected ConcurrentMap<String,Channel> Channels;
 	
-	public Resident(String id, String userId)
+	String OwnerId;
+	
+	public Resident(String id, String ownerId, String residentType)
 	{
-		super(id, userId);
+		super(id, residentType);
+		
+		OwnerId = ownerId;
 		
 		Channels = new ConcurrentHashMap<String,Channel>();
 	}
 
 	@Override
-	public void sendMessageFrom(String messageType, String messageBody, BaseResident sender)
+	public String getOwnerId() { return OwnerId; }
+	
+	public void setOwnerId(String owner)
 	{
-		super.sendMessageFrom(messageType, messageBody, sender);
+		OwnerId = owner;
+	}
+	
+	@Override
+	public void triggerEvent(String eventType, String eventBody)
+	{
+		super.triggerEvent(eventType, eventBody);
+		
+		ResidentEventNotification notification = new ResidentEventNotification();
+		notification.resident_id = Id;
+		notification.via_channel = null;
+		notification.event_type = eventType;
+		notification.event_data = eventBody;
 		
 		for(Channel channel : Channels.values())
 		{
-			channel.relayMessage(messageType, messageBody, sender.Id);
+			channel.relayResidentEvent(this, notification);
 		}
 	}
 	
 	@Override
-	protected void onStateChanged(String changeMessage, long when)
+	protected void onStateChanged(ResidentStateUpdateNotification changeMessage, long when)
+	{
+		super.onStateChanged(changeMessage, when);
+		
+		for(Channel channel : Channels.values())
+		{
+			channel.relayStateChangeMessage(this, changeMessage, when);
+		}
+	}
+	
+	public void removeFromAllChannels()
+	{
+		removeFromAllChannels(null);
+	}
+	
+	public void removeFromAllChannels(Map<String,Object> finalValues)
 	{
 		for(Channel channel : Channels.values())
 		{
-			channel.relayStateChangeMessage(changeMessage, when, getId());
+			channel.removeResident(this, finalValues, true);
 		}
+		
+		Channels.clear();
 	}
 	
 	@Override
 	public void destroy()
 	{
 		super.destroy();
-
-		for(Channel channel : Channels.values())
-		{
-			channel.Members.remove(getId());
-			channel.onResidentRemoved(this, null);
-		}
 		
-		Channels.clear();
+		removeFromAllChannels(null);
 	}
 	
-	public ChannelMemberInfo getInfo(long since)
-	{
-		ChannelMemberInfo info = new ChannelMemberInfo();
-		info.id = Id;
-		info.values = getState(since);
-		
-		return info;
-	}
+	
 }

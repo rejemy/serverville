@@ -21,7 +21,6 @@ import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.client.ClientConnectionHandler;
 import com.dreamwing.serverville.client.ClientMessages.ChannelInfo;
 import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
-import com.dreamwing.serverville.client.ClientMessages.TransientClientMessage;
 import com.dreamwing.serverville.client.ClientSessionManager;
 import com.dreamwing.serverville.data.CurrencyInfo;
 import com.dreamwing.serverville.data.JsonDataType;
@@ -30,6 +29,7 @@ import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.data.KeyDataRecord;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.data.TransientDataItem;
+import com.dreamwing.serverville.data.UserMessage;
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
@@ -43,8 +43,8 @@ import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.serialize.JsonDataDecoder;
 import com.dreamwing.serverville.util.FileUtil;
 import com.dreamwing.serverville.util.SVID;
+import com.dreamwing.serverville.util.StringUtil;
 
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
 
 public class AgentScriptAPI
@@ -125,7 +125,7 @@ public class AgentScriptAPI
 	
 	public double setDataKey(String id, String key, Object value, Object data_type) throws JsonApiException, SQLException
 	{
-		if(id == null)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		if(!KeyDataItem.isValidKeyname(key))
@@ -141,8 +141,7 @@ public class AgentScriptAPI
 	
 	public double setDataKeys(String id, List<Map<String,Object>> items) throws JsonApiException, SQLException
 	{
-
-		if(id == null)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		List<KeyDataItem> itemList = new ArrayList<KeyDataItem>(items.size());
@@ -167,7 +166,7 @@ public class AgentScriptAPI
 	
 	public DataItemReply getDataKey(String id, String key) throws JsonApiException, SQLException
 	{
-		if(id == null || id.length() == 0)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 
 		if(!KeyDataItem.isValidKeyname(key))
@@ -192,7 +191,7 @@ public class AgentScriptAPI
 	
 	public Map<String,DataItemReply> getDataKeys(String id, List<String> keys, double since, boolean includeDeleted) throws JsonApiException, SQLException
 	{
-		if(id == null || id.length() == 0)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		for(String key : keys)
@@ -228,7 +227,7 @@ public class AgentScriptAPI
 	
 	public Map<String,DataItemReply> getAllDataKeys(String id, double since, boolean includeDeleted) throws JsonApiException, SQLException
 	{
-		if(id == null || id.length() == 0)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		List<KeyDataItem> items = KeyDataManager.loadAllKeysSince(id, (long)since, includeDeleted);
@@ -248,7 +247,7 @@ public class AgentScriptAPI
 
 	public double deleteDataKey(String id, String key) throws SQLException, JsonApiException
 	{
-		if(id == null || id.length() == 0)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		if(!KeyDataItem.isValidKeyname(key))
@@ -259,7 +258,7 @@ public class AgentScriptAPI
 	
 	public double deleteAllDataKeys(String id) throws SQLException, JsonApiException
 	{
-		if(id == null || id.length() == 0)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		return KeyDataManager.deleteAllKeys(id);
@@ -267,7 +266,17 @@ public class AgentScriptAPI
 
 	public String createChannel(String id) throws JsonApiException
 	{
-		if(id == null)
+		return createChannel(id, null, null);
+	}
+	
+	public String createChannel(String id, String residentType) throws JsonApiException
+	{
+		return createChannel(id, residentType, null);
+	}
+	
+	public String createChannel(String id, String residentType, Map<String,Object> values) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(id))
 			id = SVID.makeSVID();
 		
 		BaseResident res = ResidentManager.getResident(id);
@@ -281,7 +290,11 @@ public class AgentScriptAPI
 			throw new JsonApiException(ApiErrors.CHANNEL_ID_TAKEN, id);
 		}
 		
-		Channel chan = new Channel(id);
+		Channel chan = new Channel(id, residentType);
+		
+		if(values != null)
+			chan.setTransientValues(values, true);
+		
 		ResidentManager.addResident(chan);
 		
 		return chan.getId();
@@ -289,7 +302,7 @@ public class AgentScriptAPI
 	
 	public void deleteChannel(String id) throws JsonApiException
 	{
-		if(id == null)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, id);
 		
 		BaseResident res = ResidentManager.getResident(id);
@@ -301,29 +314,163 @@ public class AgentScriptAPI
 		res.destroy();
 	}
 
-	public String getUserAliasId(String userId, String alias) throws JsonApiException
+	public String createResident(String id, String residentType) throws JsonApiException
 	{
-		if(userId == null)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, userId);
-		
-		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(userId);
-		if(client == null)
-			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
-		
-		OnlineUser user = client.getPresence();
-		if(user == null)
-			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
-		
-		Resident userAlias = user.getAlias(alias);
-		
-		return userAlias.getId();
+		return createResident(id, residentType, null, null);
 	}
 	
-	public void addResident(String channelId, String residentId) throws JsonApiException
+	public String createResident(String id, String residentType, String owner) throws JsonApiException
 	{
-		if(channelId == null)
+		return createResident(id, residentType, owner, null);
+	}
+	
+	public String createResident(String id, String residentType, String owner, Map<String,Object> values) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(residentType))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, residentType);
+		
+		if(id == null)
+			id = SVID.makeSVID();
+		
+		if(StringUtil.isNullOrEmpty(owner))
+		{
+			Resident res = new Resident(id, null, residentType);
+			
+			if(values != null)
+				res.setTransientValues(values, true);
+			
+			ResidentManager.addResident(res);
+		}
+		else
+		{
+			ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(owner);
+			if(client == null)
+				throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+			
+			OnlineUser user = client.getPresence();
+			if(user == null)
+				throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
+			
+			Resident res = user.getOrCreateOwnedResident(id, residentType);
+			
+			if(values != null)
+				res.setTransientValues(values, true);
+		}
+		
+		
+		return id;
+	}
+	
+	public void deleteResident(String id) throws JsonApiException
+	{
+		deleteResident(id, null);
+	}
+	
+	public void deleteResident(String id, Map<String,Object> finalValues) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, id);
+		
+		BaseResident res = ResidentManager.getResident(id);
+		if(res == null || !(res instanceof Resident))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, id);
+		}
+		Resident resident = (Resident)res;
+		
+		if(resident.getOwnerId() != null)
+		{
+			ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(resident.getOwnerId());
+			if(client == null)
+				throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+			
+			OnlineUser user = client.getPresence();
+			if(user == null)
+				throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
+			
+			user.deleteResident(id, finalValues);
+		}
+		else
+		{
+			resident.removeFromAllChannels(finalValues);
+			resident.destroy();
+		}
+		
+	}
+	
+	public void removeResidentFromAllChannels(String id) throws JsonApiException
+	{
+		removeResidentFromAllChannels(id, null);
+	}
+	
+	public void removeResidentFromAllChannels(String id, Map<String,Object> finalValues) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, id);
+		
+		BaseResident res = ResidentManager.getResident(id);
+		if(res == null || !(res instanceof Resident))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, id);
+		}
+		Resident resident = (Resident)res;
+		
+		resident.removeFromAllChannels(finalValues);
+	}
+	
+	// TODO: handle residents and owners on different nodes
+	public void setResidentOwner(String id, String owner) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, id);
+		
+		BaseResident res = ResidentManager.getResident(id);
+		if(res == null || !(res instanceof Resident))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, id);
+		}
+		Resident resident = (Resident)res;
+		
+		OnlineUser newOwner = null;
+		if(owner != null)
+		{
+			ClientConnectionHandler newOwnerClient = ClientSessionManager.getSessionByUserId(owner);
+			if(newOwnerClient == null)
+				throw new JsonApiException(ApiErrors.NOT_FOUND, "new owner not found");
+			
+			newOwner = newOwnerClient.getPresence();
+			if(newOwner == null)
+				throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "new owner not online");
+		
+		}
+		
+		if(resident.getOwnerId() != null)
+		{
+			ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(resident.getOwnerId());
+			if(client == null)
+				throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+			
+			OnlineUser user = client.getPresence();
+			if(user == null)
+				throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
+			
+			user.removeResident(id);
+			
+			resident.setOwnerId(null);
+		}
+		
+		if(newOwner != null)
+		{
+			newOwner.addResident(resident);
+		}
+		
+	}
+	
+	public void addResidentToChannel(String channelId, String residentId) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(channelId))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
-		if(residentId == null)
+		if(StringUtil.isNullOrEmpty(residentId))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, residentId);
 		
 		BaseResident source = ResidentManager.getResident(channelId);
@@ -343,66 +490,11 @@ public class AgentScriptAPI
 		channel.addResident(resident);
 	}
 	
-	public void addListener(String userId, String channelId) throws JsonApiException
+	public void removeResidentFromChannel(String channelId, String residentId, Map<String,Object> finalValues) throws JsonApiException
 	{
-		if(userId == null)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, userId);
-		
-		if(channelId == null)
+		if(StringUtil.isNullOrEmpty(channelId))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
-		
-		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(userId);
-		if(client == null)
-			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
-		
-		OnlineUser user = client.getPresence();
-		if(user == null)
-			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
-		
-		BaseResident source = ResidentManager.getResident(channelId);
-		if(source == null || !(source instanceof Channel))
-		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, channelId);
-		}
-		
-		Channel channel = (Channel)source;
-		
-		channel.addListener(user);
-	}
-	
-	public void removeListener(String userId, String channelId) throws JsonApiException
-	{
-		if(userId == null)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, userId);
-		
-		if(channelId == null)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
-		
-		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(userId);
-		if(client == null)
-			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
-		
-		OnlineUser user = client.getPresence();
-		if(user == null)
-			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
-		
-		BaseResident source = ResidentManager.getResident(channelId);
-		if(source == null || !(source instanceof Channel))
-		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, channelId);
-		}
-		
-		Channel channel = (Channel)source;
-		
-		channel.removeListener(user);
-	}
-	
-
-	public void removeResident(String channelId, String residentId, Map<String,Object> finalValues) throws JsonApiException
-	{
-		if(channelId == null)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
-		if(residentId == null)
+		if(StringUtil.isNullOrEmpty(residentId))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, residentId);
 		
 		BaseResident source = ResidentManager.getResident(channelId);
@@ -425,13 +517,70 @@ public class AgentScriptAPI
 			resident.setTransientValues(finalValues);
 	}
 	
-	public ChannelInfo userJoinChannel(String userId, String channelId, String alias, Map<String,Object> values) throws JsonApiException
+	
+	public void addChannelListener(String channelId, String userId) throws JsonApiException
 	{
-		if(userId == null)
+		if(StringUtil.isNullOrEmpty(userId))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, userId);
 		
-		if(channelId == null)
+		if(StringUtil.isNullOrEmpty(channelId))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
+		
+		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(userId);
+		if(client == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		OnlineUser user = client.getPresence();
+		if(user == null)
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
+		
+		BaseResident source = ResidentManager.getResident(channelId);
+		if(source == null || !(source instanceof Channel))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, channelId);
+		}
+		
+		Channel channel = (Channel)source;
+		
+		channel.addListener(user);
+	}
+	
+	public void removeChannelListener(String channelId, String userId) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(userId))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, userId);
+		
+		if(StringUtil.isNullOrEmpty(channelId))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
+		
+		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(userId);
+		if(client == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		OnlineUser user = client.getPresence();
+		if(user == null)
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
+		
+		BaseResident source = ResidentManager.getResident(channelId);
+		if(source == null || !(source instanceof Channel))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, channelId);
+		}
+		
+		Channel channel = (Channel)source;
+		
+		channel.removeListener(user);
+	}
+	
+	public ChannelInfo userJoinChannel(String userId, String channelId, String residentId, Map<String,Object> values) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(userId))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, userId);
+		if(StringUtil.isNullOrEmpty(channelId))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
+		if(StringUtil.isNullOrEmpty(residentId))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, residentId);
+		
 		
 		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(userId);
 		if(client == null)
@@ -448,27 +597,32 @@ public class AgentScriptAPI
 		}
 		Channel channel = (Channel)source;
 		
-		Resident userAlias = user.getOrCreateAlias(alias);
+		Resident userRes = user.getOwnedResident(residentId);
+		if(userRes == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, residentId);
+		}
 		
 		if(values != null)
 		{
-			userAlias.setTransientValues(values, true);
+			userRes.setTransientValues(values, true);
 		}
 		
-		channel.addResident(userAlias);
+		channel.addResident(userRes);
 		channel.addListener(user);
 		
 
 		return channel.getChannelInfo(0);
 	}
 	
-	public void userLeaveChannel(String userId, String channelId, String alias, Map<String,Object> finalValues) throws JsonApiException
+	public void userLeaveChannel(String userId, String channelId, String residentId, Map<String,Object> finalValues) throws JsonApiException
 	{
-		if(userId == null)
+		if(StringUtil.isNullOrEmpty(userId))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, userId);
-		
-		if(channelId == null)
+		if(StringUtil.isNullOrEmpty(channelId))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
+		if(StringUtil.isNullOrEmpty(residentId))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, residentId);
 		
 		BaseResident listener = ResidentManager.getResident(userId);
 		if(listener == null)
@@ -491,18 +645,21 @@ public class AgentScriptAPI
 		if(user == null)
 			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
 		
-		Resident userAlias = user.getAlias(alias);
-		if(alias == null)
+		Resident userRes = user.getOwnedResident(residentId);
+		if(userRes == null)
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, alias);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, residentId);
 		}
 		
-		channel.removeResident(userAlias, finalValues);
+		channel.removeResident(userRes, finalValues);
 		channel.removeListener(user);
 	}
 	
 	public ChannelInfo getChannelInfo(String channelId, double since) throws JsonApiException
 	{
+		if(StringUtil.isNullOrEmpty(channelId))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, channelId);
+		
 		BaseResident source = ResidentManager.getResident(channelId);
 		if(source == null || !(source instanceof Channel))
 		{
@@ -515,7 +672,7 @@ public class AgentScriptAPI
 	
 	public void setTransientValue(String id, String key, Object value) throws JsonApiException
 	{
-		if(id == null)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 
 		if(!KeyDataItem.isValidKeyname(key))
@@ -531,8 +688,7 @@ public class AgentScriptAPI
 	
 	public void setTransientValues(String id, Map<String,Object> items) throws JsonApiException
 	{
-
-		if(id == null)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		BaseResident res = ResidentManager.getResident(id);
@@ -551,11 +707,11 @@ public class AgentScriptAPI
 
 	public Object getTransientValue(String id, String key) throws JsonApiException
 	{
-		if(id == null || id.length() == 0)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 
-		//if(!KeyDataItem.isValidKeyname(key))
-		//	throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
+		if(!KeyDataItem.isValidKeyname(key))
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
 		
 		BaseResident res = ResidentManager.getResident(id);
 		if(res == null)
@@ -571,7 +727,7 @@ public class AgentScriptAPI
 
 	public Map<String,Object> getTransientValues(String id, List<String> keys) throws JsonApiException
 	{
-		if(id == null || id.length() == 0)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		BaseResident res = ResidentManager.getResident(id);
@@ -582,6 +738,9 @@ public class AgentScriptAPI
 		
 		for(String key : keys)
 		{
+			if(!KeyDataItem.isValidKeyname(key))
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
+			
 			TransientDataItem item = res.getTransientValue(key);
 			if(item != null)
 			{
@@ -594,7 +753,7 @@ public class AgentScriptAPI
 	
 	public Map<String,Object> getAllTransientValues(String id) throws JsonApiException
 	{
-		if(id == null || id.length() == 0)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		BaseResident res = ResidentManager.getResident(id);
@@ -615,7 +774,7 @@ public class AgentScriptAPI
 	
 	public void deleteTransientValue(String id, String key) throws JsonApiException
 	{
-		if(id == null || id.length() == 0)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		BaseResident res = ResidentManager.getResident(id);
@@ -628,7 +787,7 @@ public class AgentScriptAPI
 	
 	public void deleteTransientValues(String id, List<String> keys) throws JsonApiException
 	{
-		if(id == null || id.length() == 0)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		BaseResident res = ResidentManager.getResident(id);
@@ -640,7 +799,7 @@ public class AgentScriptAPI
 	
 	public void deleteAllTransientValues(String id) throws JsonApiException
 	{
-		if(id == null || id.length() == 0)
+		if(StringUtil.isNullOrEmpty(id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		BaseResident res = ResidentManager.getResident(id);
@@ -650,106 +809,51 @@ public class AgentScriptAPI
 		res.deleteAllTransientValues();
 	}
 	
-	public void sendServerMessageForUser(String to, String from, String alias, String messageType, Object value) throws JsonApiException, SQLException
+	public void triggerResidentEvent(String residentId, String eventType, String event) throws JsonApiException
 	{
-		if(from == null || from.length() == 0)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, "from");
+		if(StringUtil.isNullOrEmpty(residentId))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "residentId");
 		
-		if(messageType == null || messageType.length() == 0)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, "messageType");
+		if(StringUtil.isNullOrEmpty(eventType))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "eventType");
 		
-		if(value == null)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, "value");
+		BaseResident res = ResidentManager.getResident(residentId);
+		if(res == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, residentId);
 		
-		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(from);
-		if(client == null)
-			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
-		
-		OnlineUser user = client.getPresence();
-		if(user == null)
-			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, "user not online");
-		
-		Resident userAlias = user.getAlias(alias);
-		if(userAlias == null)
-		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, alias);
-		}
-		
-		TransientClientMessage message = new TransientClientMessage();
-		message.message_type = messageType;
-		message.value = ScriptObjectMirror.wrapAsJSONCompatible(value, null);
-		
-		if(to != null)
-		{
-			BaseResident listener = ResidentManager.getResident(to);
-			if(listener == null)
-			{
-				throw new JsonApiException(ApiErrors.NOT_FOUND, to);
-			}
-			
-			listener.sendMessageFrom("serverMessage", message, userAlias);
-		}
-		else
-		{
-			userAlias.sendMessage("serverMessage", message);
-		}
+		res.triggerEvent(eventType, event);
 	}
 	
-	public void sendServerMessage(String to, String messageType, Object value) throws JsonApiException, SQLException
+	public void sendUserMessage(String to, String from, boolean fromUser, boolean guaranteed, String messageType, String message) throws JsonApiException, SQLException
 	{
-		if(to == null || to.length() == 0)
+		if(StringUtil.isNullOrEmpty(to))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "to");
 		
-		if(messageType == null || messageType.length() == 0)
+		if(StringUtil.isNullOrEmpty(from))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "from");
+		
+		if(StringUtil.isNullOrEmpty(messageType))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "messageType");
 		
-		if(value == null)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, "value");
-		
-		TransientClientMessage message = new TransientClientMessage();
-		message.message_type = messageType;
-		message.value = ScriptObjectMirror.wrapAsJSONCompatible(value, null);
-		
-		BaseResident listener = ResidentManager.getResident(to);
-		if(listener == null)
-		{
+		if(ServervilleUser.findById(to) == null)
 			throw new JsonApiException(ApiErrors.NOT_FOUND, to);
+		
+		if(fromUser)
+		{
+			if(ServervilleUser.findById(from) == null)
+				throw new JsonApiException(ApiErrors.NOT_FOUND, from);
 		}
 		
-		listener.sendMessage("serverMessage", message);
+		UserMessage msg = new UserMessage();
+		msg.ToUser = to;
+		msg.From = from;
+		msg.FromUser = fromUser;
+		msg.MessageType = messageType;
+		msg.Content = message;
 		
+		UserMessage.deliverUserMessage(msg, guaranteed);
 	}
 	
-	public boolean sendServerMessageToOnlineUser(String to, String from, String messageType, Object value) throws JsonApiException, SQLException
-	{
-		if(to == null || to.length() == 0)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, "to");
-		
-		if(from == null || from.length() == 0)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, "from");
-		
-		if(messageType == null || messageType.length() == 0)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, "messageType");
-		
-		if(value == null)
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, "value");
-		
-		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(to);
-		if(client == null)
-			return false;
-		
-		OnlineUser user = client.getPresence();
-		if(user == null)
-			return false;
-		
-		TransientClientMessage message = new TransientClientMessage();
-		message.message_type = messageType;
-		message.value = ScriptObjectMirror.wrapAsJSONCompatible(value, null);
-		
-		user.onMessage("serverMessage", message, from, null);
-		
-		return true;
-	}
 	
 	public int getCurrencyBalance(String userid, String currencyId) throws JsonApiException, SQLException
 	{

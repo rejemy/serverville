@@ -8,7 +8,8 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 
 import com.dreamwing.serverville.admin.AdminAPI.AdminPropertyPermissionsInfo;
-import com.dreamwing.serverville.data.PropertyPermissionsManager.PropertyPermissionsRecord;
+import com.dreamwing.serverville.data.RecordPermissionsManager.RecordPermissionsRecord;
+import com.dreamwing.serverville.data.ResidentPermissionsManager.ResidentPermissionsRecord;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.util.JSON;
@@ -25,24 +26,33 @@ public class PropertyPermissions
 		public boolean GlobalReadable;
 	}
 	
-	public String RecordType;
+	public String DataType;
 	NavigableMap<String,PropertyInfo> Properties;
 	public Date Created;
 	public Date Modified;
 	
 	PropertyInfo DefaultPermission;
 	
-	public PropertyPermissions(String recordType, String jsonProperties) throws JsonParseException, JsonMappingException, IOException, JsonApiException
+	public PropertyPermissions(String dataType, String jsonProperties) throws JsonParseException, JsonMappingException, IOException, JsonApiException
 	{
-		RecordType = recordType;
+		DataType = dataType;
 		Created = new Date();
 		
 		initProperties(jsonProperties);
 	}
 	
-	public PropertyPermissions(PropertyPermissionsRecord record) throws JsonParseException, JsonMappingException, IOException, JsonApiException
+	public PropertyPermissions(RecordPermissionsRecord record) throws JsonParseException, JsonMappingException, IOException, JsonApiException
 	{
-		RecordType = record.RecordType;
+		DataType = record.RecordType;
+		Created = record.Created;
+		Modified = record.Modified;
+		
+		initProperties(record.Properties);
+	}
+	
+	public PropertyPermissions(ResidentPermissionsRecord record) throws JsonParseException, JsonMappingException, IOException, JsonApiException
+	{
+		DataType = record.ResidentType;
 		Created = record.Created;
 		Modified = record.Modified;
 		
@@ -93,7 +103,7 @@ public class PropertyPermissions
 		
 		if(DefaultPermission == null)
 		{
-			DefaultPermission = PropertyPermissionsManager.DefaultPermission;
+			DefaultPermission = RecordPermissionsManager.DefaultPermission;
 		}
 	}
 	
@@ -193,7 +203,7 @@ public class PropertyPermissions
 	{
 		AdminPropertyPermissionsInfo permsinfo = new AdminPropertyPermissionsInfo();
 		
-		permsinfo.record_type = RecordType;
+		permsinfo.data_type = DataType;
 		permsinfo.created = Created.getTime();
 		if(Modified != null)
 			permsinfo.modified = Modified.getTime();

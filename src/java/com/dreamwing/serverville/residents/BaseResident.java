@@ -11,7 +11,9 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.dreamwing.serverville.client.ClientMessages.TransientValuesChangeMessage;
+import com.dreamwing.serverville.client.ClientMessages.ChannelMemberInfo;
+import com.dreamwing.serverville.client.ClientMessages.ResidentEventNotification;
+import com.dreamwing.serverville.client.ClientMessages.ResidentStateUpdateNotification;
 import com.dreamwing.serverville.data.TransientDataItem;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,31 +25,35 @@ public abstract class BaseResident
 	protected static final Logger l = LogManager.getLogger(BaseResident.class);
 	
 	protected String Id;
-	protected String UserId;
+	protected String ResidentType;
 	
 	protected ConcurrentMap<String,TransientDataItem> TransientValues;
 	protected TransientDataItem MostRecentValue;
 	
-	protected ConcurrentMap<String,MessageListener> Listeners;
+	protected ConcurrentMap<String,OnlineUser> Listeners;
 	
 	
-	public BaseResident(String id, String userId)
+	public BaseResident(String id, String residentType)
 	{
 		Id = id;
-		UserId = userId;
+		ResidentType = residentType;
+		
 		TransientValues = new ConcurrentHashMap<String,TransientDataItem>();
-		Listeners = new ConcurrentHashMap<String,MessageListener>();
+		Listeners = new ConcurrentHashMap<String,OnlineUser>();
 		
 	}
 	
 	public String getId() { return Id; }
-	public String getUserId() { return UserId; }
+	
+	public String getType() { return ResidentType; }
+	
+	public String getOwnerId() { return null; }
 	
 	public void destroy()
 	{
 		ResidentManager.removeResident(this);
 		
-		for(MessageListener listener : Listeners.values())
+		for(OnlineUser listener : Listeners.values())
 		{
 			listener.onStoppedListeningTo(this);
 		}
@@ -55,41 +61,28 @@ public abstract class BaseResident
 		Listeners.clear();
 	}
 	
-	public void sendMessage(String messageType, Object messageObject)
+	public void triggerEvent(String eventType, String eventBody)
 	{
-		sendMessageFrom(messageType, messageObject, this);
-	}
-	
-	public void sendMessage(String messageType, String messageBody)
-	{
-		sendMessageFrom(messageType, messageBody, this);
-	}
-	
-	public void sendMessageFrom(String messageType, Object messageObject, BaseResident sender)
-	{
+		ResidentEventNotification notification = new ResidentEventNotification();
+		notification.resident_id = Id;
+		notification.via_channel = null;
+		notification.event_type = eventType;
+		notification.event_data = eventBody;
+		
 		String messageBody = null;
 		try {
-			messageBody = JSON.serializeToString(messageObject);
+			messageBody = JSON.serializeToString(notification);
 		} catch (JsonProcessingException e) {
-			l.error("Error encoding directed message", e);
+			l.error("Error encoding resident event message", e);
 			return;
 		}
 		
-		sendMessageFrom(messageType, messageBody, sender);
-	}
-	
-	public void sendMessageFrom(String messageType, String messageBody, BaseResident sender)
-	{
-		if(messageType == null || messageType.length() == 0 || messageType.charAt(0) == '_' || messageType.indexOf(':') >= 0)
-			throw new IllegalArgumentException("Invalid message type: "+messageType);
-		
-		Channel via = this instanceof Channel ? (Channel)this : null;
-		
-		for(MessageListener listener : Listeners.values())
+		for(OnlineUser listener : Listeners.values())
 		{
-			listener.onMessage(messageType, messageBody, sender.Id, via);
+			listener.onResidentEvent(this, null, messageBody);
 		}
 	}
+	
 	
 	public void setTransientValue(String key, Object value)
 	{
@@ -107,8 +100,9 @@ public abstract class BaseResident
 		if(key.startsWith("$$"))
 			return;
 		
-		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
+		ResidentStateUpdateNotification changeMessage = new ResidentStateUpdateNotification();
 		
+		changeMessage.resident_id = Id;
 		changeMessage.values = new HashMap<String,Object>();
 		changeMessage.values.put(item.key, item.value);
 		
@@ -122,7 +116,8 @@ public abstract class BaseResident
 	
 	public void setTransientValues(Map<String,Object> values, boolean forceUpdate)
 	{
-		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
+		ResidentStateUpdateNotification changeMessage = new ResidentStateUpdateNotification();
+		changeMessage.resident_id = Id;
 		changeMessage.values = new HashMap<String,Object>();
 		
 		long currTime = System.currentTimeMillis();
@@ -151,9 +146,79 @@ public abstract class BaseResident
 			onStateChanged(changeMessage, currTime);
 	}
 	
+	public void deleteTransientValue(String key)
+	{
+		TransientDataItem item = TransientValues.get(key);
+		if(item == null)
+		{
+			return;
+		}
+		
+		item.deleted = true;
+		item.modified = System.currentTimeMillis();
+		
+		updateTransientValueInList(item);
+		
+		ResidentStateUpdateNotification changeMessage = new ResidentStateUpdateNotification();
+		changeMessage.resident_id = Id;
+		
+		changeMessage.deleted = new ArrayList<String>(1);
+		changeMessage.deleted.add(key);
+		
+		onStateChanged(changeMessage, item.modified);
+	}
+	
+	public void deleteTransientValues(List<String> keys)
+	{
+		ResidentStateUpdateNotification changeMessage = new ResidentStateUpdateNotification();
+		changeMessage.resident_id = Id;
+		changeMessage.deleted = new ArrayList<String>(keys.size());
+		
+		long currTime = System.currentTimeMillis();
+		
+		for(String key : keys)
+		{
+			TransientDataItem item = TransientValues.get(key);
+			if(item == null)
+			{
+				continue;
+			}
+			
+			item.deleted = true;
+			item.modified = currTime;
+
+			updateTransientValueInList(item);
+			
+			changeMessage.deleted.add(key);
+		}
+		
+		onStateChanged(changeMessage, currTime);
+	}
+	
+	public synchronized void deleteAllTransientValues()
+	{
+		ResidentStateUpdateNotification changeMessage = new ResidentStateUpdateNotification();
+		changeMessage.resident_id = Id;
+		changeMessage.deleted = new ArrayList<String>(TransientValues.size());
+		
+		long currTime = System.currentTimeMillis();
+		
+		for(Map.Entry<String,TransientDataItem> itemSet : TransientValues.entrySet())
+		{
+			TransientDataItem item = itemSet.getValue();
+
+			item.deleted = true;
+			item.modified = currTime;
+
+			changeMessage.deleted.add(itemSet.getKey());
+		}
+		
+		onStateChanged(changeMessage, currTime);
+	}
 	
 	
-	protected void onStateChanged(TransientValuesChangeMessage changeMessage, long when)
+	
+	protected void onStateChanged(ResidentStateUpdateNotification changeMessage, long when)
 	{
 		String messageBody = null;
 		try {
@@ -163,17 +228,13 @@ public abstract class BaseResident
 			return;
 		}
 		
-		onStateChanged(messageBody, when);
-
-	}
-	
-	protected void onStateChanged(String changeMessage, long when)
-	{
-		for(MessageListener listener : Listeners.values())
+		for(OnlineUser listener : Listeners.values())
 		{
-			listener.onStateChange(changeMessage, when, getId(), null);
+			listener.onStateChange(this, null, messageBody, when);
 		}
+		
 	}
+
 	
 	protected synchronized void updateTransientValueInList(TransientDataItem newItem)
 	{
@@ -207,81 +268,16 @@ public abstract class BaseResident
 		return TransientValues.values();
 	}
 	
-	public void deleteTransientValue(String key)
-	{
-		TransientDataItem item = TransientValues.get(key);
-		if(item == null)
-		{
-			return;
-		}
-		
-		item.deleted = true;
-		item.modified = System.currentTimeMillis();
-		
-		updateTransientValueInList(item);
-		
-		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
-		
-		changeMessage.deleted = new ArrayList<String>(1);
-		changeMessage.deleted.add(key);
-		
-		onStateChanged(changeMessage, item.modified);
-	}
 	
-	public void deleteTransientValues(List<String> keys)
-	{
-		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
-		changeMessage.deleted = new ArrayList<String>(keys.size());
-		
-		long currTime = System.currentTimeMillis();
-		
-		for(String key : keys)
-		{
-			TransientDataItem item = TransientValues.get(key);
-			if(item == null)
-			{
-				continue;
-			}
-			
-			item.deleted = true;
-			item.modified = currTime;
-
-			updateTransientValueInList(item);
-			
-			changeMessage.deleted.add(key);
-		}
-		
-		onStateChanged(changeMessage, currTime);
-	}
 	
-	public synchronized void deleteAllTransientValues()
-	{
-		TransientValuesChangeMessage changeMessage = new TransientValuesChangeMessage();
-		changeMessage.deleted = new ArrayList<String>(TransientValues.size());
-		
-		long currTime = System.currentTimeMillis();
-		
-		for(Map.Entry<String,TransientDataItem> itemSet : TransientValues.entrySet())
-		{
-			TransientDataItem item = itemSet.getValue();
-
-			item.deleted = true;
-			item.modified = currTime;
-
-			changeMessage.deleted.add(itemSet.getKey());
-		}
-		
-		onStateChanged(changeMessage, currTime);
-	}
-	
-	public void addListener(MessageListener listener)
+	public void addListener(OnlineUser listener)
 	{
 		if(Listeners.put(listener.getId(), listener) == null)
 			listener.onListeningTo(this);
 	}
 	
 	
-	public void removeListener(MessageListener listener)
+	public void removeListener(OnlineUser listener)
 	{
 		if(Listeners.remove(listener.getId()) != null)
 			listener.onStoppedListeningTo(this);
@@ -318,6 +314,15 @@ public abstract class BaseResident
 		if(MostRecentValue == null)
 			return 0;
 		return MostRecentValue.modified;
+	}
+	
+	public ChannelMemberInfo getInfo(long since)
+	{
+		ChannelMemberInfo info = new ChannelMemberInfo();
+		info.resident_id = Id;
+		info.values = getState(since);
+		
+		return info;
 	}
 	
 }

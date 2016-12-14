@@ -185,7 +185,7 @@ public class ClientMessages {
 	public static class KeyDataInfo
 	{
 		public String id;
-		public String type;
+		public String record_type;
 		public String owner;
 		public String parent;
 		public double version;
@@ -195,7 +195,7 @@ public class ClientMessages {
 	
 	public static class KeyDataRecordsRequest
 	{
-		public String type;
+		public String record_type;
 		public String parent;
 	}
 	
@@ -210,95 +210,183 @@ public class ClientMessages {
 		public List<SetUserDataRequest> values;
 	}
 	
-	public static class TransientValuesChangeMessage
+	public static class CreateResidentRequest
 	{
+		public String resident_type;
 		public Map<String,Object> values;
-		public List<String> deleted;
+	}
+	
+	public static class CreateResidentReply
+	{
+		public String resident_id;
+	}
+	
+	public static class DeleteResidentRequest
+	{
+		public String resident_id;
+		public Map<String,Object> final_values;
+	}
+	
+	public static class RemoveResidentFromAllChannelsRequest
+	{
+		public String resident_id;
+		public Map<String,Object> final_values;
 	}
 	
 	public static class JoinChannelRequest
 	{
-		public String alias;
-		public String id;
+		public String channel_id;
+		public String resident_id;
 		public Map<String,Object> values;
 	}
 	
 	public static class LeaveChannelRequest
 	{
-		public String alias;
-		public String id;
+		public String channel_id;
+		public String resident_id;
 		public Map<String,Object> final_values;
 	}
 	
-	public static class ListenToResidentRequest
+	public static class ListenToChannelRequest
 	{
-		public String id;
+		public String channel_id;
 	}
 	
-	public static class StopListenToResidentRequest
+	public static class StopListenToChannelRequest
 	{
-		public String id;
+		public String channel_id;
 	}
 	
 	public static class ChannelMemberInfo
 	{
-		public String id;
+		public String resident_id;
 		public Map<String,Object> values;
+	}
+	
+	public static class TriggerResidentEventRequest
+	{
+		public String resident_id;
+		public String event_type;
+		public String event_data;
+	}
+	
+	public static class ResidentJoinedNotification
+	{
+		public String resident_id;
+		public String via_channel;
+		public Map<String,Object> values;
+	}
+	
+	public static class ResidentStateUpdateNotification
+	{
+		public String resident_id;
+		public String via_channel;
+		public Map<String,Object> values;
+		public List<String> deleted;
+	}
+	
+	public static class ResidentLeftNotification
+	{
+		public String resident_id;
+		public String via_channel;
+		public Map<String,Object> final_values;
+	}
+	
+	public static class ResidentEventNotification
+	{
+		public String resident_id;
+		public String via_channel;
+		public String event_type;
+		public String event_data;
 	}
 	
 	public static class ChannelInfo
 	{
-		public String id;
+		public String channel_id;
 		public Map<String,Object> values;
 		public Map<String,ChannelMemberInfo> members;
 	}
 	
 	public static class SetTransientValueRequest
 	{
-		public String alias;
+		public String resident_id;
 		public String key;
 		public Object value;
 	}
 	
 	public static class SetTransientValuesRequest
 	{
-		public String alias;
+		public String resident_id;
 		public Map<String,Object> values;
+	}
+	
+	public static class DeleteTransientValueRequest
+	{
+		public String resident_id;
+		public String key;
+	}
+	
+	public static class DeleteTransientValuesRequest
+	{
+		public String resident_id;
+		public List<String> values;
 	}
 
 	public static class GetTransientValueRequest
 	{
-		public String id;
-		public String alias;
+		public String resident_id;
 		public String key;
 	}
 	
 	public static class GetTransientValuesRequest
 	{
-		public String id;
-		public String alias;
+		public String resident_id;
 		public List<String> keys;
 	}
 	
 	public static class GetAllTransientValuesRequest
 	{
-		public String id;
-		public String alias;
+		public String resident_id;
 	}
 	
-	public static class TransientMessageRequest
+	public static class SendUserMessageRequest
 	{
 		public String to;
-		public String alias;
 		public String message_type;
-		public Object value;
+		public String message;
+		public boolean guaranteed;
 	}
 	
-	public static class TransientClientMessage
+	public static class ClearMessageRequest
 	{
-		public String message_type;
-		public Object value;
+		public String id;
 	}
+	
+	public static class UserMessageNotification
+	{
+		public String id;
+		public String message_type;
+		public String message;
+		public String from_id;
+		public boolean sender_is_user;
+	}
+	
+	public static class UserMessageList
+	{
+		public List<UserMessageNotification> messages;
+	}
+	
+	public static class PendingNotification
+	{
+		public String notification_type;
+		public String body;
+	}
+	
+	public static class PendingNotificationList
+	{
+		public List<PendingNotification> notifications;
+	}
+	
 	
 	public static class CurrencyBalanceRequest
 	{
@@ -354,5 +442,16 @@ public class ClientMessages {
 		public double price;
 		public Map<String,Integer> currencies;
 	}
+	
+	public static Class<?>[] NotificationRegistry = new Class[]
+	{
+		ResidentJoinedNotification.class,
+		ResidentStateUpdateNotification.class,
+		ResidentLeftNotification.class,
+		ResidentEventNotification.class,
+		UserMessageNotification.class,
+		PendingNotification.class,
+		PendingNotificationList.class,
+	};
 	
 }

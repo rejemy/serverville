@@ -107,29 +107,31 @@ declare namespace api
 	function deleteDataKey(id:string, key:string):number;
 	function deleteAllDataKeys(id:string):number;
 
-	function createChannel(channelId:string):string;
+	function createChannel(channelId:string, residentType?:string, values?:TransientValueMap):string;
 	function deleteChannel(channelId:string):void;
-	function getUserAliasId(userId:string, alias:string):string;
-	function userJoinChannel(userId:string, channelId:string, alias:string, values?:TransientValueMap):ChannelInfo;
-	function userLeaveChannel(userId:string, channelId:string, alias:string, finalValues?:TransientValueMap):ChannelInfo;
+	function createResident(residentId:string, residentType:string, userId?:string, values?:TransientValueMap):string;
+	function deleteResident(residentId:string, finalValues?:TransientValueMap):void;
+	function removeResidentFromAllChannels(residentId:string, finalValues?:TransientValueMap):void;
+	function setResidentOwner(residentId:string, userId:string):void;
+	function addResidentToChannel(channelId:string,residentId:string):void;
+	function removeResidentFromChannel(channelId:string,residentId:string, finalValues?:TransientValueMap):void;
+	function addChannelListener(channelId:string, userId:string):void;
+	function removeChannelListener(channelId:string, userId:string):void;
+	function userJoinChannel(userId:string, channelId:string, residentId:string, values?:TransientValueMap):ChannelInfo;
+	function userLeaveChannel(userId:string, channelId:string, residentId:string, finalValues?:TransientValueMap):ChannelInfo;
 	function getChannelInfo(channelId:string, since:number):ChannelInfo;
-	function addResident(channelId:string,residentId:string):void;
-	function removeResident(channelId:string,residentId:string, finalValues?:TransientValueMap):void;
-	function addListener(userId:string, channelId:string):void;
-	function removeListener(userId:string, channelId:string):void;
+	
+	function setTransientValue(residentId:string, key:String, value:any):void;
+	function setTransientValues(residentId:string, keys:TransientValueMap):void;
+	function getTransientValue(residentId:string, key:String):any;
+	function getTransientValues(residentId:string, keys:String[]):TransientValueMap;
+	function getAllTransientValues(residentId:string):TransientValueMap;
+	function deleteTransientValue(residentId:string, key:string):void;
+	function deleteTransientValues(residentId:string, keys:string[]):void;
+	function deleteAllTransientValues(residentId:string):void;
 
-	function setTransientValue(id:string, key:String, value:any):void;
-	function setTransientValues(id:string, keys:TransientValueMap):void;
-	function getTransientValue(id:string, key:String):any;
-	function getTransientValues(id:string, keys:String[]):TransientValueMap;
-	function getAllTransientValues(id:string):TransientValueMap;
-	function deleteTransientValue(id:string, key:string):void;
-	function deleteTransientValues(id:string, keys:string[]):void;
-	function deleteAllTransientValues(id:string):void;
-
-	function sendServerMessageForUser(to:string, from:string, alias:string, messageType:string, value:Object):void;
-	function sendServerMessageToOnlineUser(to:string, from:string, messageType:string, value:Object):boolean;
-	function sendServerMessage(to:string, messageType:string, value:Object):void;
+	function triggerResidentEvent(residentId:string, eventType:string, event:String):void;
+	function sendUserMessage(to:string, from:string, fromUser:boolean, guaranteed:boolean, messageType:string, value:string):void;
 
 	function getCurrencyBalance(userId:string, currencyId:string):number;
 	function getCurrencyBalances(userId:string):{[currencyId:string]:number};
