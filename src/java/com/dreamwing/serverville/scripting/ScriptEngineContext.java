@@ -46,16 +46,7 @@ public class ScriptEngineContext {
 			return;
 		
 		Version = version;
-		
-		List<ScriptData> userScripts = null;
-		try {
-			userScripts = ScriptData.loadAll();
-		} catch (SQLException e) {
-			l.error("Couldn't create javascript engine due to error loading scripts:", e);
-			throw e;
-		}
-		
-		init(userScripts);
+		init(ScriptManager.getUserScripts());
 	}
 	
 	// Init with the list of provided scripts

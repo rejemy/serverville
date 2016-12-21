@@ -55,7 +55,6 @@ public class ProductManager
 		return product;
 	}
 	
-	// TODO: send reload message to cluster
 	public static void addProduct(Product product) throws SQLException
 	{
 		LocaleUtil.setMapDefaults(product.Text);
@@ -63,7 +62,6 @@ public class ProductManager
 		ProductDb.put(product.ProductId, product);
 	}
 	
-	// TODO: send reload message to cluster
 	public static void removeProduct(String id) throws SQLException
 	{
 		ProductDb.remove(id);

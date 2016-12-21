@@ -1,8 +1,10 @@
 package com.dreamwing.serverville.scripting;
 
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
@@ -14,9 +16,12 @@ import org.apache.logging.log4j.Logger;
 
 import com.dreamwing.serverville.agent.AgentShared;
 import com.dreamwing.serverville.client.ClientConnectionHandler;
+import com.dreamwing.serverville.cluster.ClusterManager;
+import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.residents.Channel;
 import com.dreamwing.serverville.residents.OnlineUser;
 import com.dreamwing.serverville.util.FileUtil;
+import com.hazelcast.core.IAtomicLong;
 
 
 public class ScriptManager
@@ -30,6 +35,7 @@ public class ScriptManager
 	private static Semaphore EngineLock;
 	private static ScriptEngineContext[] Engines;
 	
+	private static List<ScriptData> GlobalScriptCache;
 	private static volatile int ScriptVersion=0;
 	
 	private static Map<String,Boolean> ClientHandlers;
@@ -44,6 +50,15 @@ public class ScriptManager
 		Engines = new ScriptEngineContext[MAX_ENGINES];
 		EngineLock = new Semaphore(MAX_ENGINES, true);
 
+		scriptsUpdated();
+		
+		IAtomicLong scriptInitLock = ClusterManager.Cluster.getAtomicLong("ScriptGlobalInit");
+		if(scriptInitLock.getAndSet(1) == 0)
+		{
+			// Should only happen on one server
+			doGlobalInit();
+		}
+		/*
 		updateHandlerSets();
 		
 		ScriptEngineContext engine = getEngine();
@@ -58,7 +73,7 @@ public class ScriptManager
 		finally
 		{
 			returnEngine(engine);
-		}
+		}*/
 	}
 	
 	public static ScriptEngineContext getEngine()
@@ -84,27 +99,33 @@ public class ScriptManager
 			l.error("Interrupted waiting for engine context", e);
 			return null;
 		}
-		synchronized(ScriptManager.class)
+		try
 		{
-			for(int i = 0; i<MAX_ENGINES; i++)
+			synchronized(ScriptManager.class)
 			{
-				ScriptEngineContext info = Engines[i];
-				
-				if(info == null)
+				for(int i = 0; i<MAX_ENGINES; i++)
 				{
-					info = new ScriptEngineContext();
-					Engines[i] = info;
+					ScriptEngineContext info = Engines[i];
+					
+					if(info == null)
+					{
+						info = new ScriptEngineContext();
+						Engines[i] = info;
+					}
+					else if(info.InUse)
+					{
+						continue;
+					}
+					
+					info.InUse = true;
+					return info;
 				}
-				else if(info.InUse)
-				{
-					continue;
-				}
-				
-				info.InUse = true;
-				return info;
 			}
 		}
-		EngineLock.release();
+		finally
+		{
+			EngineLock.release();
+		}
 		
 		l.error("No engine available, something is out of sync");
 		
@@ -120,24 +141,36 @@ public class ScriptManager
 		EngineLock.release();
 	}
 	
-	public static void scriptsUpdated() throws ScriptException
+	public static synchronized void scriptsUpdated() throws ScriptException, SQLException
 	{
+		GlobalScriptCache = ScriptData.loadAll();
 		ScriptVersion++;
 		
+		updateHandlerSets();
+	}
+	
+	public synchronized static void doGlobalInit()
+	{
 		ScriptEngineContext eng = null;
 		try
 		{
 			eng = getEngine();
 			eng.invokeFunction("globalInit");
+			l.info("Ran globalInit javascript");
 		} catch (NoSuchMethodException e) {
 			// No function, no problem
+		} catch (ScriptException e) {
+			l.error("Error in global init javascript:", e);
 		}
 		finally
 		{
 			returnEngine(eng);
 		}
-		
-		updateHandlerSets();
+	}
+	
+	public static List<ScriptData> getUserScripts()
+	{
+		return GlobalScriptCache;
 	}
 	
 	private static void updateHandlerSets()
@@ -151,9 +184,12 @@ public class ScriptManager
 			return;
 		}
 		
-		Map<String,Boolean> clientHandlers = new HashMap<String,Boolean>();
-
 		String[] clientHandlerList = ctx.getClientHandlerList();
+		
+		Map<String,Boolean> clientHandlers = new HashMap<String,Boolean>();
+		String[] agentHandlerList = ctx.getAgentHandlerList();
+		String[] callbackHandlerList = ctx.getCallbackHandlerList();
+		
 		if(clientHandlerList != null)
 		{
 			for(String handlerName : clientHandlerList)
@@ -176,8 +212,6 @@ public class ScriptManager
 		
 		
 		Set<String> agentHandlers = new HashSet<String>();
-		
-		String[] agentHandlerList = ctx.getAgentHandlerList();
 		if(agentHandlerList != null)
 		{
 			for(String handlerName : agentHandlerList)
@@ -190,8 +224,6 @@ public class ScriptManager
 		
 		
 		Set<String> callbackHandlers = new HashSet<String>();
-		
-		String[] callbackHandlerList = ctx.getCallbackHandlerList();
 		if(callbackHandlerList != null)
 		{
 			for(String handlerName : callbackHandlerList)

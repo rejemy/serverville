@@ -26,6 +26,8 @@ import com.dreamwing.serverville.CurrencyInfoManager;
 import com.dreamwing.serverville.ProductManager;
 import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.agent.AgentKeyManager;
+import com.dreamwing.serverville.cluster.ClusterManager;
+import com.dreamwing.serverville.cluster.ClusterMessages.CachedDataUpdateMessage;
 import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.data.AgentKey;
 import com.dreamwing.serverville.data.CurrencyHistory;
@@ -837,6 +839,14 @@ public class AdminAPI {
 			return HttpHelpers.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
 		}
 		
+		// Whichever server successfully updates the scripts should re-run the global init
+		ScriptManager.doGlobalInit();
+		
+		CachedDataUpdateMessage update = new CachedDataUpdateMessage();
+		update.DataType = CachedDataUpdateMessage.Scripts;
+		ClusterManager.sendCachedDataUpdateMessage(update);
+		
+		
 		return HttpHelpers.sendSuccess(req);
 	}
 
@@ -887,6 +897,10 @@ public class AdminAPI {
 			String errorMessage = e.getCause().getMessage()+" at line "+e.getLineNumber();
 			return HttpHelpers.sendError(req, ApiErrors.JAVASCRIPT_ERROR, errorMessage);
 		}
+		
+		CachedDataUpdateMessage update = new CachedDataUpdateMessage();
+		update.DataType = CachedDataUpdateMessage.Scripts;
+		ClusterManager.sendCachedDataUpdateMessage(update);
 		
 		return HttpHelpers.sendSuccess(req);
 	}
@@ -1076,6 +1090,11 @@ public class AdminAPI {
 		}
 		
 		CurrencyInfoManager.addCurrency(currency);
+		
+		CachedDataUpdateMessage update = new CachedDataUpdateMessage();
+		update.DataType = CachedDataUpdateMessage.Currency;
+		update.DataId = currency.CurrencyId;
+		ClusterManager.sendCachedDataUpdateMessage(update);
 		
 		return HttpHelpers.sendSuccess(req);
 	}
@@ -1305,6 +1324,11 @@ public class AdminAPI {
 		
 		ProductManager.addProduct(prod);
 		
+		CachedDataUpdateMessage update = new CachedDataUpdateMessage();
+		update.DataType = CachedDataUpdateMessage.Product;
+		update.DataId = prod.ProductId;
+		ClusterManager.sendCachedDataUpdateMessage(update);
+		
 		return HttpHelpers.sendSuccess(req);
 	}
 	
@@ -1385,6 +1409,11 @@ public class AdminAPI {
 			throw new JsonApiException(ApiErrors.INTERNAL_SERVER_ERROR, "Server couldn't encode json for some reason: "+e.getMessage());
 		}
 		
+		CachedDataUpdateMessage update = new CachedDataUpdateMessage();
+		update.DataType = CachedDataUpdateMessage.RecordPerms;
+		update.DataId = permissions.DataType;
+		ClusterManager.sendCachedDataUpdateMessage(update);
+		
 		return HttpHelpers.sendSuccess(req);
 	}
 	
@@ -1451,6 +1480,11 @@ public class AdminAPI {
 		} catch (JsonProcessingException e) {
 			throw new JsonApiException(ApiErrors.INTERNAL_SERVER_ERROR, "Server couldn't encode json for some reason: "+e.getMessage());
 		}
+		
+		CachedDataUpdateMessage update = new CachedDataUpdateMessage();
+		update.DataType = CachedDataUpdateMessage.ResidentPerms;
+		update.DataId = permissions.DataType;
+		ClusterManager.sendCachedDataUpdateMessage(update);
 		
 		return HttpHelpers.sendSuccess(req);
 	}

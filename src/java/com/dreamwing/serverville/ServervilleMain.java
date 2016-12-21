@@ -26,6 +26,7 @@ import com.dreamwing.serverville.admin.AdminServerSocketInitializer;
 import com.dreamwing.serverville.agent.AgentServerSocketInitializer;
 import com.dreamwing.serverville.client.ClientSessionManager;
 import com.dreamwing.serverville.client.ClientSocketInitializer;
+import com.dreamwing.serverville.cluster.ClusterManager;
 import com.dreamwing.serverville.data.RecordPermissionsManager;
 import com.dreamwing.serverville.data.ResidentPermissionsManager;
 import com.dreamwing.serverville.db.KeyDataManager;
@@ -62,6 +63,7 @@ public class ServervilleMain {
 		DefaultProperties.setProperty("agent_port", "8001");
 		DefaultProperties.setProperty("admin_port", "8002");
 		DefaultProperties.setProperty("res_root", "res");
+		DefaultProperties.setProperty("cluster_members", "");
 		DefaultProperties.setProperty("require_invite", "false");
 		DefaultProperties.setProperty("cache_files_under", "30000");
 		DefaultProperties.setProperty("pretty_json", "false");
@@ -208,6 +210,7 @@ public class ServervilleMain {
     	
     	LocaleUtil.DefaultLanguage = ServervilleMain.ServerProperties.getProperty("default_language");
     	
+    	ClusterManager.init();
     	WritableDirectories.init();
     	StripeInterface.init();
     	SslProtocolDetector.init();
@@ -367,6 +370,8 @@ public class ServervilleMain {
 
 		ClientSocketInitializer.shutdown();
 		AdminServerSocketInitializer.shutdown();
+		
+		ClusterManager.shutdown();
 		
 		l.info("Shutdown complete");
 		

@@ -56,14 +56,12 @@ public class CurrencyInfoManager
 		return currency;
 	}
 	
-	// TODO: send reload message to cluster
 	public static void addCurrency(CurrencyInfo currency) throws SQLException
 	{
 		currency.save();
 		CurrencyDb.put(currency.CurrencyId, currency);
 	}
 	
-	// TODO: send reload message to cluster
 	public static void removeCurrency(String id) throws SQLException
 	{
 		CurrencyDb.remove(id);
