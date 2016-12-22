@@ -34,14 +34,12 @@ From your Serverville working directory, run `java -jar serverville.jar` and the
 
 ## Roadmap
 
-Coming soon to Serverville:
+Coming someday to Serverville:
 
 * Documentation!
-* Payment processing via Stripe
 * Clustering support
 * Sharded MySQL support
 * Durable caching layer to reduce database load
 * Inventory support
 * Admin website
 * Remote javascript debugging
-* Messaging
