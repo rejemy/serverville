@@ -12,20 +12,20 @@
 	<classpathentry kind="lib" path="lib/c3p0-0.9.5.2.jar" sourcepath="lib/c3p0-0.9.5.2-sources.jar"/>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.39-bin.jar" sourcepath="lib/mysql-connector-java-5.1.39-sources.jar"/>
 	<classpathentry kind="lib" path="lib/mchange-commons-java-0.2.12.jar" sourcepath="lib/mchange-commons-java-0.2.12-sources.jar"/>
-	<classpathentry kind="lib" path="lib/netty-all-4.1.4.Final.jar" sourcepath="lib/netty-all-4.1.4.Final-sources.jar"/>
-	<classpathentry kind="lib" path="lib/log4j-1.2-api-2.6.2.jar" sourcepath="lib/log4j-1.2-api-2.6.2-sources.jar"/>
-	<classpathentry kind="lib" path="lib/log4j-api-2.6.2.jar" sourcepath="lib/log4j-api-2.6.2-sources.jar"/>
-	<classpathentry kind="lib" path="lib/log4j-core-2.6.2.jar" sourcepath="lib/log4j-core-2.6.2-sources.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-analyzers-common-6.1.0.jar" sourcepath="lib/lucene-analyzers-common-6.1.0-sources.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-core-6.1.0.jar" sourcepath="lib/lucene-core-6.1.0-sources.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-queryparser-6.1.0.jar" sourcepath="lib/lucene-queryparser-6.1.0-sources.jar"/>
-	<classpathentry kind="lib" path="lib/okhttp-3.4.1.jar" sourcepath="lib/okhttp-3.4.1-sources.jar"/>
-	<classpathentry kind="lib" path="lib/okio-1.9.0.jar" sourcepath="lib/okio-1.9.0-sources.jar"/>
-	<classpathentry kind="lib" path="lib/stripe-java-2.8.0.jar" sourcepath="lib/stripe-java-2.8.0-sources.jar"/>
 	<classpathentry kind="lib" path="lib/hazelcast-3.7.4.jar" sourcepath="lib/hazelcast-3.7.4-sources.jar"/>
 	<classpathentry kind="lib" path="lib/gson-2.8.0.jar" sourcepath="lib/gson-2.8.0-sources.jar"/>
 	<classpathentry kind="lib" path="lib/jackson-core-2.8.5.jar" sourcepath="lib/jackson-core-2.8.5-sources.jar"/>
 	<classpathentry kind="lib" path="lib/jackson-annotations-2.8.5.jar" sourcepath="lib/jackson-annotations-2.8.5-sources.jar"/>
 	<classpathentry kind="lib" path="lib/jackson-databind-2.8.5.jar" sourcepath="lib/jackson-databind-2.8.5-sources.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-1.2-api-2.7.jar" sourcepath="lib/log4j-1.2-api-2.7-sources.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-api-2.7.jar" sourcepath="lib/log4j-api-2.7-sources.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-core-2.7.jar" sourcepath="lib/log4j-core-2.7-sources.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-analyzers-common-6.3.0.jar" sourcepath="lib/lucene-analyzers-common-6.3.0-sources.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-core-6.3.0.jar" sourcepath="lib/lucene-core-6.3.0-sources.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-queryparser-6.3.0.jar" sourcepath="lib/lucene-queryparser-6.3.0-sources.jar"/>
+	<classpathentry kind="lib" path="lib/netty-all-4.1.6.Final.jar" sourcepath="lib/netty-all-4.1.6.Final-sources.jar"/>
+	<classpathentry kind="lib" path="lib/okio-2.0.0.jar" sourcepath="lib/okio-2.0.0-sources.jar"/>
+	<classpathentry kind="lib" path="lib/okhttp-3.5.0.jar" sourcepath="lib/okhttp-3.5.0-sources.jar"/>
+	<classpathentry kind="lib" path="lib/stripe-java-3.5.0.jar" sourcepath="lib/stripe-java-3.5.0-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
