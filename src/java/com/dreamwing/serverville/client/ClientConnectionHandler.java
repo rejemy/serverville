@@ -16,6 +16,8 @@ import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.client.ClientMessages.PendingNotification;
 import com.dreamwing.serverville.client.ClientMessages.PendingNotificationList;
 import com.dreamwing.serverville.client.ClientMessages.UserMessageNotification;
+import com.dreamwing.serverville.cluster.ClusterManager;
+import com.dreamwing.serverville.cluster.DistributedData.OnlineUserLocator;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.data.UserMessage;
 import com.dreamwing.serverville.data.UserSession;
@@ -173,6 +175,12 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		loadGuaranteedMessages();
 		
 		ScriptManager.onUserSignIn(this);
+		
+		OnlineUserLocator locator = new OnlineUserLocator();
+		locator.UserId = user.getId();
+		locator.SessionId = session.Id;
+		
+		ClusterManager.addOnlineUser(locator);
 	}
 	
 	private void signOut()
@@ -184,6 +192,8 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	{
 		if(Info.User != null)
 		{
+			ClusterManager.removeOnlineUser(Info.User.getId());
+			
 			ScriptManager.onUserSignOut(this);
 			
 			if(updateSession)
@@ -220,6 +230,8 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		{
 			if(Info.User != null)
 			{
+				// Odd case where a user signs in, signs out,
+				// and then re-uses the same HTTP connection to sign in again
 				signOut();
 			}
 			return;
@@ -274,7 +286,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		UserSession session = (UserSession) Info.Session;
 		session.Expired = true;
-		signOut();
+		signOut(false);
 		
 		if(WebsocketConnected)
 		{

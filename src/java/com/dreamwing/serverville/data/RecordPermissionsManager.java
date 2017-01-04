@@ -166,7 +166,6 @@ public class RecordPermissionsManager
 		return null;
 	}
 	
-	// TODO: send reload message to cluster
 	public static void addPermissions(PropertyPermissions permissions) throws SQLException, JsonProcessingException
 	{
 		RecordPermissionsRecord record = new RecordPermissionsRecord();
@@ -188,7 +187,6 @@ public class RecordPermissionsManager
 			UserPermissions = permissions;
 	}
 	
-	// TODO: send reload message to cluster
 	public static void removePermissions(String recordType) throws SQLException
 	{
 		PropertyPermissionsDb.remove(recordType);

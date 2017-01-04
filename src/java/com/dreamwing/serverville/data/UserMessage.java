@@ -4,11 +4,17 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
-import com.dreamwing.serverville.client.ClientConnectionHandler;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.dreamwing.serverville.client.ClientMessages.UserMessageNotification;
-import com.dreamwing.serverville.client.ClientSessionManager;
+import com.dreamwing.serverville.cluster.ClusterManager;
+import com.dreamwing.serverville.cluster.ClusterMessages.DeliverUserNotificationMessage;
 import com.dreamwing.serverville.db.DatabaseManager;
+import com.dreamwing.serverville.util.JSON;
 import com.dreamwing.serverville.util.SVID;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.hazelcast.core.Member;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
@@ -16,6 +22,8 @@ import com.j256.ormlite.table.DatabaseTable;
 @DatabaseTable(tableName = "user_message")
 public class UserMessage
 {
+	private static final Logger l = LogManager.getLogger(UserMessage.class);
+	
 	@DatabaseField(columnName="id", id=true, canBeNull=false)
 	public String MessageId;
 	
@@ -74,8 +82,6 @@ public class UserMessage
 		return notification;
 	}
 	
-	
-	// TODO: Forward to correct node
 	public static void deliverUserMessage(UserMessage message, boolean guaranteed) throws SQLException
 	{
 		if(message.Created == null)
@@ -89,21 +95,32 @@ public class UserMessage
 			message.save();
 		}
 		
-		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(message.ToUser);
-		if(client == null)
+		Member userMember = ClusterManager.locateUserClusterMember(message.ToUser);
+		if(userMember == null)
 		{
 			// User not online
 			return;
 		}
 		
 		UserMessageNotification notification = message.toNotification();
+		String serializedNotification;
+		try
+		{
+			serializedNotification = JSON.serializeToString(notification);
+		}
+		catch(JsonProcessingException e)
+		{
+			l.error("Error encoding message:", e);
+			return;
+		}
 		
-		client.sendNotification("msg", notification);
+		DeliverUserNotificationMessage clusterMessage = new DeliverUserNotificationMessage();
+		clusterMessage.UserId = message.ToUser;
+		clusterMessage.NotificationType = "msg";
+		clusterMessage.SerializedNotification = serializedNotification;
 		
-		/*TransientClientMessage envelope = new TransientClientMessage();
-		message.message_type = messageType;
-		message.value = ScriptObjectMirror.wrapAsJSONCompatible(value, null);
+		ClusterManager.sendToMember(clusterMessage, userMember);
 		
-		user.onMessage("serverMessage", message, from, null);*/
+
 	}
 }
