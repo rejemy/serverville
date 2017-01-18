@@ -8,7 +8,10 @@ import java.util.concurrent.ConcurrentMap;
 import com.dreamwing.serverville.client.ClientConnectionHandler;
 import com.dreamwing.serverville.client.ClientMessages.ChannelMemberInfo;
 import com.dreamwing.serverville.client.ClientMessages.ResidentJoinedNotification;
+import com.dreamwing.serverville.cluster.ClusterManager;
 import com.dreamwing.serverville.data.ServervilleUser;
+import com.dreamwing.serverville.net.ApiErrors;
+import com.dreamwing.serverville.net.JsonApiException;
 
 
 public class OnlineUser
@@ -122,9 +125,9 @@ public class OnlineUser
 		
 		ListeningTo.clear();
 
-		for(Resident alias : OwnedResidents.values())
+		for(Resident res : OwnedResidents.values())
 		{
-			alias.destroy();
+			res.destroy();
 		}
 		
 		OwnedResidents.clear();
@@ -142,19 +145,31 @@ public class OnlineUser
 		return alias;
 	}
 	
-	public synchronized Resident getOrCreateOwnedResident(String id, String residentType)
+	public synchronized Resident getOrCreateOwnedResident(String id, String residentType) throws JsonApiException
 	{
-		if(id == null || id.length() == 0)
-		{
-			return null;
-		}
 		
 		Resident res = OwnedResidents.get(id);
 		if(res == null)
 		{
+			if(ResidentManager.hasResident(id))
+				throw new JsonApiException(ApiErrors.RESIDENT_ID_TAKEN, id);
+			
 			res = new Resident(id, User.getId(), residentType);
 			OwnedResidents.put(id, res);
 			ResidentManager.addResident(res);
+			
+			
+			try
+			{
+				ClusterManager.registerLocalResident(res);
+			}
+			catch(Exception e)
+			{
+				// Oops, we have to clean it up if we couldn't register it on the cluster
+				OwnedResidents.remove(id);
+				ResidentManager.removeResident(res);
+				throw e;
+			}
 		}
 		
 		return res;

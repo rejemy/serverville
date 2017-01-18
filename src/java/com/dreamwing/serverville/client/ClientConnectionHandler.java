@@ -139,6 +139,8 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	
 	public void signIn(ServervilleUser user, UserSession session) throws SQLException, JsonApiException
 	{
+		//l.info("User signing in");
+		
 		if(user == null)
 		{
 			signOut();
@@ -177,10 +179,9 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		ScriptManager.onUserSignIn(this);
 		
 		OnlineUserLocator locator = new OnlineUserLocator();
-		locator.UserId = user.getId();
 		locator.SessionId = session.Id;
 		
-		ClusterManager.addOnlineUser(locator);
+		ClusterManager.addOnlineUser(user.getId(), locator);
 	}
 	
 	private void signOut()
@@ -190,6 +191,8 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	
 	private void signOut(boolean updateSession)
 	{
+		//l.info("User signing out");
+		
 		if(Info.User != null)
 		{
 			ClusterManager.removeOnlineUser(Info.User.getId());

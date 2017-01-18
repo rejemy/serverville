@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -96,7 +97,8 @@ public class ServervilleMain {
 	public static Path ResRoot;
 	
 	public static String Hostname;
-
+	public static int ClientPort;
+	
 	private volatile boolean Running=true;
 	
 	public static IndexedFileManager LogSearcher=null;
@@ -163,14 +165,23 @@ public class ServervilleMain {
 			ServerProperties = DefaultProperties;
 		}
 		
+		for(Object propKey : Collections.list(ServerProperties.propertyNames()))
+		{
+			String var = System.getenv("sv_"+(String)propKey);
+			if(var != null)
+				ServerProperties.setProperty((String)propKey, var);
+		}
+		
 		configureLogger(ServerProperties.getProperty("log4j_config"));
+		
+		Hostname = ServerProperties.getProperty("hostname");
 		
 		String workingDir = System.getProperty("user.dir");
 		l.info("Starting up in working directory "+workingDir);
 		if(ServerProperties == DefaultProperties)
-			l.info("Using default properties");
+			l.info("Initializing Serverville Server on "+Hostname+" with default properties");
 		else
-			l.info("Using properties from "+PropertiesFilename);
+			l.info("Initializing Serverville Server on "+Hostname+" with properties in "+PropertiesFilename);
 	}
 	
 	public void init() throws Exception
@@ -210,7 +221,8 @@ public class ServervilleMain {
     	
     	LocaleUtil.DefaultLanguage = ServervilleMain.ServerProperties.getProperty("default_language");
     	
-    	ClusterManager.init();
+    	ClientPort = Integer.parseInt(ServerProperties.getProperty("client_port"));
+    	
     	WritableDirectories.init();
     	StripeInterface.init();
     	SslProtocolDetector.init();
@@ -224,6 +236,11 @@ public class ServervilleMain {
     	ResidentManager.init();
     	UserManager.init();
     	ScriptManager.init();
+    	
+    	ClusterManager.init();
+    	
+    	ScriptManager.start();
+    	
     	ClientSessionManager.init();
     	
     	SelfTest.init();
@@ -255,11 +272,10 @@ public class ServervilleMain {
 			l.info("Skipping agent service");
 		}
 		
-		int clientPort = Integer.parseInt(ServerProperties.getProperty("client_port"));
-		if(clientPort != 0)
+		if(ClientPort != 0)
 		{
-			l.info("Starting client listener on port "+clientPort);
-			ClientSocketInitializer.startListener(clientPort);
+			l.info("Starting client listener on port "+ClientPort);
+			ClientSocketInitializer.startListener(ClientPort);
 		}
 		else
 		{

@@ -21,6 +21,8 @@ import com.dreamwing.serverville.agent.AgentMessages.UserInfoReply;
 import com.dreamwing.serverville.client.ClientConnectionHandler;
 import com.dreamwing.serverville.client.ClientMessages.ChannelInfo;
 import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
+import com.dreamwing.serverville.cluster.ClusterManager;
+import com.dreamwing.serverville.cluster.ClusterMessages.CreateChannelRequestMessage;
 import com.dreamwing.serverville.client.ClientSessionManager;
 import com.dreamwing.serverville.data.CurrencyInfo;
 import com.dreamwing.serverville.data.JsonDataType;
@@ -264,6 +266,11 @@ public class AgentScriptAPI
 		return KeyDataManager.deleteAllKeys(id);
 	}
 
+	public String getHostWithResident(String residentId)
+	{
+		return ClusterManager.getHostnameForResident(residentId);
+	}
+	
 	public String createChannel(String id) throws JsonApiException
 	{
 		return createChannel(id, null, null);
@@ -276,28 +283,20 @@ public class AgentScriptAPI
 	
 	public String createChannel(String id, String residentType, Map<String,Object> values) throws JsonApiException
 	{
+		if(StringUtil.isNullOrEmpty(residentType))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "residentType");
+		
 		if(StringUtil.isNullOrEmpty(id))
 			id = SVID.makeSVID();
 		
-		BaseResident res = ResidentManager.getResident(id);
-		if(res != null)
-		{
-			if(res instanceof Channel)
-			{
-				return res.getId();
-			}
-			
-			throw new JsonApiException(ApiErrors.CHANNEL_ID_TAKEN, id);
-		}
+		CreateChannelRequestMessage request = new CreateChannelRequestMessage();
+		request.ChannelId = id;
+		request.ResidentType = residentType;
+		request.Values = values;
 		
-		Channel chan = new Channel(id, residentType);
+		ClusterManager.runOnMemberOwningId(request, id);
 		
-		if(values != null)
-			chan.setTransientValues(values, true);
-		
-		ResidentManager.addResident(chan);
-		
-		return chan.getId();
+		return id;
 	}
 	
 	public void deleteChannel(String id) throws JsonApiException
@@ -340,6 +339,17 @@ public class AgentScriptAPI
 				res.setTransientValues(values, true);
 			
 			ResidentManager.addResident(res);
+			
+			try
+			{
+				ClusterManager.registerLocalResident(res);
+			}
+			catch(Exception e)
+			{
+				// Oops, we have to clean it up if we couldn't register it on the cluster
+				ResidentManager.removeResident(res);
+				throw e;
+			}
 		}
 		else
 		{
@@ -570,6 +580,11 @@ public class AgentScriptAPI
 		Channel channel = (Channel)source;
 		
 		channel.removeListener(user);
+	}
+	
+	public ChannelInfo userJoinChannel(String userId, String channelId, String residentId) throws JsonApiException
+	{
+		return userJoinChannel(userId, channelId, residentId, null);
 	}
 	
 	public ChannelInfo userJoinChannel(String userId, String channelId, String residentId, Map<String,Object> values) throws JsonApiException

@@ -5,32 +5,44 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.dreamwing.serverville.ServervilleMain;
-import com.dreamwing.serverville.cluster.ClusterMessages.CachedDataUpdateMessage;
 import com.dreamwing.serverville.cluster.ClusterMessages.ClusterMessageFactory;
 import com.dreamwing.serverville.cluster.ClusterMessages.DisconnectUserMessage;
+import com.dreamwing.serverville.cluster.ClusterMessages.MemberShuttingDownMessage;
+import com.dreamwing.serverville.cluster.ClusterMessages.ClusterMemberMessageRunnable;
+import com.dreamwing.serverville.cluster.DistributedData.BaseResidentClusterData;
+import com.dreamwing.serverville.cluster.DistributedData.ChannelClusterData;
 import com.dreamwing.serverville.cluster.DistributedData.DistributedDataFactory;
 import com.dreamwing.serverville.cluster.DistributedData.OnlineUserLocator;
+import com.dreamwing.serverville.cluster.DistributedData.ResidentLocator;
 import com.dreamwing.serverville.data.UserSession;
+import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
+import com.dreamwing.serverville.residents.BaseResident;
+import com.dreamwing.serverville.residents.Channel;
 import com.dreamwing.serverville.util.StringUtil;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.Partition;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class ClusterManager
@@ -38,12 +50,14 @@ public class ClusterManager
 	private static final Logger l = LogManager.getLogger(ClusterManager.class);
 	
 	public static HazelcastInstance Cluster;
-	private static ITopic<CachedDataUpdateMessage> CachedDataUpdateTopic;
+	//private static ITopic<CachedDataUpdateMessage> CachedDataUpdateTopic;
 	private static IMap<String, OnlineUserLocator> OnlineUsers;
-	private static Map<String,Member> ClusterMembers;
-	
-	
+	private static IMap<String, ResidentLocator> ResidentLocations;
+	private static IMap<ResidentLocator, BaseResidentClusterData> Residents;
 	private static IExecutorService RemoteExecutor;
+	
+	private static Member LocalMember;
+	private static Map<String,Member> ClusterMembers;
 	
 	public static void init()
 	{
@@ -78,13 +92,30 @@ public class ClusterManager
 		if(hostList != null)
 			joinCfg.getTcpIpConfig().setMembers(hostList);
 		
-		cfg.getTopicConfig("CachedDataUpdate").addMessageListenerConfig(new ListenerConfig("com.dreamwing.serverville.cluster.CachedDataUpdateListener"));
+		//cfg.getTopicConfig("CachedDataUpdate").addMessageListenerConfig(new ListenerConfig("com.dreamwing.serverville.cluster.CachedDataUpdateListener"));
+		
+		NearCacheConfig residentCache = new NearCacheConfig();
+		residentCache.setEvictionPolicy("LRU");
+		residentCache.setMaxSize(10000);
+		cfg.getMapConfig("ResidentLocations").setNearCacheConfig(residentCache);
+		
+		cfg.getMapConfig("OnlineUsers").setNearCacheConfig(residentCache);
+		
+		//PartitioningStrategyConfig stringParition = new PartitioningStrategyConfig().setPartitionStrategy(new StringPartitioningStrategy());
+		
+		MapConfig residentsMapConfig = cfg.getMapConfig("Residents");
+		//residentsMapConfig.setPartitioningStrategyConfig(stringParition);
+		residentsMapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+		residentsMapConfig.setBackupCount(0);
 		
 		Cluster = Hazelcast.newHazelcastInstance(cfg);
-		
-		CachedDataUpdateTopic = Cluster.getTopic("CachedDataUpdate");
+
+		LocalMember = Cluster.getCluster().getLocalMember();
+		LocalMember.setStringAttribute("hostname", ServervilleMain.Hostname+":"+ServervilleMain.ClientPort);
+		//CachedDataUpdateTopic = Cluster.getTopic("CachedDataUpdate");
 		
 		Cluster.getCluster().addMembershipListener(new ClusterMemberListener());
+		//Cluster.getPartitionService().addPartitionLostListener(new PartitionLostHandler());
 		
 		RemoteExecutor = Cluster.getExecutorService("RemoteExecutor");
 		
@@ -95,10 +126,17 @@ public class ClusterManager
 		}
 		
 		OnlineUsers = Cluster.getMap("OnlineUsers");
+		ResidentLocations = Cluster.getMap("ResidentLocations");
+		
+		Residents = Cluster.getMap("Residents");
+	
 	}
 	
 	public static void shutdown()
 	{
+		MemberShuttingDownMessage message = new MemberShuttingDownMessage();
+		message.MemberId = LocalMember.getUuid();
+		sendToAll(message);
 		Cluster.shutdown();
 	}
 	
@@ -107,20 +145,20 @@ public class ClusterManager
 		return Cluster.getCluster().getLocalMember().getUuid();
 	}
 	
+	/*
 	public static void sendCachedDataUpdateMessage(CachedDataUpdateMessage event)
 	{
 		CachedDataUpdateTopic.publish(event);
 	}
+	*/
 	
-	
-	public static void addOnlineUser(OnlineUserLocator locator)
+	public static void addOnlineUser(String userId, OnlineUserLocator locator)
 	{
 		locator.MemberUUID = getLocalMemberUUID();
-		OnlineUserLocator oldUser = OnlineUsers.put(locator.UserId, locator);
+		OnlineUserLocator oldUser = OnlineUsers.put(userId, locator);
 		if(oldUser != null)
 		{
 			// We have a previous connection
-			
 			if(!oldUser.SessionId.equals(locator.SessionId))
 			{
 				// Old connection was on a different session, expire the old session
@@ -168,6 +206,11 @@ public class ClusterManager
 		return ClusterMembers.get(locator.MemberUUID);
 	}
 	
+	public static void onMemberGracefulExit(String memberId)
+	{
+		ClusterMembers.remove(memberId);
+	}
+	
 	public static class ClusterMemberListener implements MembershipListener
 	{
 
@@ -175,13 +218,27 @@ public class ClusterManager
 		public void memberAdded(MembershipEvent membershipEvent)
 		{
 			Member m = membershipEvent.getMember();
+			l.info("Cluster member joined: "+m.getUuid());
+			
 			ClusterMembers.put(m.getUuid(), m);
 		}
 
 		@Override
 		public void memberRemoved(MembershipEvent membershipEvent)
 		{
-			ClusterMembers.remove(membershipEvent.getMember().getUuid());
+			Member m = membershipEvent.getMember();
+			l.info("Cluster member removed: "+m.getUuid());
+			
+			if(ClusterMembers.remove(m.getUuid()) != null)
+			{
+				l.warn("Cluster member died: "+m.getUuid());
+				// Member wasn't cleaned up gracefully, we have to check our data
+				cleanupDataAfterMemberCrash();
+			}
+			else
+			{
+				l.info("Cluster member removed: "+m.getUuid());
+			}
 		}
 
 		@Override
@@ -190,6 +247,38 @@ public class ClusterManager
 			
 		}
 		
+	}
+	
+	/*
+	public static class PartitionLostHandler implements PartitionLostListener
+	{
+
+		@Override
+		public void partitionLost(PartitionLostEvent event)
+		{
+			l.warn("Lost partition "+event.getPartitionId());
+		}	
+	}
+	*/
+	
+	public static Member getMemberForId(String id)
+	{
+		Partition part = Cluster.getPartitionService().getPartition(id);
+		return part.getOwner();
+	}
+	
+	public static Member getMemberForResident(ResidentLocator locator)
+	{
+		Partition part = Cluster.getPartitionService().getPartition(locator);
+		return part.getOwner();
+	}
+	
+	public static void sendToAll(IdentifiedDataSerializable message)
+	{
+		ClusterMemberMessageRunnable runner = new ClusterMemberMessageRunnable();
+		runner.Message = message;
+		
+		RemoteExecutor.executeOnAllMembers(runner);	
 	}
 	
 	public static void sendToMember(IdentifiedDataSerializable message, Member clusterMember)
@@ -205,5 +294,101 @@ public class ClusterManager
 		{
 			RemoteExecutor.executeOnMember(runner, clusterMember);
 		}
+	}
+	
+	public static IdentifiedDataSerializable runOnMemberOwningId(IdentifiedDataSerializable request, String id) throws JsonApiException
+	{
+		Member member = getMemberForId(id);
+		return runOnMember(request, member);
+	}
+	
+	public static IdentifiedDataSerializable runOnMember(IdentifiedDataSerializable request, Member clusterMember) throws JsonApiException
+	{
+		ClusterMemberMessageRunnable runner = new ClusterMemberMessageRunnable();
+		runner.Message = request;
+		
+		Future<IdentifiedDataSerializable> future;
+		if(clusterMember.localMember())
+		{
+			future = ServervilleMain.ServiceScheduler.submit((Callable<IdentifiedDataSerializable>)runner);
+		}
+		else
+		{
+			future = RemoteExecutor.submitToMember((Callable<IdentifiedDataSerializable>)runner, clusterMember);
+		}
+		
+		try {
+			return future.get();
+		} catch (InterruptedException e) {
+			throw new JsonApiException(ApiErrors.INTERRUPTED, e.getMessage());
+		} catch (ExecutionException e) {
+			if(e.getCause() instanceof JsonApiException)
+				throw (JsonApiException)(e.getCause());
+			throw new JsonApiException(ApiErrors.INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+		
+	}
+	
+	
+	public static void registerLocalResident(BaseResident res) throws JsonApiException
+	{
+		ResidentLocator locator = res.getLocator();
+		
+		ResidentLocations.set(res.getId(), locator);
+		
+		// Not enforcing resident uniqueness until I get it a little more stable
+		/*
+		if(ResidentLocations.putIfAbsent(res.getId(), locator) != null)
+		{
+			// Already resident with that id
+			throw new JsonApiException(ApiErrors.RESIDENT_ID_TAKEN, res.getId());
+		}*/
+	}
+	
+	public static void unregisterLocalResident(BaseResident res)
+	{
+		ResidentLocations.delete(res.getId());
+	}
+	
+	public static void createChannelInCluster(Channel res)
+	{
+		ChannelClusterData clusterData = new ChannelClusterData();
+		clusterData.LiveChannel = res;
+		clusterData.IsTempObject = true;
+		
+		ResidentLocator locator = res.getLocator();
+		Residents.set(locator, clusterData);
+		ResidentLocations.set(res.getId(), locator);
+	}
+	
+	/*
+	public static void createResidentInCluster(Resident res)
+	{
+		ResidentClusterData clusterData = new ResidentClusterData();
+		clusterData.LiveResident = res;
+		
+		ResidentLocator locator = res.getLocator();
+		Residents.set(locator, clusterData);
+		ResidentLocations.set(res.getId(), locator);
+	}*/
+	
+	public static void cleanupDataAfterMemberCrash()
+	{
+		for(String key : ResidentLocations.localKeySet())
+		{
+			ResidentLocator locator = ResidentLocations.get(key);
+			if(!Residents.containsKey(locator))
+			{
+				ResidentLocations.remove(key);
+			}
+			
+		}
+	}
+	
+	public static String getHostnameForResident(String residentId)
+	{
+		Partition part = Cluster.getPartitionService().getPartition(residentId);
+		Member memb = part.getOwner();
+		return memb.getStringAttribute("hostname");
 	}
 }

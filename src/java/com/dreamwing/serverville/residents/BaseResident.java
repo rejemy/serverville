@@ -1,5 +1,6 @@
 package com.dreamwing.serverville.residents;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -11,12 +12,21 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.dreamwing.serverville.client.ClientConnectionHandler;
+import com.dreamwing.serverville.client.ClientSessionManager;
+import com.dreamwing.serverville.cluster.ClusterManager;
+import com.dreamwing.serverville.cluster.DistributedData.ResidentLocator;
 import com.dreamwing.serverville.client.ClientMessages.ChannelMemberInfo;
 import com.dreamwing.serverville.client.ClientMessages.ResidentEventNotification;
 import com.dreamwing.serverville.client.ClientMessages.ResidentStateUpdateNotification;
+import com.dreamwing.serverville.data.PropertyPermissions;
+import com.dreamwing.serverville.data.ResidentPermissionsManager;
 import com.dreamwing.serverville.data.TransientDataItem;
 import com.dreamwing.serverville.util.JSON;
+import com.dreamwing.serverville.util.StringUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
@@ -26,21 +36,23 @@ public abstract class BaseResident
 	
 	protected String Id;
 	protected String ResidentType;
+	protected PropertyPermissions Permissions;
 	
 	protected ConcurrentMap<String,TransientDataItem> TransientValues;
 	protected TransientDataItem MostRecentValue;
 	
 	protected ConcurrentMap<String,OnlineUser> Listeners;
 	
+	protected String ColocatedWith;
 	
 	public BaseResident(String id, String residentType)
 	{
 		Id = id;
 		ResidentType = residentType;
+		Permissions = ResidentPermissionsManager.getPermissions(ResidentType);
 		
 		TransientValues = new ConcurrentHashMap<String,TransientDataItem>();
 		Listeners = new ConcurrentHashMap<String,OnlineUser>();
-		
 	}
 	
 	public String getId() { return Id; }
@@ -49,8 +61,16 @@ public abstract class BaseResident
 	
 	public String getOwnerId() { return null; }
 	
+	public String getColocation() { return ColocatedWith; }
+	
+	public ResidentLocator getLocator()
+	{
+		return new ResidentLocator(Id, ColocatedWith);
+	}
+	
 	public void destroy()
 	{
+		ClusterManager.unregisterLocalResident(this);
 		ResidentManager.removeResident(this);
 		
 		for(OnlineUser listener : Listeners.values())
@@ -59,6 +79,11 @@ public abstract class BaseResident
 		}
 		
 		Listeners.clear();
+	}
+	
+	public PropertyPermissions getPermissions()
+	{
+		return Permissions;
 	}
 	
 	public void triggerEvent(String eventType, String eventBody)
@@ -96,8 +121,8 @@ public abstract class BaseResident
 
 		updateTransientValueInList(item);
 		
-		// Server read only key, don't send notification
-		if(key.startsWith("$$"))
+		// Don't send updates for private data
+		if(!Permissions.isGlobalReadable(key))
 			return;
 		
 		ResidentStateUpdateNotification changeMessage = new ResidentStateUpdateNotification();
@@ -137,7 +162,8 @@ public abstract class BaseResident
 
 			updateTransientValueInList(item);
 			
-			if(!key.startsWith("$$"))
+			// Don't send updates for private data
+			if(Permissions.isGlobalReadable(key))
 				changeMessage.values.put(key, value);
 
 		}
@@ -159,6 +185,10 @@ public abstract class BaseResident
 		
 		updateTransientValueInList(item);
 		
+		// Don't send updates for private data
+		if(!Permissions.isGlobalReadable(key))
+			return;
+				
 		ResidentStateUpdateNotification changeMessage = new ResidentStateUpdateNotification();
 		changeMessage.resident_id = Id;
 		
@@ -189,10 +219,13 @@ public abstract class BaseResident
 
 			updateTransientValueInList(item);
 			
-			changeMessage.deleted.add(key);
+			// Don't send updates for private data
+			if(Permissions.isGlobalReadable(key))
+				changeMessage.deleted.add(key);
 		}
 		
-		onStateChanged(changeMessage, currTime);
+		if(!changeMessage.deleted.isEmpty())
+			onStateChanged(changeMessage, currTime);
 	}
 	
 	public synchronized void deleteAllTransientValues()
@@ -213,7 +246,8 @@ public abstract class BaseResident
 			changeMessage.deleted.add(itemSet.getKey());
 		}
 		
-		onStateChanged(changeMessage, currTime);
+		if(!changeMessage.deleted.isEmpty())
+			onStateChanged(changeMessage, currTime);
 	}
 	
 	
@@ -325,4 +359,64 @@ public abstract class BaseResident
 		return info;
 	}
 	
+	
+	public void write(ObjectDataOutput out) throws IOException
+	{
+		StringUtil.writeUTFNullSafe(out, ColocatedWith);
+		
+		List<TransientDataItem> values = new ArrayList<TransientDataItem>(TransientValues.size());
+		TransientDataItem value = MostRecentValue;
+		while(value != null)
+		{
+			values.add(value);
+			value = value.nextItem;
+		}
+		
+		String encodedValues = JSON.serializeToString(values);
+		out.writeUTF(encodedValues);
+		
+		out.writeInt(Listeners.size());
+		for(OnlineUser listener : Listeners.values())
+		{
+			out.writeUTF(listener.User.getId());
+		}
+	}
+
+	public void read(ObjectDataInput in) throws IOException
+	{
+		ColocatedWith = StringUtil.readUTFNullSafe(in);
+		
+		String encodedValues = in.readUTF();
+		
+		MostRecentValue = null;
+		TransientValues.clear();
+		
+		TransientDataItem[] dataItems = JSON.deserialize(encodedValues, JSON.TransientDataItemArrayType);
+		for(int i=dataItems.length-1; i >= 0; i--)
+		{
+			TransientDataItem item = dataItems[i];
+			 
+			TransientValues.put(item.key, item);
+			item.nextItem = MostRecentValue;
+			if(MostRecentValue != null)
+				MostRecentValue.prevItem = item;
+			MostRecentValue = item;
+		}
+		
+		int numListeners = in.readInt();
+		for(int l=0; l<numListeners; l++)
+		{
+			String userId = in.readUTF();
+			
+			ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(userId);
+			if(client == null)
+				continue;
+			
+			OnlineUser user = client.getPresence();
+			if(user == null)
+				continue;
+			
+			Listeners.put(user.getId(), user);
+		}
+	}
 }

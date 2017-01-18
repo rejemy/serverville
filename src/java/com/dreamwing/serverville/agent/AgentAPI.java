@@ -9,12 +9,15 @@ import com.dreamwing.serverville.agent.AgentMessages.*;
 import com.dreamwing.serverville.client.ClientMessages.AllGlobalKeysRequest;
 import com.dreamwing.serverville.client.ClientMessages.ChannelInfo;
 import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
+import com.dreamwing.serverville.client.ClientMessages.GetHostWithResidentReply;
+import com.dreamwing.serverville.client.ClientMessages.GetHostWithResidentRequest;
 import com.dreamwing.serverville.client.ClientMessages.GlobalKeyRequest;
 import com.dreamwing.serverville.client.ClientMessages.GlobalKeysRequest;
 import com.dreamwing.serverville.client.ClientMessages.SetDataReply;
 import com.dreamwing.serverville.client.ClientMessages.TransientDataItemReply;
 import com.dreamwing.serverville.client.ClientMessages.TransientDataItemsReply;
 import com.dreamwing.serverville.client.ClientMessages.UserDataReply;
+import com.dreamwing.serverville.cluster.ClusterManager;
 import com.dreamwing.serverville.data.KeyDataItem;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
@@ -22,6 +25,7 @@ import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.residents.BaseResident;
 import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.serialize.JsonDataDecoder;
+import com.dreamwing.serverville.util.StringUtil;
 
 
 
@@ -56,7 +60,7 @@ public class AgentAPI
 	{
 		SetDataReply reply = new SetDataReply();
 		
-		if(request.id == null)
+		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
 		List<KeyDataItem> itemList = new ArrayList<KeyDataItem>(request.values.size());
@@ -107,6 +111,16 @@ public class AgentAPI
 	{
 		SetDataReply reply = new SetDataReply();
 		reply.updated_at = ApiInst.deleteAllDataKeys(request.id);
+		return reply;
+	}
+	
+	public static GetHostWithResidentReply GetHostWithResident(GetHostWithResidentRequest request) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "resident_id");
+		
+		GetHostWithResidentReply reply = new GetHostWithResidentReply();
+		reply.host = ClusterManager.getHostnameForResident(request.resident_id);
 		return reply;
 	}
 	

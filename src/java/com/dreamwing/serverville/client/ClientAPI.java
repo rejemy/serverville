@@ -16,6 +16,7 @@ import com.dreamwing.serverville.CurrencyInfoManager;
 import com.dreamwing.serverville.ProductManager;
 import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.client.ClientMessages.*;
+import com.dreamwing.serverville.cluster.ClusterManager;
 import com.dreamwing.serverville.data.CurrencyInfo;
 import com.dreamwing.serverville.data.InviteCode;
 import com.dreamwing.serverville.data.JsonDataType;
@@ -24,7 +25,6 @@ import com.dreamwing.serverville.data.KeyDataRecord;
 import com.dreamwing.serverville.data.Product;
 import com.dreamwing.serverville.data.PropertyPermissions;
 import com.dreamwing.serverville.data.RecordPermissionsManager;
-import com.dreamwing.serverville.data.ResidentPermissionsManager;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.data.TransientDataItem;
 import com.dreamwing.serverville.data.UserMessage;
@@ -612,6 +612,16 @@ public class ClientAPI {
 		return reply;
 	}
 	
+	public static GetHostWithResidentReply GetHostWithResident(GetHostWithResidentRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(request.resident_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.resident_id);
+		
+		GetHostWithResidentReply reply = new GetHostWithResidentReply();
+		reply.host = ClusterManager.getHostnameForResident(request.resident_id);
+		return reply;
+	}
+	
 	public static CreateResidentReply CreateResident(CreateResidentRequest request, ClientMessageInfo info) throws JsonApiException
 	{
 		if(StringUtil.isNullOrEmpty(request.resident_type))
@@ -692,7 +702,7 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
 		}
 		
-		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
+		PropertyPermissions perms = resident.getPermissions();
 		
 		if(!perms.isOwnerWritable(request.key))
 			throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
@@ -719,7 +729,7 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
 		}
 		
-		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
+		PropertyPermissions perms = resident.getPermissions();
 		
 		for(String keyname : request.values.keySet())
 		{
@@ -754,7 +764,7 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
 		}
 		
-		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
+		PropertyPermissions perms = resident.getPermissions();
 		
 		if(!perms.isOwnerWritable(request.key))
 			throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
@@ -781,7 +791,7 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
 		}
 		
-		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
+		PropertyPermissions perms = resident.getPermissions();
 		
 		for(String keyname : request.values)
 		{
@@ -812,7 +822,7 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
 		}
 		
-		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
+		PropertyPermissions perms = resident.getPermissions();
 		
 		if(info.User.getId().equals(resident.getOwnerId()))
 		{
@@ -846,7 +856,7 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
 		}
 		
-		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
+		PropertyPermissions perms = resident.getPermissions();
 		
 		Map<String,Object> values = new HashMap<String,Object>();
 		
@@ -891,7 +901,7 @@ public class ClientAPI {
 			throw new JsonApiException(ApiErrors.NOT_FOUND, request.resident_id);
 		}
 		
-		PropertyPermissions perms = ResidentPermissionsManager.getPermissions(resident);
+		PropertyPermissions perms = resident.getPermissions();
 		
 		Map<String,Object> values = new HashMap<String,Object>();
 		

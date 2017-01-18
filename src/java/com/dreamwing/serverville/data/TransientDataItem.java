@@ -1,5 +1,7 @@
 package com.dreamwing.serverville.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
 public class TransientDataItem
@@ -11,9 +13,12 @@ public class TransientDataItem
 	public boolean deleted;
 	
 	// For in-memory resident transient state
+	@JsonIgnore
 	public TransientDataItem nextItem;
+	@JsonIgnore
 	public TransientDataItem prevItem;
-		
+	
+	public TransientDataItem() {}
 	
 	public TransientDataItem(String key, Object val)
 	{

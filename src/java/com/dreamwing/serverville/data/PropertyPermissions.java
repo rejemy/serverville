@@ -179,6 +179,11 @@ public class PropertyPermissions
 		return getPropertyPermission(propname).GlobalReadable;
 	}
 	
+	public boolean isServerOnly(String propname)
+	{
+		return getPropertyPermission(propname).OwnerReadable == false;
+	}
+	
 	private static String encodePermissionInfo(PropertyInfo info)
 	{
 		if(info.GlobalReadable)

@@ -210,6 +210,16 @@ public class ClientMessages {
 		public List<SetUserDataRequest> values;
 	}
 	
+	public static class GetHostWithResidentRequest
+	{
+		public String resident_id;
+	}
+	
+	public static class GetHostWithResidentReply
+	{
+		public String host;
+	}
+	
 	public static class CreateResidentRequest
 	{
 		public String resident_type;

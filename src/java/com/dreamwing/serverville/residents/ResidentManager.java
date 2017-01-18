@@ -17,6 +17,11 @@ public class ResidentManager {
 		ActiveResidents.putIfAbsent(resident.getId(), resident);
 	}
 	
+	public static boolean hasResident(String resId)
+	{
+		return ActiveResidents.containsKey(resId);
+	}
+	
 	public static BaseResident getResident(String resId)
 	{
 		return ActiveResidents.get(resId);

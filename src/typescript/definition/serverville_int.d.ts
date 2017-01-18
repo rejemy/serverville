@@ -107,6 +107,7 @@ declare namespace api
 	function deleteDataKey(id:string, key:string):number;
 	function deleteAllDataKeys(id:string):number;
 
+	function getHostWithResident(residentId:string):string;
 	function createChannel(channelId:string, residentType?:string, values?:TransientValueMap):string;
 	function deleteChannel(channelId:string):void;
 	function createResident(residentId:string, residentType:string, userId?:string, values?:TransientValueMap):string;

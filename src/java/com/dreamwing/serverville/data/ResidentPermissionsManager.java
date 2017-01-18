@@ -16,7 +16,6 @@ import com.dreamwing.serverville.admin.AdminAPI.AdminPropertyPermissionsInfo;
 import com.dreamwing.serverville.data.PropertyPermissions.PropertyInfo;
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.net.JsonApiException;
-import com.dreamwing.serverville.residents.BaseResident;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.j256.ormlite.field.DataType;
@@ -120,17 +119,7 @@ public class ResidentPermissionsManager
 			return DefaultPermissions;
 		return perms;
 	}
-	
-	public static PropertyPermissions getPermissions(BaseResident resident)
-	{
-		if(resident == null || resident.getType() == null)
-			return DefaultPermissions;
-		PropertyPermissions perms = PropertyPermissionsDb.get(resident.getType());
-		if(perms == null)
-			return DefaultPermissions;
-		return perms;
-	}
-	
+
 	public static PropertyPermissions reloadPermissions(String residentType) throws SQLException
 	{
 		ResidentPermissionsRecord record = ResidentPermissionsRecord.loadPermissionRecord(residentType);

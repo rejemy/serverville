@@ -1,5 +1,6 @@
 package com.dreamwing.serverville.residents;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,6 +14,8 @@ import com.dreamwing.serverville.client.ClientMessages.ResidentStateUpdateNotifi
 import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
 public class Channel extends BaseResident
 {
@@ -214,5 +217,33 @@ public class Channel extends BaseResident
 		super.removeListener(listener);
 		
 		ScriptManager.onStopListenToChannel(this, listener);
+	}
+	
+	public void write(ObjectDataOutput out) throws IOException
+	{
+		super.write(out);
+		
+		out.writeInt(Members.size());
+		for(Resident resident : Members.values())
+		{
+			out.writeUTF(resident.getId());
+		}
+	}
+
+	public void read(ObjectDataInput in) throws IOException
+	{
+		super.read(in);
+		
+		int numResidents = in.readInt();
+		for(int i=0; i<numResidents; i++)
+		{
+			String residentId = in.readUTF();
+			BaseResident res = ResidentManager.getResident(residentId);
+			if(res == null || !(res instanceof Resident))
+				continue;
+			
+			Resident resident = (Resident)res;
+			Members.put(resident.getId(), resident);
+		}
 	}
 }

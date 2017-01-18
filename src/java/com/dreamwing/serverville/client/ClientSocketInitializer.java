@@ -70,9 +70,8 @@ public class ClientSocketInitializer extends ChannelInitializer<SocketChannel> {
 
         b.bind(port).sync();
         
-        String hostname = ServervilleMain.ServerProperties.getProperty("hostname");
         String protocol = SslProtocolDetector.AdminSSLOnly ? "https" : "http";
-        URL = protocol+"://"+hostname+":"+port+"/";
+        URL = protocol+"://"+ServervilleMain.Hostname+":"+port+"/";
     }
     
     public static void shutdown()

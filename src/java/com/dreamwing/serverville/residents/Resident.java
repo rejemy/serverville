@@ -1,11 +1,15 @@
 package com.dreamwing.serverville.residents;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import com.dreamwing.serverville.client.ClientMessages.ResidentEventNotification;
 import com.dreamwing.serverville.client.ClientMessages.ResidentStateUpdateNotification;
+import com.dreamwing.serverville.util.StringUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
 public class Resident extends BaseResident
 {
@@ -81,5 +85,36 @@ public class Resident extends BaseResident
 		removeFromAllChannels(null);
 	}
 	
+	public void write(ObjectDataOutput out) throws IOException
+	{
+		super.write(out);
+		
+		StringUtil.writeUTFNullSafe(out, OwnerId);
+		
+		out.writeInt(Channels.size());
+		for(Channel channel : Channels.values())
+		{
+			out.writeUTF(channel.getId());
+		}
+	}
+
+	public void read(ObjectDataInput in) throws IOException
+	{
+		super.read(in);
+		
+		OwnerId = StringUtil.readUTFNullSafe(in);
+		
+		int numChannels = in.readInt();
+		for(int i=0; i<numChannels; i++)
+		{
+			String channelId = in.readUTF();
+			BaseResident res = ResidentManager.getResident(channelId);
+			if(res == null || !(res instanceof Channel))
+				continue;
+			
+			Channel channel = (Channel)res;
+			Channels.put(channel.getId(), channel);
+		}
+	}
 	
 }

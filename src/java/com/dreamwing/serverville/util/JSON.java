@@ -14,6 +14,7 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
 import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.data.Product;
+import com.dreamwing.serverville.data.TransientDataItem;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.type.ArrayType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
@@ -35,6 +37,7 @@ public final class JSON {
 	public static MapType StringIntegerMapType;
 	public static MapType StringStringMapType;
 	public static MapType StringProductTextMapType;
+	public static ArrayType TransientDataItemArrayType;
 	
 	public static void init()
 	{
@@ -53,6 +56,7 @@ public final class JSON {
 		StringIntegerMapType = typeFactory.constructMapType(HashMap.class, String.class, Integer.class);
 		StringStringMapType = typeFactory.constructMapType(HashMap.class, String.class, String.class);
 		StringProductTextMapType = typeFactory.constructMapType(HashMap.class, String.class, Product.ProductText.class);
+		TransientDataItemArrayType = typeFactory.constructArrayType(TransientDataItem.class);
 	}
 	
 	public static byte[] serializeToBytes(Object data) throws JsonProcessingException

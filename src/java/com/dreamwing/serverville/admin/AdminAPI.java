@@ -844,7 +844,7 @@ public class AdminAPI {
 		
 		CachedDataUpdateMessage update = new CachedDataUpdateMessage();
 		update.DataType = CachedDataUpdateMessage.Scripts;
-		ClusterManager.sendCachedDataUpdateMessage(update);
+		ClusterManager.sendToAll(update);
 		
 		
 		return HttpHelpers.sendSuccess(req);
@@ -900,7 +900,7 @@ public class AdminAPI {
 		
 		CachedDataUpdateMessage update = new CachedDataUpdateMessage();
 		update.DataType = CachedDataUpdateMessage.Scripts;
-		ClusterManager.sendCachedDataUpdateMessage(update);
+		ClusterManager.sendToAll(update);
 		
 		return HttpHelpers.sendSuccess(req);
 	}
@@ -1094,7 +1094,7 @@ public class AdminAPI {
 		CachedDataUpdateMessage update = new CachedDataUpdateMessage();
 		update.DataType = CachedDataUpdateMessage.Currency;
 		update.DataId = currency.CurrencyId;
-		ClusterManager.sendCachedDataUpdateMessage(update);
+		ClusterManager.sendToAll(update);
 		
 		return HttpHelpers.sendSuccess(req);
 	}
@@ -1327,7 +1327,7 @@ public class AdminAPI {
 		CachedDataUpdateMessage update = new CachedDataUpdateMessage();
 		update.DataType = CachedDataUpdateMessage.Product;
 		update.DataId = prod.ProductId;
-		ClusterManager.sendCachedDataUpdateMessage(update);
+		ClusterManager.sendToAll(update);
 		
 		return HttpHelpers.sendSuccess(req);
 	}
@@ -1412,7 +1412,7 @@ public class AdminAPI {
 		CachedDataUpdateMessage update = new CachedDataUpdateMessage();
 		update.DataType = CachedDataUpdateMessage.RecordPerms;
 		update.DataId = permissions.DataType;
-		ClusterManager.sendCachedDataUpdateMessage(update);
+		ClusterManager.sendToAll(update);
 		
 		return HttpHelpers.sendSuccess(req);
 	}
@@ -1484,7 +1484,7 @@ public class AdminAPI {
 		CachedDataUpdateMessage update = new CachedDataUpdateMessage();
 		update.DataType = CachedDataUpdateMessage.ResidentPerms;
 		update.DataId = permissions.DataType;
-		ClusterManager.sendCachedDataUpdateMessage(update);
+		ClusterManager.sendToAll(update);
 		
 		return HttpHelpers.sendSuccess(req);
 	}

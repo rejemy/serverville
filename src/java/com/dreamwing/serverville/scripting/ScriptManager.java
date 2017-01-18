@@ -1,5 +1,6 @@
 package com.dreamwing.serverville.scripting;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -42,7 +43,7 @@ public class ScriptManager
 	private static Set<String> AgentHandlers;
 	private static Set<String> CallbackHandlers;
 	
-	public static void init() throws Exception
+	public static void init() throws ScriptException, SQLException, IOException
 	{
 		ClassLoader loader = ScriptManager.class.getClassLoader();
 		EngineBaseSource = FileUtil.readStreamToString(loader.getResourceAsStream("javascript/engine.js"), StandardCharsets.UTF_8);
@@ -51,29 +52,16 @@ public class ScriptManager
 		EngineLock = new Semaphore(MAX_ENGINES, true);
 
 		scriptsUpdated();
-		
+	}
+	
+	public static void start()
+	{
 		IAtomicLong scriptInitLock = ClusterManager.Cluster.getAtomicLong("ScriptGlobalInit");
 		if(scriptInitLock.getAndSet(1) == 0)
 		{
 			// Should only happen on one server
 			doGlobalInit();
 		}
-		/*
-		updateHandlerSets();
-		
-		ScriptEngineContext engine = getEngine();
-		try
-		{
-			engine.invokeFunction("globalInit");
-		} catch (NoSuchMethodException e) {
-			// No function, no problem
-		} catch (Exception e) {
-			l.error("Error executing script globalInit: ", e);
-		}
-		finally
-		{
-			returnEngine(engine);
-		}*/
 	}
 	
 	public static ScriptEngineContext getEngine()
