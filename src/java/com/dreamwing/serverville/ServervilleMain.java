@@ -51,6 +51,7 @@ public class ServervilleMain {
 	public static Properties ServerProperties;
 	
 	public static String PropertiesFilename = "serverville.properties";
+	public static String LocalPropertiesFilename = "serverville.local.properties";
 	
 	static
 	{
@@ -163,6 +164,15 @@ public class ServervilleMain {
 		{
 			System.out.println("Couldn't load properties. Using defaults.");
 			ServerProperties = DefaultProperties;
+		}
+		
+		try
+		{
+			loadLocalPropertiesFile(LocalPropertiesFilename);
+		}
+		catch(Exception e)
+		{
+			System.out.println("Local properties override file exists, but can't be read");
 		}
 		
 		for(Object propKey : Collections.list(ServerProperties.propertyNames()))
@@ -324,8 +334,21 @@ public class ServervilleMain {
 		FileInputStream input = new FileInputStream(filename);
 		
 		props.load(input);
+		input.close();
 		
 		return props;
+	}
+	
+	public static void loadLocalPropertiesFile(String filename) throws IOException
+	{
+		File prop = new File(filename);
+		if(!prop.exists())
+			return;
+		
+		FileInputStream input = new FileInputStream(filename);
+		
+		ServerProperties.load(input);
+		input.close();
 	}
 	
 	public static void configureLogger(String propsfile)

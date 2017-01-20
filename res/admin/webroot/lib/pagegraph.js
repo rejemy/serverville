@@ -38,8 +38,8 @@ var pg;
         }
     }
     pg.removeElementResizeListener = removeElementResizeListener;
+    // end horrible hack stuff
 })(pg || (pg = {}));
-var pg;
 (function (pg) {
     var ui;
     (function (ui) {
@@ -180,7 +180,6 @@ var pg;
         ui.makeScrollPanel = makeScrollPanel;
     })(ui = pg.ui || (pg.ui = {}));
 })(pg || (pg = {}));
-var pg;
 (function (pg) {
     var library;
     (function (library) {
