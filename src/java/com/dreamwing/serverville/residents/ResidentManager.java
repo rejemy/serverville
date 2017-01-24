@@ -3,6 +3,8 @@ package com.dreamwing.serverville.residents;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import com.dreamwing.serverville.cluster.ClusterManager;
+
 public class ResidentManager {
 	
 	private static ConcurrentMap<String,BaseResident> ActiveResidents;
@@ -10,6 +12,14 @@ public class ResidentManager {
 	public static void init()
 	{
 		ActiveResidents = new ConcurrentHashMap<String,BaseResident>();
+	}
+	
+	public static void shutdown()
+	{
+		for(BaseResident resident : ActiveResidents.values())
+		{
+			ClusterManager.unregisterLocalResident(resident);
+		}
 	}
 	
 	public static void addResident(BaseResident resident)

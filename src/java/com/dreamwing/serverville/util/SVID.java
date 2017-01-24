@@ -8,6 +8,8 @@ import java.util.Random;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.dreamwing.serverville.ServervilleMain;
+
 public final class SVID {
 
 	private static final Logger l = LogManager.getLogger(SVID.class);
@@ -15,16 +17,14 @@ public final class SVID {
 	private static final long EpochOffset = 1420000000000L;
 	private static final Random CounterGenerator = new Random();
 	
-	private static short ServerId=0;
+	private static short ServerNum=0;
 	private static short CounterStart=(short)CounterGenerator.nextInt();
 	private static short Counter=CounterStart;
 	private static long LastTime=0;
 	
-	public static void init(short serverId)
+	public static void init()
 	{
-		ServerId = serverId;
-		
-		
+		ServerNum = ServervilleMain.getServerNumber();
 	}
 	
 	public static String makeSVID()
@@ -59,20 +59,20 @@ public final class SVID {
 		epoch = LastTime << 16;
 		buf.putLong(epoch);
 		buf.position(6);
-		buf.putShort(ServerId);
+		buf.putShort(ServerNum);
 		buf.putShort(c);
 		
 		return SVIDCodec.encode(buf.array());
 	}
 	
-	public static String engineerSVID(long time, short serverId, short counter)
+	public static String engineerSVID(long time, short serverNum, short counter)
 	{
 		long epoch = (time-EpochOffset) & 0xffffffffffffL;
 		ByteBuffer buf = ByteBuffer.allocate(10).order(ByteOrder.BIG_ENDIAN);
 		epoch = epoch << 16;
 		buf.putLong(epoch);
 		buf.position(6);
-		buf.putShort(serverId);
+		buf.putShort(serverNum);
 		buf.putShort(counter);
 		
 		return SVIDCodec.encode(buf.array());

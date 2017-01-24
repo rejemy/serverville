@@ -81,6 +81,22 @@ CREATE TABLE `agent_key` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `cluster_member`
+--
+
+DROP TABLE IF EXISTS `cluster_member`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `cluster_member` (
+  `address` varchar(255) COLLATE utf8_bin NOT NULL,
+  `servernum` int(11) NOT NULL,
+  `created` bigint(20) NOT NULL,
+  PRIMARY KEY (`address`),
+  UNIQUE KEY `servernum_UNIQUE` (`servernum`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `currency`
 --
 
@@ -182,7 +198,7 @@ DROP TABLE IF EXISTS `keydata_item`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `keydata_item` (
   `id` varchar(255) NOT NULL,
-  `key` varchar(255) CHARACTER SET ascii NOT NULL,
+  `key` varchar(255) CHARACTER SET utf8_bin NOT NULL,
   `data` varbinary(62000) DEFAULT NULL,
   `datatype` int(11) NOT NULL,
   `created` bigint(20) NOT NULL,

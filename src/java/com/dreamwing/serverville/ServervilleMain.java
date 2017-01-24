@@ -28,6 +28,7 @@ import com.dreamwing.serverville.agent.AgentServerSocketInitializer;
 import com.dreamwing.serverville.client.ClientSessionManager;
 import com.dreamwing.serverville.client.ClientSocketInitializer;
 import com.dreamwing.serverville.cluster.ClusterManager;
+import com.dreamwing.serverville.data.ClusterMember;
 import com.dreamwing.serverville.data.RecordPermissionsManager;
 import com.dreamwing.serverville.data.ResidentPermissionsManager;
 import com.dreamwing.serverville.db.KeyDataManager;
@@ -43,6 +44,7 @@ import com.dreamwing.serverville.test.SelfTest;
 import com.dreamwing.serverville.util.CurrencyUtil;
 import com.dreamwing.serverville.util.JSON;
 import com.dreamwing.serverville.util.LocaleUtil;
+import com.dreamwing.serverville.util.SVID;
 
 
 public class ServervilleMain {
@@ -110,6 +112,8 @@ public class ServervilleMain {
 	
 	public static boolean RequireInvite=false;
 	
+	private static short ServerNumber;
+	
 	public static void main(String[] args)
 	{
 		System.out.println("Starting up!");
@@ -147,6 +151,11 @@ public class ServervilleMain {
 		init();
 	}
 
+	public static short getServerNumber()
+	{
+		return ServerNumber;
+	}
+	
 	public static void initProps()
 	{
 		try {
@@ -155,6 +164,7 @@ public class ServervilleMain {
 			Hostname = "localhost";
 		}
 		System.out.println("Initializing Serverville Server on "+Hostname+" with properties in "+PropertiesFilename);
+		DefaultProperties.setProperty("hostname", Hostname);
 		
 		try
 		{
@@ -233,11 +243,15 @@ public class ServervilleMain {
     	
     	ClientPort = Integer.parseInt(ServerProperties.getProperty("client_port"));
     	
+    	String uniqueAddress = Hostname+":"+ClientPort;
+    	
     	WritableDirectories.init();
     	StripeInterface.init();
     	SslProtocolDetector.init();
     	JSON.init();
     	DatabaseManager.init();
+    	ServerNumber = ClusterMember.getServerNum(uniqueAddress);
+    	l.info("Assigned server number "+ServerNumber);
     	KeyDataManager.init();
     	RecordPermissionsManager.init();
     	ResidentPermissionsManager.init();
@@ -248,7 +262,7 @@ public class ServervilleMain {
     	ScriptManager.init();
     	
     	ClusterManager.init();
-    	
+    	SVID.init();
     	ScriptManager.start();
     	
     	ClientSessionManager.init();
@@ -410,6 +424,7 @@ public class ServervilleMain {
 		ClientSocketInitializer.shutdown();
 		AdminServerSocketInitializer.shutdown();
 		
+		ResidentManager.shutdown();
 		ClusterManager.shutdown();
 		
 		l.info("Shutdown complete");

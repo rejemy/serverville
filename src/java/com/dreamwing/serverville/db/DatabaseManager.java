@@ -12,6 +12,7 @@ import com.dreamwing.serverville.agent.AgentKeyManager;
 import com.dreamwing.serverville.data.AdminActionLog;
 import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.data.AgentKey;
+import com.dreamwing.serverville.data.ClusterMember;
 import com.dreamwing.serverville.data.CurrencyHistory;
 import com.dreamwing.serverville.data.CurrencyInfo;
 import com.dreamwing.serverville.data.CurrencyRecord;
@@ -37,6 +38,8 @@ public class DatabaseManager {
 	private static ComboPooledDataSource DataSource;
 	
 	private static ServervilleQueryRunner SqlServer;
+	
+	public static Dao<ClusterMember, String> ClusterMemberDao;
 	
 	public static Dao<ServervilleUser, String> ServervilleUserDao;
 	public static Dao<UserSession, String> ServervilleUser_UserSessionDao;
@@ -109,6 +112,8 @@ public class DatabaseManager {
 		SqlServer = new ServervilleQueryRunner(DataSource);
 		
 		DataSourceConnectionSource cs = new DataSourceConnectionSource(DataSource, url);
+		
+		ClusterMemberDao = DaoManager.createDao(cs, ClusterMember.class);
 		
 		ServervilleUserDao = DaoManager.createDao(cs, ServervilleUser.class);
 		ServervilleUser_UserSessionDao = DaoManager.createDao(cs, UserSession.class);

@@ -525,6 +525,43 @@ public class KeyDataManager {
 		}
 	}
 	
+	public static List<KeyDataItem> pageAllKeys(String id, int pageSize, String startAfter, boolean descending) throws SQLException
+	{
+		if(id == null || id.length() == 0)
+		{
+			l.error("Data item has invalid id: "+id);
+			throw new IllegalArgumentException("Invalid id");
+		}
+
+		if(pageSize == 0)
+			pageSize = Integer.MAX_VALUE;
+		
+		String desc = null;
+		String operator = null;
+		if(descending)
+		{
+			desc = "DESC ";
+			operator = "<";
+		}
+		else
+		{
+			desc = "";
+			operator = ">";
+		}
+		
+		try {
+			List<KeyDataItem> results = null;
+			if(startAfter == null)
+				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `deleted` IS NULL ORDER BY `key` "+desc+"LIMIT ?;", ItemListHandler, id, pageSize);
+			else
+				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `key` "+operator+" ? AND `deleted` IS NULL ORDER BY `key` "+desc+"LIMIT ?;", ItemListHandler, id, startAfter, pageSize);
+			return results;
+		} catch (SQLException e) {
+			l.error("Error loading item "+id+" to database ", e);
+			throw e;
+		}
+	}
+	
 	public static long deleteKey(String id, String key) throws SQLException
 	{
 		if(id == null || id.length() == 0)

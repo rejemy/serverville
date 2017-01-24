@@ -27,6 +27,7 @@ public class AgentKeyManager {
 		key.Key = SVIDCodec.encode(keyBytes);
 		key.Comment = comment;
 		key.IPRange = ipRange;
+		key.Created = new Date();
 		key.Expiration = expiration;
 		
 		DatabaseManager.AgentKeyDao.create(key);

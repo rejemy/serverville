@@ -538,6 +538,43 @@ public class ClientAPI {
 		return reply;
 	}
 	
+	public static OrderedDataReply PageAllDataKeys(PageGlobalKeysRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		if(StringUtil.isNullOrEmpty(request.id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
+		
+		List<KeyDataItem> items = KeyDataManager.pageAllKeys(request.id, (int)request.page_size, request.start_after, request.descending);
+		if(items == null)
+			items = new ArrayList<KeyDataItem>();
+		
+		OrderedDataReply reply = new OrderedDataReply();
+		
+		reply.values = new ArrayList<DataItemReply>(items.size());
+		
+		PropertyPermissions perms = RecordPermissionsManager.UserPermissions;
+		boolean isMe = request.id.equals(info.User.getId());
+		if(!isMe)
+		{
+			KeyDataRecord record = KeyDataRecord.load(request.id);
+			if(record != null && record.Owner.equals(info.User.getId()))
+				isMe = true;
+			perms = RecordPermissionsManager.getPermissions(record);
+		}
+		
+		for(KeyDataItem item : items)
+		{
+			if(isMe && !perms.isOwnerReadable(item.key))
+				continue;
+			else if(!isMe && !perms.isGlobalReadable(item.key))
+				continue;
+			
+			DataItemReply data = KeyDataItemToDataItemReply(request.id, item);
+			reply.values.add(data);
+		}
+		
+		return reply;
+	}
+	
 	static KeyDataInfo keyDataRecordToInfo(KeyDataRecord record)
 	{
 		KeyDataInfo keyInfo = new KeyDataInfo();
@@ -612,6 +649,7 @@ public class ClientAPI {
 		return reply;
 	}
 	
+	@ClientHandlerOptions(auth=false)
 	public static GetHostWithResidentReply GetHostWithResident(GetHostWithResidentRequest request, ClientMessageInfo info) throws JsonApiException
 	{
 		if(StringUtil.isNullOrEmpty(request.resident_id))

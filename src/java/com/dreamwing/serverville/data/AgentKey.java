@@ -22,6 +22,9 @@ public class AgentKey {
 	@DatabaseField(columnName="iprange", canBeNull=true)
 	public String IPRange;
 	
+	@DatabaseField(columnName="created", dataType=DataType.DATE_LONG, canBeNull=false)
+	public Date Created;
+	
 	@DatabaseField(columnName="expiration", dataType=DataType.DATE_LONG, canBeNull=true)
 	public Date Expiration;
 	

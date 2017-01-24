@@ -550,6 +550,7 @@ public class AdminAPI {
 		public String key;
 		public String comment;
 		public String iprange;
+		public double created;
 		public double expiration;
 	}
 	
@@ -572,6 +573,7 @@ public class AdminAPI {
 			reply.key = key.Key;
 			reply.comment = key.Comment;
 			reply.iprange = key.IPRange;
+			reply.created = key.Created.getTime();
 			if(key.Expiration != null)
 				reply.expiration = key.Expiration.getTime();
 			else
@@ -613,6 +615,7 @@ public class AdminAPI {
 		reply.key = key.Key;
 		reply.comment = key.Comment;
 		reply.iprange = key.IPRange;
+		reply.created = key.Created.getTime();
 		if(key.Expiration != null)
 			reply.expiration = key.Expiration.getTime();
 		else

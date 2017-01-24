@@ -50,7 +50,6 @@ public class ClusterManager
 	private static final Logger l = LogManager.getLogger(ClusterManager.class);
 	
 	public static HazelcastInstance Cluster;
-	//private static ITopic<CachedDataUpdateMessage> CachedDataUpdateTopic;
 	private static IMap<String, OnlineUserLocator> OnlineUsers;
 	private static IMap<String, ResidentLocator> ResidentLocations;
 	private static IMap<ResidentLocator, BaseResidentClusterData> Residents;
@@ -59,7 +58,7 @@ public class ClusterManager
 	private static Member LocalMember;
 	private static Map<String,Member> ClusterMembers;
 	
-	public static void init()
+	public static void init() throws Exception
 	{
 		List<String> hostList = null;
 		
@@ -91,9 +90,7 @@ public class ClusterManager
 		joinCfg.getTcpIpConfig().setEnabled(true);
 		if(hostList != null)
 			joinCfg.getTcpIpConfig().setMembers(hostList);
-		
-		//cfg.getTopicConfig("CachedDataUpdate").addMessageListenerConfig(new ListenerConfig("com.dreamwing.serverville.cluster.CachedDataUpdateListener"));
-		
+
 		NearCacheConfig residentCache = new NearCacheConfig();
 		residentCache.setEvictionPolicy("LRU");
 		residentCache.setMaxSize(10000);
@@ -109,10 +106,10 @@ public class ClusterManager
 		residentsMapConfig.setBackupCount(0);
 		
 		Cluster = Hazelcast.newHazelcastInstance(cfg);
-
+		
 		LocalMember = Cluster.getCluster().getLocalMember();
 		LocalMember.setStringAttribute("hostname", ServervilleMain.Hostname+":"+ServervilleMain.ClientPort);
-		//CachedDataUpdateTopic = Cluster.getTopic("CachedDataUpdate");
+		LocalMember.setShortAttribute("servernum", ServervilleMain.getServerNumber());
 		
 		Cluster.getCluster().addMembershipListener(new ClusterMemberListener());
 		//Cluster.getPartitionService().addPartitionLostListener(new PartitionLostHandler());
@@ -123,14 +120,24 @@ public class ClusterManager
 		for(Member m : clusterMembers)
 		{
 			ClusterMembers.put(m.getUuid(), m);
+			
+			if(!m.localMember())
+			{
+				Short memberNumber = m.getShortAttribute("servernum");
+				if(memberNumber != null && memberNumber == ServervilleMain.getServerNumber())
+				{
+					shutdown();
+					throw new Exception("Cluster members have duplicate member number: "+memberNumber);
+				}
+			}
 		}
 		
 		OnlineUsers = Cluster.getMap("OnlineUsers");
 		ResidentLocations = Cluster.getMap("ResidentLocations");
 		
 		Residents = Cluster.getMap("Residents");
-	
 	}
+	
 	
 	public static void shutdown()
 	{

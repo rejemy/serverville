@@ -150,6 +150,11 @@ public class ClientMessages {
 		public Map<String,DataItemReply> values;
 	}
 	
+	public static class OrderedDataReply
+	{
+		public List<DataItemReply> values;
+	}
+	
 	public static class AllKeysRequest
 	{
 		public double since;
@@ -175,6 +180,14 @@ public class ClientMessages {
 		public String id;
 		public double since;
 		public boolean include_deleted;
+	}
+	
+	public static class PageGlobalKeysRequest
+	{
+		public String id;
+		public double page_size;
+		public String start_after;
+		public boolean descending;
 	}
 	
 	public static class KeyDataRecordRequest
