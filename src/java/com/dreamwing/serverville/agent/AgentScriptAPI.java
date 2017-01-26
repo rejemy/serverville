@@ -3,6 +3,7 @@ package com.dreamwing.serverville.agent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -35,6 +36,7 @@ import com.dreamwing.serverville.data.UserMessage;
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.net.ApiErrors;
+import com.dreamwing.serverville.net.HttpHelpers;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.residents.BaseResident;
 import com.dreamwing.serverville.residents.Channel;
@@ -46,6 +48,8 @@ import com.dreamwing.serverville.serialize.JsonDataDecoder;
 import com.dreamwing.serverville.util.FileUtil;
 import com.dreamwing.serverville.util.SVID;
 import com.dreamwing.serverville.util.StringUtil;
+
+import okhttp3.Response;
 
 
 
@@ -965,9 +969,17 @@ public class AgentScriptAPI
 		return bytes;
 	}
 	
-	public String base64encode(byte[] data)
+	public String base64encode(String data)
 	{
 		if(data == null)
+			return null;
+		
+		return Base64.getEncoder().encodeToString(data.getBytes(StandardCharsets.UTF_8));
+	}
+	
+	public String base64encode(byte[] data)
+	{
+		if(data == null || data.length == 0)
 			return null;
 		
 		return Base64.getEncoder().encodeToString(data);
@@ -975,6 +987,9 @@ public class AgentScriptAPI
 	
 	File getWritableFile(String location, String filename) throws Exception
 	{
+		if(location == null || location.length() == 0)
+			throw new Exception("Must provide a location");
+		
 		if(filename == null || filename.length() == 0)
 			throw new Exception("Must provide a filename");
 		
@@ -990,6 +1005,12 @@ public class AgentScriptAPI
 			throw new Exception("filename is outside of the writable directory");
 		
 		return p.toFile();
+	}
+	
+	public boolean fileExists(String location, String filename) throws Exception
+	{
+		File f = getWritableFile(location, filename);
+		return f.canRead();
 	}
 	
 	public void writeFile(String location, String filename, String contents) throws Exception
@@ -1033,5 +1054,32 @@ public class AgentScriptAPI
 		reader.close();
 		
 		return null;
+	}
+	
+	public String getUrlAsString(String url) throws IOException
+	{
+		return HttpHelpers.getString(url);
+	}
+	
+	public byte[] getUrlAsData(String url) throws IOException
+	{
+		return HttpHelpers.getBytes(url);
+	}
+	
+	public static class HttpResponseInfo
+	{
+		public String mimeType;
+		public byte[] data;
+	}
+	
+	public HttpResponseInfo getUrl(String url) throws IOException
+	{
+		Response response = HttpHelpers.getHttpResponse(url);
+		
+		HttpResponseInfo info = new HttpResponseInfo();
+		info.data = response.body().bytes();
+		info.mimeType = response.body().contentType().toString();
+		
+		return info;
 	}
 }

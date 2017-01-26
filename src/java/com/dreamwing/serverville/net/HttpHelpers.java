@@ -252,6 +252,16 @@ public class HttpHelpers {
     	throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
     }
     
+    public static byte[] getBytes(String url) throws IOException
+    {
+    	Request request = new Request.Builder()
+    	.url(url)
+    	.build();
+	
+    	Response response = SharedHttpClient.newCall(request).execute();
+    	return response.body().bytes();
+    }
+    
     public static String getString(String url) throws IOException
     {
     	Request request = new Request.Builder()
@@ -260,6 +270,15 @@ public class HttpHelpers {
 	
     	Response response = SharedHttpClient.newCall(request).execute();
     	return response.body().string();
+    }
+    
+    public static Response getHttpResponse(String url) throws IOException
+    {
+    	Request request = new Request.Builder()
+    	    	.url(url)
+    	    	.build();
+    		
+    	return SharedHttpClient.newCall(request).execute();
     }
     
     public static String getString(String url, String sessionId) throws IOException

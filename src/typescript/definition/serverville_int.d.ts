@@ -72,6 +72,12 @@ interface ChannelInfo
 	members:{[key:string]:ChannelMemberInfo};
 }
 
+interface HttpResponseInfo
+{
+	mimeType:string;
+	data:number[];
+}
+
 declare type DataItemInfoMap = {[key:string]:DataItemInfo};
 declare type TransientValueMap = {[key:string]:any};
 
@@ -142,7 +148,13 @@ declare namespace api
 	function base64decode(data:string):number[];
 	function base64encode(data:any):string;
 
+	function fileExists(location:string, filename:string):boolean;
 	function writeFile(location:string, filename:string, contents:string|number[]):void;
 	function readTextFile(location:string, filename:string):string;
 	function readBinaryFile(location:string, filename:string):number[];
+
+	function getUrlAsString(url:string):string;
+	function getUrlAsData(url:string):number[];
+	function getUrl(url:string):HttpResponseInfo;
+	
 }
