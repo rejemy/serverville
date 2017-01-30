@@ -40,6 +40,7 @@ public enum ApiErrors {
 	ALREADY_JOINED(107, "The user has already joined this channel"),
 	CURRENCY_LIMIT(108, "The requested currency operation would put the user under the minimum or over the maximum"),
 	CURRENCY_OVERFLOW(109, "The requested currency operation would cause the user's currency balance to wrap around"),
+	ANON_NOT_ALLOWED(110, "The request is not allowed for an anonymous user"),
 	
 	CHARGE_ERROR(200, "Could not create a charge to purchase a product"),
 	

@@ -41,6 +41,7 @@ import com.dreamwing.serverville.data.RecordPermissionsManager;
 import com.dreamwing.serverville.data.ResidentPermissionsManager;
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.data.ServervilleUser;
+import com.dreamwing.serverville.data.UserSession;
 import com.dreamwing.serverville.data.Product.ProductText;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.log.IndexedFileManager.LogSearchHits;
@@ -425,6 +426,7 @@ public class AdminAPI {
 		}
 		
 		user.setPassword(password);
+		UserSession.deleteAllUserSessions(user.getId());
 		
 		return HttpHelpers.sendSuccess(req);
 	}
@@ -442,6 +444,7 @@ public class AdminAPI {
 		}
 		
 		user.setUsername(username);
+		UserSession.deleteAllUserSessions(user.getId());
 		
 		return HttpHelpers.sendSuccess(req);
 	}
@@ -459,6 +462,7 @@ public class AdminAPI {
 		}
 		
 		user.setEmail(email);
+		UserSession.deleteAllUserSessions(user.getId());
 		
 		return HttpHelpers.sendSuccess(req);
 	}

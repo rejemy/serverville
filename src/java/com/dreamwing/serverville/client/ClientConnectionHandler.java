@@ -157,8 +157,26 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			signOut();
 		}
 		
-		user.setSessionId(session.Id);
 		Info.User = user;
+		
+		switchSession(session);
+
+		if(WebsocketConnected)
+		{
+			UserPresence = new OnlineUser(this);
+		}
+		
+		loadGuaranteedMessages();
+		
+		ScriptManager.onUserSignIn(this);
+	}
+	
+	public void switchSession(UserSession session) throws SQLException, JsonApiException
+	{
+		if(Info.Session != null)
+			ClientSessionManager.removeSession(this);
+		
+		Info.User.setSessionId(session.Id);
 		Info.Session = session;
 		
 		if((WebsocketConnected || Keepalive) && session.Connected == false)
@@ -167,21 +185,12 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			session.update();
 		}
 		
-		if(WebsocketConnected)
-		{
-			UserPresence = new OnlineUser(this);
-		}
-		
 		ClientSessionManager.addSession(this);
-		
-		loadGuaranteedMessages();
-		
-		ScriptManager.onUserSignIn(this);
 		
 		OnlineUserLocator locator = new OnlineUserLocator();
 		locator.SessionId = session.Id;
 		
-		ClusterManager.addOnlineUser(user.getId(), locator);
+		ClusterManager.addOnlineUser(Info.User.getId(), locator);
 	}
 	
 	private void signOut()

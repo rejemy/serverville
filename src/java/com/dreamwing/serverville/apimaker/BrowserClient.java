@@ -156,6 +156,11 @@ public class BrowserClient {
 				apiCall.set("PreCall", "var self:Serverville = this;");
 				apiCall.set("SuccessClosure", "function(reply:SignInReply):void { self.setUserInfo(reply); if(onSuccess) { onSuccess(reply);} }");
 			}
+			else if(method.ReplyType.Name.equals("ChangePasswordReply"))
+			{
+				apiCall.set("PreCall", "var self:Serverville = this;");
+				apiCall.set("SuccessClosure", "function(reply:ChangePasswordReply):void { self.setUserSession(reply.session_id); if(onSuccess) { onSuccess(reply);} }");
+			}
 			else
 			{
 				apiCall.set("PreCall", "");

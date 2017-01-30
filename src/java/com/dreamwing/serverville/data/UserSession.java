@@ -78,7 +78,7 @@ public class UserSession implements HttpSession
 		return DatabaseManager.ServervilleUser_UserSession_UserIdDao.queryForEq("userid", userId);
 	}
 	
-	public void deleteLookupByUserIdAndId(String userId, String sessionId) throws SQLException
+	public static void deleteLookupByUserIdAndId(String userId, String sessionId) throws SQLException
 	{
 		@SuppressWarnings("unchecked")
 		PreparedDelete<UserSessionLookup> deleteQuery = (PreparedDelete<UserSessionLookup>)
@@ -138,6 +138,16 @@ public class UserSession implements HttpSession
 		for(UserSession oldSession : oldSessions)
 		{
 			oldSession.delete(true);
+		}
+	}
+	
+	public static void deleteAllUserSessions(String userId) throws SQLException
+	{
+		List<UserSessionLookup> sessionLookups = DatabaseManager.ServervilleUser_UserSession_UserIdDao.queryForEq("userid", userId);
+		for(UserSessionLookup lookup : sessionLookups)
+		{
+			DatabaseManager.ServervilleUser_UserSessionDao.deleteById(lookup.SessionId);
+			deleteLookupByUserIdAndId(userId, lookup.SessionId);
 		}
 	}
 }

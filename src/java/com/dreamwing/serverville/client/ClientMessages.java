@@ -74,6 +74,17 @@ public class ClientMessages {
 		public double admin_level;
 	}
 	
+	public static class ChangePasswordRequest
+	{
+		public String old_password;
+		public String new_password;
+	}
+	
+	public static class ChangePasswordReply
+	{
+		public String session_id;
+	}
+	
 	public static class ServerTime
 	{
 		public double time;

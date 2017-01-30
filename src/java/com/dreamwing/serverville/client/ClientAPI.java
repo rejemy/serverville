@@ -234,6 +234,31 @@ public class ClientAPI {
 		return reply;
 	}
 	
+	public static ChangePasswordReply ChangePassword(ChangePasswordRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		if(info.User.isAnonymous())
+		{
+			throw new JsonApiException(ApiErrors.ANON_NOT_ALLOWED, "Can't change a password for an anonymous user");
+		}
+		
+		if(!PasswordUtil.validatePassword(request.new_password))
+			throw new JsonApiException(ApiErrors.INVALID_INPUT, "Invalid password");
+	
+		if(!info.User.checkPassword(request.old_password))
+			throw new JsonApiException(ApiErrors.BAD_AUTH, "Password does not match");
+		
+		
+		info.User.setPassword(request.new_password);
+		UserSession.deleteAllUserSessions(info.User.getId());
+		
+		UserSession session = UserSession.startNewSession(info.User.getId());
+		info.ConnectionHandler.switchSession(session);
+		
+		ChangePasswordReply reply = new ChangePasswordReply();
+		reply.session_id = info.User.getSessionId();
+		return reply;
+	}
+	
 	public static ServerTime GetTime(EmptyClientRequest request, ClientMessageInfo info)
 	{
 		ServerTime time = new ServerTime();
