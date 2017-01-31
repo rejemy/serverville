@@ -3,7 +3,6 @@ package com.dreamwing.serverville.scripting;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +20,7 @@ import com.dreamwing.serverville.cluster.ClusterManager;
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.residents.Channel;
 import com.dreamwing.serverville.residents.OnlineUser;
+import com.dreamwing.serverville.scripting.ScriptEngineContext.ClientMethodInfo;
 import com.dreamwing.serverville.util.FileUtil;
 import com.hazelcast.core.IAtomicLong;
 
@@ -39,7 +39,7 @@ public class ScriptManager
 	private static List<ScriptData> GlobalScriptCache;
 	private static volatile int ScriptVersion=0;
 	
-	private static Map<String,Boolean> ClientHandlers;
+	private static Map<String,ClientMethodInfo> ClientHandlers;
 	private static Set<String> AgentHandlers;
 	private static Set<String> CallbackHandlers;
 	
@@ -172,31 +172,11 @@ public class ScriptManager
 			return;
 		}
 		
-		String[] clientHandlerList = ctx.getClientHandlerList();
-		
-		Map<String,Boolean> clientHandlers = new HashMap<String,Boolean>();
+
 		String[] agentHandlerList = ctx.getAgentHandlerList();
 		String[] callbackHandlerList = ctx.getCallbackHandlerList();
-		
-		if(clientHandlerList != null)
-		{
-			for(String handlerName : clientHandlerList)
-			{
-				Object handler = ctx.getClientHandler(handlerName);
-				if(handler == null)
-				{
-					// Nulled out API, so it can't be called by clients
-					clientHandlers.put(handlerName, false);
-				}
-				else
-				{
-					clientHandlers.put(handlerName, true);
-				}
-				
-			}
-		}
-		
-		ClientHandlers = clientHandlers;
+
+		ClientHandlers = ctx.getClientHandlerList();
 		
 		
 		Set<String> agentHandlers = new HashSet<String>();
@@ -224,7 +204,7 @@ public class ScriptManager
 		
 	}
 	
-	public static Boolean hasClientHandler(String apiType)
+	public static ClientMethodInfo getClientHandlerInfo(String apiType)
 	{
 		return ClientHandlers.get(apiType);
 	}

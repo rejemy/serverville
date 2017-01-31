@@ -1,7 +1,9 @@
 package com.dreamwing.serverville.scripting;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
@@ -33,6 +35,13 @@ public class ScriptEngineContext {
 	private ScriptObjectMirror ClientHandlers;
 	private ScriptObjectMirror AgentHandlers;
 	private ScriptObjectMirror CallbackHandlers;
+	
+	public static class ClientMethodInfo
+	{
+		public String Name;
+		public boolean Defined;
+		public boolean RequiresAuth;
+	}
 	
 	public ScriptEngineContext()
 	{
@@ -141,12 +150,12 @@ public class ScriptEngineContext {
 	
 	public Object getClientHandler(String api)
 	{
-		return ClientHandlers.get(api);
+		return ClientHandlers.getMember(api);
 	}
 	
 	public Object getCallbackHandler(String api)
 	{
-		return CallbackHandlers.get(api);
+		return CallbackHandlers.getMember(api);
 	}
 	
 	public Object invokeFunction(String name, Object... args)
@@ -181,12 +190,39 @@ public class ScriptEngineContext {
 		}
 	}
 
-	public String[] getClientHandlerList()
+	public Map<String,ClientMethodInfo> getClientHandlerList()
 	{
 		if(ClientHandlers == null)
 			return null;
 		
-		return ClientHandlers.getOwnKeys(false);
+		Map<String,ClientMethodInfo> methods = new HashMap<String,ClientMethodInfo>();
+		
+		String methodNames[] = ClientHandlers.getOwnKeys(false);
+		
+		for(String methodName : methodNames)
+		{
+			ClientMethodInfo info = new ClientMethodInfo();
+			info.Name = methodName;
+			
+			ScriptObjectMirror jsMethod = (ScriptObjectMirror)ClientHandlers.getMember(methodName);
+			if(jsMethod != null)
+			{
+				info.Defined = true;
+				Object noAuth = jsMethod.getMember("noAuth");
+				if(noAuth instanceof Boolean && (Boolean)noAuth)
+				{
+					info.RequiresAuth = false;
+				}
+				else
+				{
+					info.RequiresAuth = true;
+				}
+			}
+
+			methods.put(methodName, info);
+		}
+		
+		return methods;
 	}
 	
 

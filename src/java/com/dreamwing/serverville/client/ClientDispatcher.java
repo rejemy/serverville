@@ -15,6 +15,7 @@ import com.dreamwing.serverville.net.ApiError;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
+import com.dreamwing.serverville.scripting.ScriptEngineContext.ClientMethodInfo;
 import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -110,8 +111,8 @@ public class ClientDispatcher {
 	private Object invokeMethod(String messageType, String messageData, ClientMessageInfo info) throws Exception
 	{
 		// Check if we have an override for it in a script
-		Boolean hasScript = ScriptManager.hasClientHandler(messageType);
-		if(hasScript == null)
+		ClientMethodInfo methodInfo = ScriptManager.getClientHandlerInfo(messageType);
+		if(methodInfo == null)
 		{
 			// Not defined in script
 			DispatchMethod method = Methods.get(messageType);
@@ -143,11 +144,11 @@ public class ClientDispatcher {
 			
 			return reply;
 		}
-		else if(hasScript == true)
+		else if(methodInfo.Defined)
 		{
 			// Defined and there is a script
-			// All script methods require authentication
-			if(info.User == null)
+			
+			if(info.User == null && methodInfo.RequiresAuth)
 				throw new JsonApiException(ApiErrors.NOT_AUTHED);
 			
 			ScriptEngineContext context = ScriptManager.getEngine();
