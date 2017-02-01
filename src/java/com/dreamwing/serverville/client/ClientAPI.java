@@ -259,6 +259,7 @@ public class ClientAPI {
 		return reply;
 	}
 	
+	@ClientHandlerOptions(auth=false)
 	public static ServerTime GetTime(EmptyClientRequest request, ClientMessageInfo info)
 	{
 		ServerTime time = new ServerTime();
@@ -442,6 +443,7 @@ public class ClientAPI {
 		return reply;
 	}
 	
+	@ClientHandlerOptions(auth=false)
 	public static DataItemReply GetDataKey(GlobalKeyRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(StringUtil.isNullOrEmpty(request.id))
@@ -450,7 +452,9 @@ public class ClientAPI {
 		if(!KeyDataItem.isValidKeyname(request.key))
 			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
 		
-		if(request.id.equals(info.User.getId()))
+		String userId = info.User != null ? info.User.getId() : null;
+		
+		if(request.id.equals(userId))
 		{
 			if(!RecordPermissionsManager.UserPermissions.isOwnerReadable(request.key))
 				throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
@@ -460,7 +464,7 @@ public class ClientAPI {
 			// If it's not our data, load the keydata record to see if we can get it
 			KeyDataRecord record = KeyDataRecord.load(request.id);
 			PropertyPermissions perms = RecordPermissionsManager.getPermissions(record);
-			if(record != null && record.Owner.equals(info.User.getId()))
+			if(record != null && record.Owner.equals(userId))
 			{
 				if(!perms.isOwnerReadable(request.key))
 					throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
@@ -480,18 +484,20 @@ public class ClientAPI {
 		return KeyDataItemToDataItemReply(request.id, item);
 	}
 	
-	
+	@ClientHandlerOptions(auth=false)
 	public static UserDataReply GetDataKeys(GlobalKeysRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(StringUtil.isNullOrEmpty(request.id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
 		
+		String userId = info.User != null ? info.User.getId() : null;
+		
 		PropertyPermissions perms = RecordPermissionsManager.UserPermissions;
-		boolean isMe = request.id.equals(info.User.getId());
+		boolean isMe = request.id.equals(userId);
 		if(!isMe)
 		{
 			KeyDataRecord record = KeyDataRecord.load(request.id);
-			if(record != null && record.Owner.equals(info.User.getId()))
+			if(record != null && record.Owner.equals(userId))
 				isMe = true;
 			perms = RecordPermissionsManager.getPermissions(record);
 		}
@@ -525,6 +531,7 @@ public class ClientAPI {
 		return reply;
 	}
 	
+	@ClientHandlerOptions(auth=false)
 	public static UserDataReply GetAllDataKeys(AllGlobalKeysRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(StringUtil.isNullOrEmpty(request.id))
@@ -538,12 +545,14 @@ public class ClientAPI {
 		
 		reply.values = new HashMap<String,DataItemReply>();
 		
+		String userId = info.User != null ? info.User.getId() : null;
+		
 		PropertyPermissions perms = RecordPermissionsManager.UserPermissions;
-		boolean isMe = request.id.equals(info.User.getId());
+		boolean isMe = request.id.equals(userId);
 		if(!isMe)
 		{
 			KeyDataRecord record = KeyDataRecord.load(request.id);
-			if(record != null && record.Owner.equals(info.User.getId()))
+			if(record != null && record.Owner.equals(userId))
 				isMe = true;
 			perms = RecordPermissionsManager.getPermissions(record);
 		}
@@ -563,6 +572,7 @@ public class ClientAPI {
 		return reply;
 	}
 	
+	@ClientHandlerOptions(auth=false)
 	public static OrderedDataReply PageAllDataKeys(PageGlobalKeysRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(StringUtil.isNullOrEmpty(request.id))
@@ -576,12 +586,14 @@ public class ClientAPI {
 		
 		reply.values = new ArrayList<DataItemReply>(items.size());
 		
+		String userId = info.User != null ? info.User.getId() : null;
+		
 		PropertyPermissions perms = RecordPermissionsManager.UserPermissions;
-		boolean isMe = request.id.equals(info.User.getId());
+		boolean isMe = request.id.equals(userId);
 		if(!isMe)
 		{
 			KeyDataRecord record = KeyDataRecord.load(request.id);
-			if(record != null && record.Owner.equals(info.User.getId()))
+			if(record != null && record.Owner.equals(userId))
 				isMe = true;
 			perms = RecordPermissionsManager.getPermissions(record);
 		}
@@ -615,6 +627,7 @@ public class ClientAPI {
 		return keyInfo;
 	}
 	
+	@ClientHandlerOptions(auth=false)
 	public static KeyDataInfo GetKeyDataRecord(KeyDataRecordRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(StringUtil.isNullOrEmpty(request.id))
@@ -870,7 +883,7 @@ public class ClientAPI {
 		return reply;
 	}
 	
-	
+	@ClientHandlerOptions(auth=false)
 	public static TransientDataItemReply GetTransientValue(GetTransientValueRequest request, ClientMessageInfo info) throws JsonApiException
 	{
 		if(!KeyDataItem.isValidKeyname(request.key))
@@ -887,7 +900,9 @@ public class ClientAPI {
 		
 		PropertyPermissions perms = resident.getPermissions();
 		
-		if(info.User.getId().equals(resident.getOwnerId()))
+		String userId = info.User != null ? info.User.getId() : null;
+		
+		if(userId != null && userId.equals(resident.getOwnerId()))
 		{
 			if(!perms.isOwnerReadable(request.key))
 				throw new JsonApiException(ApiErrors.PRIVATE_DATA, request.key);
@@ -907,7 +922,7 @@ public class ClientAPI {
 		return reply;
 	}
 	
-
+	@ClientHandlerOptions(auth=false)
 	public static TransientDataItemsReply GetTransientValues(GetTransientValuesRequest request, ClientMessageInfo info) throws JsonApiException
 	{
 		if(StringUtil.isNullOrEmpty(request.resident_id))
@@ -923,7 +938,9 @@ public class ClientAPI {
 		
 		Map<String,Object> values = new HashMap<String,Object>();
 		
-		boolean isMe = info.User.getId().equals(resident.getOwnerId());
+		String userId = info.User != null ? info.User.getId() : null;
+		
+		boolean isMe = userId != null && userId.equals(resident.getOwnerId());
 		
 		for(String key : request.keys)
 		{
@@ -953,6 +970,7 @@ public class ClientAPI {
 		return reply;
 	}
 	
+	@ClientHandlerOptions(auth=false)
 	public static TransientDataItemsReply GetAllTransientValues(GetAllTransientValuesRequest request, ClientMessageInfo info) throws JsonApiException
 	{
 		if(StringUtil.isNullOrEmpty(request.resident_id))
@@ -968,7 +986,9 @@ public class ClientAPI {
 		
 		Map<String,Object> values = new HashMap<String,Object>();
 		
-		boolean isMe = info.User.getId().equals(resident.getOwnerId());
+		String userId = info.User != null ? info.User.getId() : null;
+		
+		boolean isMe = userId != null && userId.equals(resident.getOwnerId());
 		
 		for(TransientDataItem item : resident.getAllTransientValues())
 		{
