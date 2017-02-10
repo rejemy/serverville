@@ -152,11 +152,11 @@ public abstract class BaseResident
 			String key = itemSet.getKey();
 			Object value = itemSet.getValue();
 			
-			TransientDataItem item = TransientValues.computeIfAbsent(key, k -> { return new TransientDataItem(key, value);});
+			TransientDataItem item = TransientValues.computeIfAbsent(key, k -> { return new TransientDataItem(key, value, currTime);});
 			if(item.value != value || item.deleted || forceUpdate)
 			{
 				item.value = ScriptObjectMirror.wrapAsJSONCompatible(value, null);
-				item.modified = System.currentTimeMillis();
+				item.modified = currTime;
 				item.deleted = false;
 			}
 
@@ -180,6 +180,7 @@ public abstract class BaseResident
 			return;
 		}
 		
+		item.value = null;
 		item.deleted = true;
 		item.modified = System.currentTimeMillis();
 		
@@ -228,7 +229,7 @@ public abstract class BaseResident
 			onStateChanged(changeMessage, currTime);
 	}
 	
-	public synchronized void deleteAllTransientValues()
+	public void deleteAllTransientValues()
 	{
 		ResidentStateUpdateNotification changeMessage = new ResidentStateUpdateNotification();
 		changeMessage.resident_id = Id;
@@ -236,14 +237,17 @@ public abstract class BaseResident
 		
 		long currTime = System.currentTimeMillis();
 		
-		for(Map.Entry<String,TransientDataItem> itemSet : TransientValues.entrySet())
+		synchronized(this)
 		{
-			TransientDataItem item = itemSet.getValue();
-
-			item.deleted = true;
-			item.modified = currTime;
-
-			changeMessage.deleted.add(itemSet.getKey());
+			for(Map.Entry<String,TransientDataItem> itemSet : TransientValues.entrySet())
+			{
+				TransientDataItem item = itemSet.getValue();
+	
+				item.deleted = true;
+				item.modified = currTime;
+	
+				changeMessage.deleted.add(itemSet.getKey());
+			}
 		}
 		
 		if(!changeMessage.deleted.isEmpty())
@@ -296,7 +300,7 @@ public abstract class BaseResident
 		return item;
 	}
 	
-	// Note - includes deleted items
+	// Note - includes deleted items, and they will be unordered
 	public Collection<TransientDataItem> getAllTransientValues()
 	{
 		return TransientValues.values();
@@ -359,6 +363,52 @@ public abstract class BaseResident
 		return info;
 	}
 	
+	public List<TransientDataItem> getValues()
+	{
+		synchronized(this)
+		{
+			int numValues = TransientValues.size();
+			if(numValues == 0)
+				return null;
+			List<TransientDataItem> values = new ArrayList<TransientDataItem>(numValues);
+			
+			TransientDataItem item = MostRecentValue;
+			while(item != null)
+			{
+				values.add(item);
+				item = item.nextItem;
+			}
+			
+			return values;
+		}
+	}
+	
+	public void setValues(List<TransientDataItem> values)
+	{
+		if(values == null)
+			return;
+		
+		synchronized(this)
+		{
+			TransientValues.clear();
+			
+			TransientDataItem lastItem = null;
+			for(TransientDataItem item : values)
+			{
+				if(lastItem == null)
+				{
+					MostRecentValue = item;
+				}
+				else
+				{
+					lastItem.nextItem = item;
+					item.prevItem = lastItem;
+				}
+				
+				lastItem = item;
+			}
+		}
+	}
 	
 	public void write(ObjectDataOutput out) throws IOException
 	{

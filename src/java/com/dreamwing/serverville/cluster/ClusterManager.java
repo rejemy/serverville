@@ -17,6 +17,9 @@ import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.cluster.ClusterMessages.ClusterMessageFactory;
 import com.dreamwing.serverville.cluster.ClusterMessages.DisconnectUserMessage;
 import com.dreamwing.serverville.cluster.ClusterMessages.MemberShuttingDownMessage;
+import com.dreamwing.serverville.cluster.ClusterMessages.RemoveGlobalChannelMessage;
+import com.dreamwing.serverville.cluster.ClusterMessages.ReplicateGlobalChannelMessage;
+import com.dreamwing.serverville.cluster.ClusterMessages.StartupCompleteMessage;
 import com.dreamwing.serverville.cluster.ClusterMessages.ClusterMemberMessageRunnable;
 import com.dreamwing.serverville.cluster.DistributedData.BaseResidentClusterData;
 import com.dreamwing.serverville.cluster.DistributedData.ChannelClusterData;
@@ -28,6 +31,9 @@ import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.residents.BaseResident;
 import com.dreamwing.serverville.residents.Channel;
+import com.dreamwing.serverville.residents.GlobalChannel;
+import com.dreamwing.serverville.residents.ResidentManager;
+import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.util.StringUtil;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
@@ -36,6 +42,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
@@ -54,9 +61,12 @@ public class ClusterManager
 	private static IMap<String, ResidentLocator> ResidentLocations;
 	private static IMap<ResidentLocator, BaseResidentClusterData> Residents;
 	private static IExecutorService RemoteExecutor;
+	private static IAtomicReference<String> SeniorMemberUuid;
 	
 	private static Member LocalMember;
 	private static Map<String,Member> ClusterMembers;
+	private static boolean IsSeniorMember = false;
+	private static boolean ScriptsInitted = false;
 	
 	public static void init() throws Exception
 	{
@@ -98,23 +108,38 @@ public class ClusterManager
 		
 		cfg.getMapConfig("OnlineUsers").setNearCacheConfig(residentCache);
 		
-		//PartitioningStrategyConfig stringParition = new PartitioningStrategyConfig().setPartitionStrategy(new StringPartitioningStrategy());
-		
 		MapConfig residentsMapConfig = cfg.getMapConfig("Residents");
-		//residentsMapConfig.setPartitioningStrategyConfig(stringParition);
 		residentsMapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
 		residentsMapConfig.setBackupCount(0);
 		
-		Cluster = Hazelcast.newHazelcastInstance(cfg);
+		Cluster = Hazelcast.newHazelcastInstance(cfg); // <---------------------------- Join cluster
 		
 		LocalMember = Cluster.getCluster().getLocalMember();
 		LocalMember.setStringAttribute("hostname", ServervilleMain.Hostname+":"+ServervilleMain.ClientPort);
 		LocalMember.setShortAttribute("servernum", ServervilleMain.getServerNumber());
+		LocalMember.setLongAttribute("joined", System.currentTimeMillis());
 		
 		Cluster.getCluster().addMembershipListener(new ClusterMemberListener());
-		//Cluster.getPartitionService().addPartitionLostListener(new PartitionLostHandler());
-		
 		RemoteExecutor = Cluster.getExecutorService("RemoteExecutor");
+		
+		SeniorMemberUuid = Cluster.getAtomicReference("SeniorUuid");
+		
+		if(SeniorMemberUuid.compareAndSet(null, LocalMember.getUuid()))
+		{
+			IsSeniorMember = true;
+			LocalMember.setBooleanAttribute("senior", true);
+		}
+		
+		OnlineUsers = Cluster.getMap("OnlineUsers");
+		ResidentLocations = Cluster.getMap("ResidentLocations");
+		
+		Residents = Cluster.getMap("Residents");
+		
+		if(IsSeniorMember)
+		{
+			ScriptManager.doGlobalInit();
+			ScriptsInitted = true;
+		}
 		
 		Set<Member> clusterMembers = Cluster.getCluster().getMembers();
 		for(Member m : clusterMembers)
@@ -129,15 +154,27 @@ public class ClusterManager
 					shutdown();
 					throw new Exception("Cluster members have duplicate member number: "+memberNumber);
 				}
+				
+				if(IsSeniorMember)
+				{
+					sendGlobalsToMember(m);
+				}
 			}
 		}
 		
-		OnlineUsers = Cluster.getMap("OnlineUsers");
-		ResidentLocations = Cluster.getMap("ResidentLocations");
+		if(IsSeniorMember)
+		{
+			onClusterReady();
+		}
 		
-		Residents = Cluster.getMap("Residents");
 	}
 	
+	public static void onClusterReady()
+	{
+		LocalMember.setBooleanAttribute("ready", true);
+		ScriptsInitted = true;
+		ServervilleMain.onClusterStarted();
+	}
 	
 	public static void shutdown()
 	{
@@ -147,18 +184,17 @@ public class ClusterManager
 		Cluster.shutdown();
 	}
 	
+	public static boolean isSeniorMember()
+	{
+		return IsSeniorMember;
+	}
+	
 	public static String getLocalMemberUUID()
 	{
 		return Cluster.getCluster().getLocalMember().getUuid();
 	}
 	
-	/*
-	public static void sendCachedDataUpdateMessage(CachedDataUpdateMessage event)
-	{
-		CachedDataUpdateTopic.publish(event);
-	}
-	*/
-	
+
 	public static void addOnlineUser(String userId, OnlineUserLocator locator)
 	{
 		locator.MemberUUID = getLocalMemberUUID();
@@ -228,6 +264,11 @@ public class ClusterManager
 			l.info("Cluster member joined: "+m.getUuid());
 			
 			ClusterMembers.put(m.getUuid(), m);
+			
+			if(!m.localMember() && IsSeniorMember && ScriptsInitted)
+			{
+				sendGlobalsToMember(m);
+			}
 		}
 
 		@Override
@@ -246,6 +287,12 @@ public class ClusterManager
 			{
 				l.info("Cluster member removed: "+m.getUuid());
 			}
+			
+			if(Boolean.TRUE.equals(m.getBooleanAttribute("senior")))
+			{
+				senioritySearch();
+			}
+
 		}
 
 		@Override
@@ -255,6 +302,7 @@ public class ClusterManager
 		}
 		
 	}
+	
 	
 	/*
 	public static class PartitionLostHandler implements PartitionLostListener
@@ -317,7 +365,7 @@ public class ClusterManager
 		Future<IdentifiedDataSerializable> future;
 		if(clusterMember.localMember())
 		{
-			future = ServervilleMain.ServiceScheduler.submit((Callable<IdentifiedDataSerializable>)runner);
+			future = ServervilleMain.MainExecutor.submit((Callable<IdentifiedDataSerializable>)runner);
 		}
 		else
 		{
@@ -368,16 +416,30 @@ public class ClusterManager
 		ResidentLocations.set(res.getId(), locator);
 	}
 	
-	/*
-	public static void createResidentInCluster(Resident res)
+	public static void createGlobalChannel(String id, String residentType, Map<String,Object> values)
 	{
-		ResidentClusterData clusterData = new ResidentClusterData();
-		clusterData.LiveResident = res;
+		ReplicateGlobalChannelMessage message = new ReplicateGlobalChannelMessage();
+		message.ChannelId = id;
+		message.ResidentType = residentType;
 		
-		ResidentLocator locator = res.getLocator();
-		Residents.set(locator, clusterData);
-		ResidentLocations.set(res.getId(), locator);
-	}*/
+		if(values != null)
+		{
+			GlobalChannel channel = new GlobalChannel(id, residentType);
+			channel.setTransientValues(values);
+			message.Values = channel.getValues();
+		}
+		
+		sendToAll(message);
+	}
+	
+	public static void destroyGlobalChannel(GlobalChannel channel)
+	{
+		RemoveGlobalChannelMessage message = new RemoveGlobalChannelMessage();
+		message.ChannelId = channel.getId();
+		
+		sendToAll(message);
+	}
+	
 	
 	public static void cleanupDataAfterMemberCrash()
 	{
@@ -397,5 +459,64 @@ public class ClusterManager
 		Partition part = Cluster.getPartitionService().getPartition(residentId);
 		Member memb = part.getOwner();
 		return memb.getStringAttribute("hostname");
+	}
+	
+	private static void senioritySearch()
+	{
+		String oldSeniorMember = SeniorMemberUuid.get();
+		long myJoinDate = LocalMember.getLongAttribute("joined");
+		
+		for(Member m : ClusterMembers.values())
+		{
+			long joined = m.getLongAttribute("joined");
+			if(joined < myJoinDate)
+			{
+				return;
+			}
+			else if(joined == myJoinDate)
+			{
+				if(LocalMember.getUuid().compareTo(m.getUuid()) >= 0)
+					return;
+			}
+		}
+		
+		// I guess it's us
+		if(SeniorMemberUuid.compareAndSet(oldSeniorMember, LocalMember.getUuid()))
+		{
+			becomeSenior();
+		}
+		
+	}
+	
+	private static void becomeSenior()
+	{
+		IsSeniorMember = true;
+		LocalMember.setBooleanAttribute("senior", true);
+		
+		// Check to see if anly cluster members are not ready - they might have joined
+		// during the seniority search while there was nobody to send them the globals
+		for(Member m : ClusterMembers.values())
+		{
+			if(!Boolean.TRUE.equals(m.getBooleanAttribute("ready")))
+			{
+				sendGlobalsToMember(m);
+			}
+		}
+	}
+	
+	private static void sendGlobalsToMember(Member m)
+	{
+		for(GlobalChannel channel : ResidentManager.GlobalResidents.values())
+		{
+			ReplicateGlobalChannelMessage message = new ReplicateGlobalChannelMessage();
+			message.ChannelId = channel.getId();
+			message.ResidentType = channel.getType();
+			message.Values = channel.getValues();
+			
+			sendToMember(message, m);
+		}
+		
+		StartupCompleteMessage message = new StartupCompleteMessage();
+		sendToMember(message, m);
 	}
 }

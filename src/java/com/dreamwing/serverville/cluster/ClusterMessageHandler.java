@@ -15,19 +15,30 @@ import com.dreamwing.serverville.cluster.ClusterMessages.CachedDataUpdateMessage
 import com.dreamwing.serverville.cluster.ClusterMessages.CreateChannelRequestMessage;
 import com.dreamwing.serverville.cluster.ClusterMessages.DeliverUserNotificationMessage;
 import com.dreamwing.serverville.cluster.ClusterMessages.DisconnectUserMessage;
+import com.dreamwing.serverville.cluster.ClusterMessages.GlobalChannelDataUpdateMessage;
+import com.dreamwing.serverville.cluster.ClusterMessages.GlobalChannelEventMessage;
 import com.dreamwing.serverville.cluster.ClusterMessages.MemberShuttingDownMessage;
+import com.dreamwing.serverville.cluster.ClusterMessages.RemoveGlobalChannelMessage;
+import com.dreamwing.serverville.cluster.ClusterMessages.ReplicateGlobalChannelMessage;
+import com.dreamwing.serverville.cluster.ClusterMessages.StartupCompleteMessage;
 import com.dreamwing.serverville.data.RecordPermissionsManager;
 import com.dreamwing.serverville.data.ResidentPermissionsManager;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.residents.BaseResident;
 import com.dreamwing.serverville.residents.Channel;
+import com.dreamwing.serverville.residents.GlobalChannel;
 import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.scripting.ScriptManager;
 
 public class ClusterMessageHandler
 {
 	private static final Logger l = LogManager.getLogger(ClusterManager.class);
+	
+	public static void onStartupCompleteMessage(StartupCompleteMessage message)
+	{
+		ClusterManager.onClusterReady();
+	}
 	
 	public static void onCachedDataUpdateMessage(CachedDataUpdateMessage message)
 	{
@@ -131,6 +142,7 @@ public class ClusterMessageHandler
 	
 	public static void onCreateChannelRequest(CreateChannelRequestMessage request) throws JsonApiException
 	{
+		
 		BaseResident res = ResidentManager.getResident(request.ChannelId);
 		if(res != null)
 		{
@@ -168,5 +180,62 @@ public class ClusterMessageHandler
 			throw e;
 		}*/
 		
+	}
+	
+	public static void onReplicateGlobalChannel(ReplicateGlobalChannelMessage message)
+	{
+		GlobalChannel globalChan = new GlobalChannel(message.ChannelId, message.ResidentType);
+		
+		
+		ResidentManager.addResident(globalChan);
+	}
+	
+	public static void onGlobalChannelEvent(GlobalChannelEventMessage message)
+	{
+		BaseResident res = ResidentManager.getResident(message.ChannelId);
+		if(res == null || !(res instanceof GlobalChannel))
+		{
+			l.error("Got global event for channel that hasn't been created yet: "+message.ChannelId);
+			return;
+		}
+		
+		GlobalChannel channel = (GlobalChannel)res;
+		channel.onEventTriggered(message.MessageBody);
+	}
+	
+	public static void onGlobalChannelDataUpdate(GlobalChannelDataUpdateMessage message)
+	{
+		BaseResident res = ResidentManager.getResident(message.ChannelId);
+		if(res == null || !(res instanceof GlobalChannel))
+		{
+			l.error("Got global update for channel that hasn't been created yet: "+message.ChannelId);
+			return;
+		}
+		
+		
+		GlobalChannel channel = (GlobalChannel)res;
+		
+		if(message.Updates != null)
+		{
+			channel.setTransientValues(message.Updates, message.ForceUpdate);
+		}
+		else if(message.Deleted != null)
+		{
+			channel.deleteTransientValues(message.Deleted);
+		}
+		else if(message.DeleteAll)
+		{
+			channel.deleteAllTransientValues();
+		}
+	}
+	
+	public static void onRemoveGlobalChannel(RemoveGlobalChannelMessage message)
+	{
+		BaseResident res = ResidentManager.getResident(message.ChannelId);
+		if(!(res instanceof GlobalChannel))
+			return;
+		
+		GlobalChannel channel = (GlobalChannel)res;
+		channel.destroy();
 	}
 }

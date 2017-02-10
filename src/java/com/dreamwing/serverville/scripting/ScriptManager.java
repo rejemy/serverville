@@ -16,13 +16,11 @@ import org.apache.logging.log4j.Logger;
 
 import com.dreamwing.serverville.agent.AgentShared;
 import com.dreamwing.serverville.client.ClientConnectionHandler;
-import com.dreamwing.serverville.cluster.ClusterManager;
 import com.dreamwing.serverville.data.ScriptData;
 import com.dreamwing.serverville.residents.Channel;
 import com.dreamwing.serverville.residents.OnlineUser;
 import com.dreamwing.serverville.scripting.ScriptEngineContext.ClientMethodInfo;
 import com.dreamwing.serverville.util.FileUtil;
-import com.hazelcast.core.IAtomicLong;
 
 
 public class ScriptManager
@@ -54,15 +52,16 @@ public class ScriptManager
 		scriptsUpdated();
 	}
 	
+	/*
 	public static void start()
 	{
-		IAtomicLong scriptInitLock = ClusterManager.Cluster.getAtomicLong("ScriptGlobalInit");
-		if(scriptInitLock.getAndSet(1) == 0)
+		if(ClusterManager.isSeniorMember())
 		{
 			// Should only happen on one server
 			doGlobalInit();
 		}
 	}
+	*/
 	
 	public static ScriptEngineContext getEngine()
 	{

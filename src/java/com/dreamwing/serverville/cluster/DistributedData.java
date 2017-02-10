@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.dreamwing.serverville.data.TransientDataItem;
 import com.dreamwing.serverville.residents.Channel;
 import com.dreamwing.serverville.residents.Resident;
 import com.dreamwing.serverville.residents.ResidentManager;
@@ -27,6 +28,7 @@ public class DistributedData
 		public static final int RESIDENT_LOCATOR = 2;
 		public static final int RESIDENT_CLUSTER_DATA = 3;
 		public static final int CHANNEL_CLUSTER_DATA = 4;
+		public static final int TRANSIENT_DATA = 5;
 		
 		@Override
 		public IdentifiedDataSerializable create(int typeId)
@@ -41,6 +43,8 @@ public class DistributedData
 				return new ResidentClusterData();
 			case CHANNEL_CLUSTER_DATA:
 				return new ChannelClusterData();
+			case TRANSIENT_DATA:
+				return new TransientDataItem();
 			default:
 				l.error("Tried to deserialize cluster data with unknown type: "+typeId);
 			}
@@ -217,4 +221,5 @@ public class DistributedData
 			return DistributedDataFactory.CHANNEL_CLUSTER_DATA;
 		}
 	}
+
 }

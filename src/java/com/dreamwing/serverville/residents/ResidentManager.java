@@ -8,10 +8,12 @@ import com.dreamwing.serverville.cluster.ClusterManager;
 public class ResidentManager {
 	
 	private static ConcurrentMap<String,BaseResident> ActiveResidents;
+	public static ConcurrentMap<String,GlobalChannel> GlobalResidents;
 	
 	public static void init()
 	{
 		ActiveResidents = new ConcurrentHashMap<String,BaseResident>();
+		GlobalResidents = new ConcurrentHashMap<String,GlobalChannel>();
 	}
 	
 	public static void shutdown()
@@ -25,6 +27,8 @@ public class ResidentManager {
 	public static void addResident(BaseResident resident)
 	{
 		ActiveResidents.putIfAbsent(resident.getId(), resident);
+		if(resident instanceof GlobalChannel)
+			GlobalResidents.putIfAbsent(resident.getId(), (GlobalChannel)resident);
 	}
 	
 	public static boolean hasResident(String resId)
@@ -37,9 +41,12 @@ public class ResidentManager {
 		return ActiveResidents.get(resId);
 	}
 	
+	
 	public static void removeResident(BaseResident resident)
 	{
 		ActiveResidents.remove(resident.getId());
+		if(resident instanceof GlobalChannel)
+			GlobalResidents.remove(resident.getId());
 	}
 	
 }

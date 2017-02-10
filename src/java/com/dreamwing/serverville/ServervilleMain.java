@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -109,6 +110,7 @@ public class ServervilleMain {
 	public static long StartupTime; 
 	
 	public static ScheduledExecutorService ServiceScheduler;
+	public static ExecutorService MainExecutor;
 	
 	public static boolean RequireInvite=false;
 	
@@ -122,10 +124,11 @@ public class ServervilleMain {
 		
 		initProps();
 		
-		ServervilleMain server=null;
+		Singleton = new ServervilleMain();
+		
 		try
 		{
-			server = new ServervilleMain();
+			Singleton.init();
 		}
 		catch(Exception e)
 		{
@@ -133,22 +136,11 @@ public class ServervilleMain {
 			System.exit(1);
 		}
 		
-		try
-		{
-			server.runServer();
-		}
-		catch(Exception e)
-		{
-			l.error("Exception in server startup:", e);
-			System.exit(1);
-		}
 	}
 	
-	public ServervilleMain() throws Exception
+	public ServervilleMain()
 	{
 		Singleton = this;
-		
-		init();
 	}
 
 	public static short getServerNumber()
@@ -207,6 +199,7 @@ public class ServervilleMain {
 	public void init() throws Exception
 	{
 		ServiceScheduler = Executors.newScheduledThreadPool(1);
+		MainExecutor = Executors.newCachedThreadPool();
 		
 		String workingDir = System.getProperty("user.dir");
 		
@@ -252,6 +245,8 @@ public class ServervilleMain {
     	DatabaseManager.init();
     	ServerNumber = ClusterMember.getServerNum(uniqueAddress);
     	l.info("Assigned server number "+ServerNumber);
+    	
+    	SVID.init();
     	KeyDataManager.init();
     	RecordPermissionsManager.init();
     	ResidentPermissionsManager.init();
@@ -259,15 +254,23 @@ public class ServervilleMain {
     	ProductManager.init();
     	ResidentManager.init();
     	UserManager.init();
-    	ScriptManager.init();
-    	
-    	ClusterManager.init();
-    	SVID.init();
-    	ScriptManager.start();
-    	
     	ClientSessionManager.init();
-    	
     	SelfTest.init();
+    	ScriptManager.init();
+    	ClusterManager.init();
+	}
+	
+	public static void onClusterStarted()
+	{
+		try
+		{
+			Singleton.runServer();
+		}
+		catch(Exception e)
+		{
+			l.error("Exception in server startup:", e);
+			System.exit(1);
+		}
 	}
 	
 	public void runServer() throws Exception

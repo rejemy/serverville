@@ -115,6 +115,7 @@ declare namespace api
 
 	function getHostWithResident(residentId:string):string;
 	function createChannel(channelId:string, residentType?:string, values?:TransientValueMap):string;
+	function createGlobalChannel(channelId:string, residentType?:string, values?:TransientValueMap):string;
 	function deleteChannel(channelId:string):void;
 	function createResident(residentId:string, residentType:string, userId?:string, values?:TransientValueMap):string;
 	function deleteResident(residentId:string, finalValues?:TransientValueMap):void;

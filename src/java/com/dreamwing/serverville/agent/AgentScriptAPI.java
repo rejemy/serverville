@@ -40,6 +40,7 @@ import com.dreamwing.serverville.net.HttpHelpers;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.residents.BaseResident;
 import com.dreamwing.serverville.residents.Channel;
+import com.dreamwing.serverville.residents.GlobalChannel;
 import com.dreamwing.serverville.residents.OnlineUser;
 import com.dreamwing.serverville.residents.Resident;
 import com.dreamwing.serverville.residents.ResidentManager;
@@ -303,6 +304,29 @@ public class AgentScriptAPI
 		return id;
 	}
 	
+	public String createGlobalChannel(String id) throws JsonApiException
+	{
+		return createGlobalChannel(id, null, null);
+	}
+	
+	public String createGlobalChannel(String id, String residentType) throws JsonApiException
+	{
+		return createGlobalChannel(id, residentType, null);
+	}
+	
+	public String createGlobalChannel(String id, String residentType, Map<String,Object> values) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(residentType))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "residentType");
+		
+		if(StringUtil.isNullOrEmpty(id))
+			id = SVID.makeSVID();
+		
+		ClusterManager.createGlobalChannel(id, residentType, values);
+		
+		return id;
+	}
+	
 	public void deleteChannel(String id) throws JsonApiException
 	{
 		if(StringUtil.isNullOrEmpty(id))
@@ -312,6 +336,12 @@ public class AgentScriptAPI
 		if(res == null || !(res instanceof Channel))
 		{
 			throw new JsonApiException(ApiErrors.NOT_FOUND, id);
+		}
+		
+		if(res instanceof GlobalChannel)
+		{
+			ClusterManager.destroyGlobalChannel((GlobalChannel)res);
+			return;
 		}
 		
 		res.destroy();
@@ -391,7 +421,7 @@ public class AgentScriptAPI
 			throw new JsonApiException(ApiErrors.NOT_FOUND, id);
 		}
 		Resident resident = (Resident)res;
-		
+
 		if(resident.getOwnerId() != null)
 		{
 			ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(resident.getOwnerId());
