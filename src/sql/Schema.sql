@@ -28,7 +28,7 @@ CREATE TABLE `admin_log` (
   PRIMARY KEY (`requestid`),
   KEY `UserIndex` (`userid`),
   KEY `CreatedIndex` (`created`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -47,7 +47,7 @@ CREATE TABLE `adminsession` (
   `connected` tinyint(4) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `LastActiveIndex` (`lastactive`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -61,7 +61,7 @@ CREATE TABLE `adminsession_userid` (
   `userid` varchar(255) NOT NULL,
   `sessionid` varchar(255) NOT NULL,
   KEY `UserIndex` (`userid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -77,7 +77,7 @@ CREATE TABLE `agent_key` (
   `iprange` varchar(45) DEFAULT NULL,
   `expiration` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -110,7 +110,7 @@ CREATE TABLE `currency` (
   `remainder` double NOT NULL DEFAULT '0',
   `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`userid`,`currency`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -129,7 +129,7 @@ CREATE TABLE `currency_history` (
   `action` varchar(255) NOT NULL,
   `modified` bigint(20) NOT NULL,
   KEY `UserIndex` (`userid`,`modified`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -149,7 +149,7 @@ CREATE TABLE `currency_info` (
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -164,7 +164,7 @@ CREATE TABLE `invite` (
   `created` bigint(20) NOT NULL,
   `created_by` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -186,7 +186,7 @@ CREATE TABLE `keydata` (
   KEY `Type_index` (`type`),
   KEY `Parent_index` (`parent`),
   KEY `Owner_index` (`owner`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -198,7 +198,7 @@ DROP TABLE IF EXISTS `keydata_item`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `keydata_item` (
   `id` varchar(255) NOT NULL,
-  `key` varchar(255) CHARACTER SET utf8_bin NOT NULL,
+  `key` varchar(255) NOT NULL,
   `data` varbinary(62000) DEFAULT NULL,
   `datatype` int(11) NOT NULL,
   `created` bigint(20) NOT NULL,
@@ -207,7 +207,7 @@ CREATE TABLE `keydata_item` (
   PRIMARY KEY (`id`,`key`),
   KEY `ModifiedTime` (`modified`),
   KEY `DeletedIndex` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -227,7 +227,7 @@ CREATE TABLE `product` (
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -251,7 +251,7 @@ CREATE TABLE `purchase` (
   `error` text,
   PRIMARY KEY (`id`),
   KEY `user` (`userid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -261,13 +261,13 @@ CREATE TABLE `purchase` (
 DROP TABLE IF EXISTS `record_permissions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `property_permissions` (
+CREATE TABLE `record_permissions` (
   `recordtype` varchar(255) NOT NULL,
   `properties` mediumtext NOT NULL,
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`recordtype`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -277,13 +277,13 @@ CREATE TABLE `property_permissions` (
 DROP TABLE IF EXISTS `resident_permissions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `property_permissions` (
+CREATE TABLE `resident_permissions` (
   `residenttype` varchar(255) NOT NULL,
   `properties` mediumtext NOT NULL,
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
-  PRIMARY KEY (`recordtype`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  PRIMARY KEY (`residenttype`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 
@@ -300,7 +300,7 @@ CREATE TABLE `script` (
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -322,7 +322,7 @@ CREATE TABLE `user` (
   `modified` bigint(20) NOT NULL,
   `admin` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -337,7 +337,7 @@ CREATE TABLE `user_email` (
   `id` varchar(255) DEFAULT NULL,
   `hold` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -356,7 +356,7 @@ CREATE TABLE `user_session` (
   `connected` tinyint(4) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `LastActiveIndex` (`lastactive`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -370,7 +370,7 @@ CREATE TABLE `user_session_userid` (
   `userid` varchar(255) NOT NULL,
   `sessionid` varchar(255) NOT NULL,
   KEY `UserIndex` (`userid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -385,7 +385,7 @@ CREATE TABLE `user_username` (
   `id` varchar(255) DEFAULT NULL,
   `hold` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -397,4 +397,3 @@ CREATE TABLE `user_username` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-07-01  9:25:53

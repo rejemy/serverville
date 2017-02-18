@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 ./webbuild.sh
-ant jar
+ant clean jar
