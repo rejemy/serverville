@@ -75,12 +75,18 @@ public class HttpHelpers {
 		return ctx.writeAndFlush(response);
 	}
 	
+	private static void setResponseCORS(HttpResponse response)
+	{
+		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_EXPOSE_HEADERS, "X-Notifications");
+	}
+	
 	public static ChannelFuture sendSuccess(HttpRequestInfo req)
 	{
 		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
 		HttpUtil.setContentLength(response, 0);
 		
-		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		setResponseCORS(response);
 		
 		return req.Connection.Ctx.writeAndFlush(response);
 	}
@@ -99,7 +105,7 @@ public class HttpHelpers {
 		HttpHelpers.setContentTypeHeader(response, contentType);
 		HttpUtil.setContentLength(response, content.readableBytes());
 		
-		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		setResponseCORS(response);
 		
 		return req.Connection.Ctx.writeAndFlush(response);
 	}
@@ -123,7 +129,7 @@ public class HttpHelpers {
 		HttpHelpers.setContentTypeHeader(response, contentType);
 		HttpUtil.setContentLength(response, content.readableBytes());
 		
-		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		setResponseCORS(response);
 		
 		return response;
 	}
@@ -176,7 +182,7 @@ public class HttpHelpers {
 		HttpHelpers.setContentTypeHeader(response, contentType);
 		HttpUtil.setContentLength(response, content.readableBytes());
 		
-		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		setResponseCORS(response);
 		
 		return response;
 	}
@@ -184,7 +190,8 @@ public class HttpHelpers {
     public static ChannelFuture sendRedirect(HttpRequestInfo req, String newUri) {
         FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.FOUND);
         response.headers().set(HttpHeaderNames.LOCATION, newUri);
-        response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+        
+        setResponseCORS(response);
         
         return req.Connection.Ctx.writeAndFlush(response);
     }
