@@ -90,6 +90,7 @@ public class ServervilleMain {
 		DefaultProperties.setProperty("default_currency", "USD");
 		DefaultProperties.setProperty("writeable_directories", "");
 		DefaultProperties.setProperty("default_property_permission", "w");
+		DefaultProperties.setProperty("allowed_origin", "*");
 	}
 	
 	private static Logger l;

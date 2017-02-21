@@ -37,6 +37,8 @@ public class HttpHelpers {
 	
 	private static ConnectionPool SharedHttpConnectionPool;
 	private static OkHttpClient SharedHttpClient;
+	private static String AllowedOrigin;
+	private static String Vary;
 	
 	static
 	{
@@ -64,12 +66,24 @@ public class HttpHelpers {
 		SharedHttpConnectionPool.evictAll();
 	}
 	
+	private static String getAllowedOrigin()
+	{
+		if(AllowedOrigin != null)
+			return AllowedOrigin;
+		AllowedOrigin = ServervilleMain.ServerProperties.getProperty("allowed_origin");
+		if(!AllowedOrigin.equals("*"))
+			Vary = "Origin";
+		return AllowedOrigin;
+	}
+	
 	public static ChannelFuture sendPreflightApproval(ChannelHandlerContext ctx)
 	{
 		HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
 		HttpUtil.setContentLength(response, 0);
 		
-		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, getAllowedOrigin());
+		if(Vary != null)
+			response.headers().set(HttpHeaderNames.VARY, Vary);
 		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_HEADERS, "Content-Type, Authorization");
 		
 		return ctx.writeAndFlush(response);
@@ -77,7 +91,9 @@ public class HttpHelpers {
 	
 	private static void setResponseCORS(HttpResponse response)
 	{
-		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, getAllowedOrigin());
+		if(Vary != null)
+			response.headers().set(HttpHeaderNames.VARY, Vary);
 		response.headers().set(HttpHeaderNames.ACCESS_CONTROL_EXPOSE_HEADERS, "X-Notifications");
 	}
 	
