@@ -259,6 +259,11 @@ public class KeyDataManager {
 	
 	public static long saveKeys(String id, Collection<KeyDataItem> keys) throws SQLException
 	{
+		return saveKeys(id, keys, System.currentTimeMillis());
+	}
+	
+	public static long saveKeys(String id, Collection<KeyDataItem> keys, long updateTime) throws SQLException
+	{
 		if(id == null || id.length() == 0)
 		{
 			l.error("Data item has invalid id: "+id);
@@ -277,8 +282,6 @@ public class KeyDataManager {
 			return 0;
 		}
 		
-		long time = System.currentTimeMillis();
-		
 		Object[][] params = new Object[keys.size()][];
 		
 		int i = 0;
@@ -292,7 +295,7 @@ public class KeyDataManager {
 			
 			data.encode();
 			
-			params[i++] = new Object[] {id, data.key, data.data, data.datatype.toInt(), time, time};
+			params[i++] = new Object[] {id, data.key, data.data, data.datatype.toInt(), updateTime, updateTime};
 		}
 		
 		try {
@@ -302,7 +305,7 @@ public class KeyDataManager {
 			throw e;
 		}
 		
-		return time;
+		return updateTime;
 	}
 	
 	public static long saveOnlyDirtyKeys(String id, Collection<KeyDataItem> keys) throws SQLException
@@ -591,6 +594,11 @@ public class KeyDataManager {
 	
 	public static long deleteKeys(String id, Collection<String> keys) throws SQLException, JsonApiException
 	{
+		return deleteKeys(id, keys, System.currentTimeMillis());
+	}
+	
+	public static long deleteKeys(String id, Collection<String> keys, long time) throws SQLException, JsonApiException
+	{
 		if(id == null || id.length() == 0)
 		{
 			l.error("Data item has invalid id: "+id);
@@ -608,8 +616,6 @@ public class KeyDataManager {
 			// Warning?
 			return 0;
 		}
-		
-		long time = System.currentTimeMillis();
 		
 		// Key names are not SQL escaped here, so we have to be really dang sure they've been validated
 		try {

@@ -350,7 +350,46 @@ public class ClientAPI {
 		return reply;
 	}
 	
-	
+	public static SetDataReply SetAndDeleteUserKeys(UserDataSetAndDeleteRequestList request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		SetDataReply reply = new SetDataReply();
+		
+		long updateTime = System.currentTimeMillis();
+		
+		if(request.values != null)
+		{
+			List<KeyDataItem> itemList = new ArrayList<KeyDataItem>(request.values.size());
+			
+			for(SetUserDataRequest data : request.values)
+			{
+				if(!KeyDataItem.isValidKeyname(data.key))
+					throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, data.key);
+				if(!RecordPermissionsManager.UserPermissions.isOwnerWritable(data.key))
+					throw new JsonApiException(ApiErrors.PRIVATE_DATA, data.key);
+				
+				KeyDataItem item = JsonDataDecoder.MakeKeyDataFromJson(data.key, data.data_type, data.value);
+				itemList.add(item);
+			}
+
+			KeyDataManager.saveKeys(info.User.getId(), itemList, updateTime);
+		}
+		
+		if(request.delete_keys != null)
+		{
+			for(String key : request.delete_keys)
+			{
+				if(!KeyDataItem.isValidKeyname(key))
+					throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
+				if(!RecordPermissionsManager.UserPermissions.isOwnerWritable(key))
+					throw new JsonApiException(ApiErrors.PRIVATE_DATA, key);
+			}
+			
+			KeyDataManager.deleteKeys(info.User.getId(), request.delete_keys, updateTime);
+		}
+		
+		reply.updated_at = updateTime;
+		return reply;
+	}
 	
 	public static DataItemReply KeyDataItemToDataItemReply(String id, KeyDataItem item)
 	{

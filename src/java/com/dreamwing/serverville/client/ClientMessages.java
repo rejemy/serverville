@@ -119,6 +119,12 @@ public class ClientMessages {
 		public List<SetUserDataRequest> values;
 	}
 	
+	public static class UserDataSetAndDeleteRequestList
+	{
+		public List<SetUserDataRequest> values;
+		public List<String> delete_keys;
+	}
+	
 	public static class SetDataReply
 	{
 		public double updated_at;
