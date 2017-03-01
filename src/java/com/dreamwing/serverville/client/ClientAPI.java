@@ -443,6 +443,33 @@ public class ClientAPI {
 		return reply;
 	}
 	
+	public static SetDataReply DeleteUserKey(DeleteKeyRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		if(!KeyDataItem.isValidKeyname(request.key))
+			throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, request.key);
+		
+		long updatedAt = KeyDataManager.deleteKey(info.User.getId(), request.key);
+		
+		SetDataReply reply = new SetDataReply();
+		reply.updated_at = updatedAt;
+		return reply;
+	}
+	
+	public static SetDataReply DeleteUserKeys(DeleteKeysRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		for(String key : request.keys)
+		{
+			if(!KeyDataItem.isValidKeyname(key))
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
+		}
+		
+		long updatedAt = KeyDataManager.deleteKeys(info.User.getId(), request.keys);
+		
+		SetDataReply reply = new SetDataReply();
+		reply.updated_at = updatedAt;
+		return reply;
+	}
+	
 	@ClientHandlerOptions(auth=false)
 	public static DataItemReply GetDataKey(GlobalKeyRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{

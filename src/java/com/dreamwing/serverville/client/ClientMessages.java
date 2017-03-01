@@ -140,6 +140,16 @@ public class ClientMessages {
 		public boolean deleted;
 	}
 	
+	public static class DeleteKeyRequest
+	{
+		public String key;
+	}
+	
+	public static class DeleteKeysRequest
+	{
+		public List<String> keys;
+	}
+	
 	public static class TransientDataItemReply
 	{
 		public Object value;

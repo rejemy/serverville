@@ -34,7 +34,8 @@ public class KeyDataManager {
 			"INSERT INTO `keydata_item` (`id`,`key`,`data`,`datatype`,`created`,`modified`) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `data`=VALUES(`data`), `datatype`=VALUES(`datatype`), `modified`=VALUES(`modified`), `deleted`=NULL;";
 	private static final String UpsertWithDeleteStatement = 
 			"INSERT INTO `keydata_item` (`id`,`key`,`data`,`datatype`,`created`,`modified`,`deleted`) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `data`=VALUES(`data`), `datatype`=VALUES(`datatype`), `modified`=VALUES(`modified`), `deleted`=VALUES(`deleted`);";
-	
+
+
 	public static String TestIdPrefix = "__sv_test_";
 	
 	public enum StringFlavor
@@ -582,6 +583,39 @@ public class KeyDataManager {
 			DatabaseManager.getServer().update("UPDATE `keydata_item` SET `modified`=?, `deleted`=1 WHERE `id`=? AND `key`=?;", time, id, key);
 		} catch (SQLException e) {
 			l.error("Error deleting item "+id+"/"+key+" from database ", e);
+			throw e;
+		}
+		
+		return time;
+	}
+	
+	public static long deleteKeys(String id, Collection<String> keys) throws SQLException, JsonApiException
+	{
+		if(id == null || id.length() == 0)
+		{
+			l.error("Data item has invalid id: "+id);
+			throw new IllegalArgumentException("Invalid id");
+		}
+		
+		if(keys == null)
+		{
+			l.error("Null keys passed into deleteKeys");
+			throw new IllegalArgumentException("Null keys passed into deleteKeys");
+		}
+		
+		if(keys.size() == 0)
+		{
+			// Warning?
+			return 0;
+		}
+		
+		long time = System.currentTimeMillis();
+		
+		// Key names are not SQL escaped here, so we have to be really dang sure they've been validated
+		try {
+			DatabaseManager.getServer().update("UPDATE `keydata_item` SET `modified`=?, `deleted`=1 WHERE `id`=? AND `key` IN "+collectionToList(keys)+";", time, id);
+		} catch (SQLException e) {
+			l.error("Error deleting item batch from database ", e);
 			throw e;
 		}
 		
