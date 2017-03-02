@@ -52,7 +52,7 @@ public class ClientSocketInitializer extends ChannelInitializer<SocketChannel> {
 		//pipeline.addLast("detector", new ClientProtocolDetector());
       
 		pipeline.addLast("httpServer", new HttpServerCodec());
-        pipeline.addLast("httpAggregator", new HttpObjectAggregator(65536));
+        pipeline.addLast("httpAggregator", new HttpObjectAggregator(ServervilleMain.MaxRequestSize));
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
         pipeline.addLast(new IdleStateHandler(0, 0, 120));
         pipeline.addLast(new ClientConnectionHandler(JsonDispatcher, FormDispatcher));

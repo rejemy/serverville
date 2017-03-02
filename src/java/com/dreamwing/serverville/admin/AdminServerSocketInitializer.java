@@ -62,7 +62,7 @@ public class AdminServerSocketInitializer extends ChannelInitializer<SocketChann
         }
         
         pipeline.addLast(new HttpServerCodec());
-        pipeline.addLast(new HttpObjectAggregator(65536));
+        pipeline.addLast(new HttpObjectAggregator(ServervilleMain.MaxRequestSize));
         pipeline.addLast(new ChunkedWriteHandler());
         pipeline.addLast(new IdleStateHandler(0, 0, 60));
         pipeline.addLast(new AdminServerConnectionHandler(Dispatcher));

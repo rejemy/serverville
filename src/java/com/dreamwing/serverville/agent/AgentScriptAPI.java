@@ -1059,6 +1059,15 @@ public class AgentScriptAPI
 		writer.close();
 	}
 	
+	public void base64decodeAndWriteFile(String location, String filename, String contents) throws Exception
+	{
+		File f = getWritableFile(location, filename);
+		
+		byte[] bytes = Base64.getDecoder().decode(contents);
+		
+		FileUtil.writeBytesToFile(f, bytes);
+	}
+	
 	public String readTextFile(String location, String filename) throws Exception
 	{
 		File f = getWritableFile(location, filename);

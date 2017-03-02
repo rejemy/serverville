@@ -91,6 +91,7 @@ public class ServervilleMain {
 		DefaultProperties.setProperty("writeable_directories", "");
 		DefaultProperties.setProperty("default_property_permission", "w");
 		DefaultProperties.setProperty("allowed_origin", "*");
+		DefaultProperties.setProperty("max_request_size", "65536");
 	}
 	
 	private static Logger l;
@@ -103,6 +104,7 @@ public class ServervilleMain {
 	
 	public static String Hostname;
 	public static int ClientPort;
+	public static int MaxRequestSize;
 	
 	private volatile boolean Running=true;
 	
@@ -116,6 +118,7 @@ public class ServervilleMain {
 	public static boolean RequireInvite=false;
 	
 	private static short ServerNumber;
+	
 	
 	public static void main(String[] args)
 	{
@@ -238,6 +241,8 @@ public class ServervilleMain {
     	ClientPort = Integer.parseInt(ServerProperties.getProperty("client_port"));
     	
     	String uniqueAddress = Hostname+":"+ClientPort;
+    	
+    	MaxRequestSize = Integer.parseInt(ServerProperties.getProperty("max_request_size"));
     	
     	WritableDirectories.init();
     	StripeInterface.init();

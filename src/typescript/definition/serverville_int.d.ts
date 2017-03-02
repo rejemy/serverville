@@ -154,6 +154,8 @@ declare namespace api
 	function readTextFile(location:string, filename:string):string;
 	function readBinaryFile(location:string, filename:string):number[];
 
+	function base64decodeAndWriteFile(location:string, filename:string, contents:string):void;
+
 	function getUrlAsString(url:string):string;
 	function getUrlAsData(url:string):number[];
 	function getUrl(url:string):HttpResponseInfo;

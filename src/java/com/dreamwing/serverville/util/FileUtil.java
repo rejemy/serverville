@@ -52,15 +52,37 @@ public class FileUtil {
 	
 	public static void writeStringToFile(String filename, String contents, Charset encoding) throws IOException
 	{
-		try(Writer out = new OutputStreamWriter(new FileOutputStream(filename), encoding))
+		writeStringToFile(new File(filename), contents, encoding);
+	}
+	
+	public static void writeStringToFile(File file, String contents, Charset encoding) throws IOException
+	{
+		File parent = file.getParentFile();
+		
+		if (!parent.exists() && !parent.mkdirs()) {
+			throw new IOException("Couldn't create dir: " + parent);
+		}
+		
+		try(Writer out = new OutputStreamWriter(new FileOutputStream(file), encoding))
 		{
 			out.write(contents);
 		}
 	}
 	
-	public static void writeStringToFile(File file, String contents, Charset encoding) throws IOException
+	public static void writeBytesToFile(String filename, byte[] contents) throws IOException
 	{
-		try(Writer out = new OutputStreamWriter(new FileOutputStream(file), encoding))
+		writeBytesToFile(new File(filename), contents);
+	}
+	
+	public static void writeBytesToFile(File file, byte[] contents) throws IOException
+	{
+		File parent = file.getParentFile();
+		
+		if (!parent.exists() && !parent.mkdirs()) {
+			throw new IOException("Couldn't create dir: " + parent);
+		}
+		
+		try(FileOutputStream out = new FileOutputStream(file))
 		{
 			out.write(contents);
 		}
