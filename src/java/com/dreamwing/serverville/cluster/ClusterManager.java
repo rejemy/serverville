@@ -195,9 +195,12 @@ public class ClusterManager
 	}
 	
 
-	public static void addOnlineUser(String userId, OnlineUserLocator locator)
+	public static void addOnlineUser(String userId, String sessionId)
 	{
+		OnlineUserLocator locator = new OnlineUserLocator();
+		locator.SessionId = sessionId;
 		locator.MemberUUID = getLocalMemberUUID();
+		
 		OnlineUserLocator oldUser = OnlineUsers.put(userId, locator);
 		if(oldUser != null)
 		{

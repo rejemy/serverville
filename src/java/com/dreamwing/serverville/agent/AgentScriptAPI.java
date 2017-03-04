@@ -900,7 +900,7 @@ public class AgentScriptAPI
 		msg.MessageType = messageType;
 		msg.Content = message;
 		
-		UserMessage.deliverUserMessage(msg, guaranteed);
+		msg.deliver(guaranteed);
 	}
 	
 	

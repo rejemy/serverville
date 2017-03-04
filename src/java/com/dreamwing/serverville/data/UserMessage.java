@@ -82,27 +82,27 @@ public class UserMessage
 		return notification;
 	}
 	
-	public static void deliverUserMessage(UserMessage message, boolean guaranteed) throws SQLException
+	public void deliver(boolean guaranteed) throws SQLException
 	{
-		if(message.Created == null)
-			message.Created = new Date();
+		if(Created == null)
+			Created = new Date();
 		
 		if(guaranteed)
 		{
-			if(message.MessageId == null)
-				message.MessageId = SVID.makeSVID();
+			if(MessageId == null)
+				MessageId = SVID.makeSVID();
 			
-			message.save();
+			save();
 		}
 		
-		Member userMember = ClusterManager.locateUserClusterMember(message.ToUser);
+		Member userMember = ClusterManager.locateUserClusterMember(ToUser);
 		if(userMember == null)
 		{
 			// User not online
 			return;
 		}
 		
-		UserMessageNotification notification = message.toNotification();
+		UserMessageNotification notification = toNotification();
 		String serializedNotification;
 		try
 		{
@@ -115,7 +115,7 @@ public class UserMessage
 		}
 		
 		DeliverUserNotificationMessage clusterMessage = new DeliverUserNotificationMessage();
-		clusterMessage.UserId = message.ToUser;
+		clusterMessage.UserId = ToUser;
 		clusterMessage.NotificationType = "msg";
 		clusterMessage.SerializedNotification = serializedNotification;
 		

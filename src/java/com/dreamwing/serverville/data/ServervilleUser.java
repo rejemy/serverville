@@ -42,9 +42,6 @@ public class ServervilleUser {
 	@DatabaseField(columnName="id", id=true, canBeNull=false)
 	private String Id;
 	
-	@DatabaseField(columnName="sessionid")
-	private String SessionId;
-	
 	@DatabaseField(columnName="username")
 	private String Username;
 	
@@ -99,7 +96,6 @@ public class ServervilleUser {
 	
 	public String getId() { return Id; }
 	public String getUsername() { return Username; }
-	public String getSessionId() { return SessionId; }
 	public String getEmail() { return Email; }
 	
 	public boolean isAnonymous()
@@ -362,17 +358,6 @@ public class ServervilleUser {
 		if(DatabaseManager.ServervilleUserDao.update(this) != 1)
 			throw new JsonApiException(ApiErrors.CONCURRENT_MODIFICATION);
 	}
-	
-	
-	public void setSessionId(String sessionId) throws SQLException, JsonApiException
-	{
-		if(Objects.equals(SessionId, sessionId))
-			return;
-		
-		SessionId = sessionId;
-		update();
-	}
-	
 	
 	public void setUsername(String username) throws SQLException, JsonApiException
 	{

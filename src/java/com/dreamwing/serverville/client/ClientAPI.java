@@ -75,7 +75,7 @@ public class ClientAPI {
 		reply.username = user.getUsername();
 		reply.email = user.getEmail();
 		reply.user_id = user.getId();
-		reply.session_id = user.getSessionId();
+		reply.session_id = info.ConnectionHandler.getSession().getId();
 		reply.admin_level = user.AdminLevel;
 		reply.country = user.Country;
 		reply.language = user.Language;
@@ -114,7 +114,7 @@ public class ClientAPI {
 		reply.username = user.getUsername();
 		reply.email = user.getEmail();
 		reply.user_id = user.getId();
-		reply.session_id = user.getSessionId();
+		reply.session_id = info.ConnectionHandler.getSession().getId();
 		reply.admin_level = user.AdminLevel;
 		reply.country = user.Country;
 		reply.language = user.Language;
@@ -152,7 +152,7 @@ public class ClientAPI {
 		
 		reply.username = null;
 		reply.email = null;
-		reply.session_id = user.getSessionId();
+		reply.session_id = info.ConnectionHandler.getSession().getId();
 		reply.admin_level = user.AdminLevel;
 		reply.country = user.Country;
 		reply.language = user.Language;
@@ -196,7 +196,7 @@ public class ClientAPI {
 		
 		reply.username = user.getUsername();
 		reply.email = user.getEmail();
-		reply.session_id = user.getSessionId();
+		reply.session_id = info.ConnectionHandler.getSession().getId();
 		reply.admin_level = user.AdminLevel;
 		reply.country = user.Country;
 		reply.language = user.Language;
@@ -224,7 +224,7 @@ public class ClientAPI {
 		reply.user_id = info.User.getId();
 		reply.username = info.User.getUsername();
 		reply.email = info.User.getEmail();
-		reply.session_id = info.User.getSessionId();
+		reply.session_id = info.ConnectionHandler.getSession().getId();
 		reply.admin_level = info.User.AdminLevel;
 		reply.country = info.User.Country;
 		reply.language = info.User.Language;
@@ -255,7 +255,7 @@ public class ClientAPI {
 		info.ConnectionHandler.switchSession(session);
 		
 		ChangePasswordReply reply = new ChangePasswordReply();
-		reply.session_id = info.User.getSessionId();
+		reply.session_id = info.ConnectionHandler.getSession().getId();
 		return reply;
 	}
 	
@@ -275,7 +275,7 @@ public class ClientAPI {
 		reply.user_id = info.User.getId();
 		reply.username = info.User.getUsername();
 		reply.email = info.User.getEmail();
-		reply.session_id = info.User.getSessionId();
+		reply.session_id = info.ConnectionHandler.getSession().getId();
 		
 		return reply;
 	}
@@ -1297,7 +1297,7 @@ public class ClientAPI {
 		msg.MessageType = request.message_type;
 		msg.Content = request.message;
 		
-		UserMessage.deliverUserMessage(msg, request.guaranteed);
+		msg.deliver(request.guaranteed);
 		
 		return new EmptyClientReply();
 	}

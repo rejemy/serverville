@@ -17,7 +17,6 @@ import com.dreamwing.serverville.client.ClientMessages.PendingNotification;
 import com.dreamwing.serverville.client.ClientMessages.PendingNotificationList;
 import com.dreamwing.serverville.client.ClientMessages.UserMessageNotification;
 import com.dreamwing.serverville.cluster.ClusterManager;
-import com.dreamwing.serverville.cluster.DistributedData.OnlineUserLocator;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.data.UserMessage;
 import com.dreamwing.serverville.data.UserSession;
@@ -176,7 +175,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		if(Info.Session != null)
 			ClientSessionManager.removeSession(this);
 		
-		Info.User.setSessionId(session.Id);
+		//Info.User.setSessionId(session.Id);
 		Info.Session = session;
 		
 		if((WebsocketConnected || Keepalive) && session.Connected == false)
@@ -187,10 +186,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		ClientSessionManager.addSession(this);
 		
-		OnlineUserLocator locator = new OnlineUserLocator();
-		locator.SessionId = session.Id;
-		
-		ClusterManager.addOnlineUser(Info.User.getId(), locator);
+		ClusterManager.addOnlineUser(Info.User.getId(), session.Id);
 	}
 	
 	private void signOut()

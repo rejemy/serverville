@@ -312,7 +312,6 @@ DROP TABLE IF EXISTS `user`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `user` (
   `id` varchar(255) NOT NULL,
-  `sessionid` varchar(255) DEFAULT NULL,
   `username` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `passwdhash` varchar(255) DEFAULT NULL,
@@ -337,6 +336,26 @@ CREATE TABLE `user_email` (
   `id` varchar(255) DEFAULT NULL,
   `hold` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `user_message`
+--
+
+DROP TABLE IF EXISTS `user_message`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_message` (
+  `id` varchar(255) NOT NULL,
+  `to` varchar(255) NOT NULL,
+  `from` varchar(255) NOT NULL,
+  `from_user` tinyint(1) NOT NULL DEFAULT '0',
+  `message_type` varchar(255) NOT NULL,
+  `content` text,
+  `created` bigint(20) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ToUser` (`to`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
