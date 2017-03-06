@@ -1,6 +1,9 @@
 package com.dreamwing.serverville.cluster;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,23 +57,35 @@ public class DistributedData
 		
 	}
 	
+
 	public static class OnlineUserLocator implements IdentifiedDataSerializable
 	{
-		public String SessionId;
-		public String MemberUUID;
+		public SortedMap<String,String> SessionToMember;
 		
 		@Override
 		public void writeData(ObjectDataOutput out) throws IOException
 		{
-			out.writeUTF(SessionId);
-			out.writeUTF(MemberUUID);
+			out.writeShort(SessionToMember.size());
+			for(Map.Entry<String,String> entry : SessionToMember.entrySet())
+			{
+				out.writeUTF(entry.getKey());
+				out.writeUTF(entry.getValue());
+			}
+			
 		}
 
 		@Override
 		public void readData(ObjectDataInput in) throws IOException
 		{
-			SessionId = in.readUTF();
-			MemberUUID = in.readUTF();
+			int numSessions = in.readUnsignedShort();
+			SessionToMember = new TreeMap<String,String>();
+			for(int i=0; i<numSessions; i++)
+			{
+				String key = in.readUTF();
+				String value = in.readUTF();
+				SessionToMember.put(key, value);
+			}
+			
 		}
 
 		@Override
@@ -82,7 +97,25 @@ public class DistributedData
 		public int getId() {
 			return DistributedDataFactory.ONLINE_USER_LOCATOR;
 		}
+		
+		public static OnlineUserLocator merge(OnlineUserLocator loc1, OnlineUserLocator loc2)
+		{
+			OnlineUserLocator merged = new OnlineUserLocator();
+			merged.SessionToMember = new TreeMap<String,String>();
+			merged.SessionToMember.putAll(loc1.SessionToMember);
+			merged.SessionToMember.putAll(loc2.SessionToMember);
+			return merged;
+		}
+		
+		public OnlineUserLocator clone()
+		{
+			OnlineUserLocator copy = new OnlineUserLocator();
+			copy.SessionToMember = new TreeMap<String,String>();
+			copy.SessionToMember.putAll(SessionToMember);
+			return copy;
+		}
 	}
+
 	
 	
 	public static class ResidentLocator implements IdentifiedDataSerializable, PartitionAware<String>

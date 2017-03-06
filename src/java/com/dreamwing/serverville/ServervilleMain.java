@@ -92,6 +92,7 @@ public class ServervilleMain {
 		DefaultProperties.setProperty("default_property_permission", "w");
 		DefaultProperties.setProperty("allowed_origin", "*");
 		DefaultProperties.setProperty("max_request_size", "65536");
+		DefaultProperties.setProperty("allow_muiltiple_sessions", "false");
 	}
 	
 	private static Logger l;
@@ -105,6 +106,7 @@ public class ServervilleMain {
 	public static String Hostname;
 	public static int ClientPort;
 	public static int MaxRequestSize;
+	public static boolean AllowMultipleSessions;
 	
 	private volatile boolean Running=true;
 	
@@ -243,6 +245,7 @@ public class ServervilleMain {
     	String uniqueAddress = Hostname+":"+ClientPort;
     	
     	MaxRequestSize = Integer.parseInt(ServerProperties.getProperty("max_request_size"));
+    	AllowMultipleSessions = Boolean.parseBoolean(ServerProperties.getProperty("allow_muiltiple_sessions"));
     	
     	WritableDirectories.init();
     	StripeInterface.init();

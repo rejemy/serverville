@@ -200,7 +200,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		if(Info.User != null)
 		{
-			ClusterManager.removeOnlineUser(Info.User.getId());
+			ClusterManager.removeOnlineUser(Info.User.getId(), Info.Session.getId());
 			
 			ScriptManager.onUserSignOut(this);
 			

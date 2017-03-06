@@ -3,6 +3,7 @@ package com.dreamwing.serverville.data;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,11 +11,11 @@ import org.apache.logging.log4j.Logger;
 import com.dreamwing.serverville.client.ClientMessages.UserMessageNotification;
 import com.dreamwing.serverville.cluster.ClusterManager;
 import com.dreamwing.serverville.cluster.ClusterMessages.DeliverUserNotificationMessage;
+import com.dreamwing.serverville.cluster.DistributedData.OnlineUserLocator;
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.util.JSON;
 import com.dreamwing.serverville.util.SVID;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.hazelcast.core.Member;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
@@ -95,8 +96,8 @@ public class UserMessage
 			save();
 		}
 		
-		Member userMember = ClusterManager.locateUserClusterMember(ToUser);
-		if(userMember == null)
+		OnlineUserLocator userLocator = ClusterManager.locateOnlineUser(ToUser);
+		if(userLocator == null)
 		{
 			// User not online
 			return;
@@ -119,7 +120,12 @@ public class UserMessage
 		clusterMessage.NotificationType = "msg";
 		clusterMessage.SerializedNotification = serializedNotification;
 		
-		ClusterManager.sendToMember(clusterMessage, userMember);
+		for(Map.Entry<String,String> entry : userLocator.SessionToMember.entrySet())
+		{
+			clusterMessage.SessionId = entry.getKey();
+			ClusterManager.sendToMember(clusterMessage, entry.getValue());
+		}
+		
 		
 
 	}

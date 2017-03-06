@@ -249,19 +249,26 @@ public class ClusterMessages
 	public static class DeliverUserNotificationMessage implements IdentifiedDataSerializable
 	{
 		public String UserId;
+		public String SessionId;
 		public String NotificationType;
 		public String SerializedNotification;
 		
 		@Override
 		public void writeData(ObjectDataOutput out) throws IOException
 		{
-			//out.writeUTF(SessionId);
+			out.writeUTF(UserId);
+			out.writeUTF(SessionId);
+			out.writeUTF(NotificationType);
+			out.writeUTF(SerializedNotification);
 		}
 
 		@Override
 		public void readData(ObjectDataInput in) throws IOException
 		{
-			//SessionId = in.readUTF();
+			UserId = in.readUTF();
+			SessionId = in.readUTF();
+			NotificationType = in.readUTF();
+			SerializedNotification = in.readUTF();
 		}
 
 		@Override

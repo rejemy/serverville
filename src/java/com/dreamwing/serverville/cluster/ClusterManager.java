@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -102,10 +103,7 @@ public class ClusterManager
 			joinCfg.getTcpIpConfig().setMembers(hostList);
 
 		NearCacheConfig residentCache = new NearCacheConfig();
-		residentCache.setEvictionPolicy("LRU");
-		residentCache.setMaxSize(10000);
 		cfg.getMapConfig("ResidentLocations").setNearCacheConfig(residentCache);
-		
 		cfg.getMapConfig("OnlineUsers").setNearCacheConfig(residentCache);
 		
 		MapConfig residentsMapConfig = cfg.getMapConfig("Residents");
@@ -197,45 +195,118 @@ public class ClusterManager
 
 	public static void addOnlineUser(String userId, String sessionId)
 	{
-		OnlineUserLocator locator = new OnlineUserLocator();
-		locator.SessionId = sessionId;
-		locator.MemberUUID = getLocalMemberUUID();
-		
-		OnlineUserLocator oldUser = OnlineUsers.put(userId, locator);
-		if(oldUser != null)
+		if(ServervilleMain.AllowMultipleSessions)
 		{
-			// We have a previous connection
-			if(!oldUser.SessionId.equals(locator.SessionId))
+			OnlineUserLocator userLocator = OnlineUsers.get(userId);
+			if(userLocator == null)
 			{
-				// Old connection was on a different session, expire the old session
-				try {
-					UserSession oldSession = UserSession.findById(oldUser.SessionId);
-					if(oldSession != null)
-					{
-						oldSession.Expired = true;
-						oldSession.Connected = false;
-						oldSession.update();
-					}
-					
-				} catch (SQLException | JsonApiException e) {
-					l.error("Db error trying to expire old session", e);
-				}
+				userLocator = new OnlineUserLocator();
+				userLocator.SessionToMember = new TreeMap<String,String>();
 			}
 			
-			// Find the member the old connection is on, and tell them to disconnect
-			Member oldConnectionMember = locateUserClusterMember(oldUser.MemberUUID);
-			if(oldConnectionMember != null)
+			userLocator.SessionToMember.put(sessionId, getLocalMemberUUID());
+			OnlineUsers.merge(userId, userLocator, OnlineUserLocator::merge);
+		}
+		else
+		{
+			OnlineUserLocator original = null;
+			OnlineUserLocator userLocator = OnlineUsers.get(userId);
+			if(userLocator == null)
 			{
-				DisconnectUserMessage message = new DisconnectUserMessage();
-				message.SessionId = oldUser.SessionId;
-				sendToMember(message, oldConnectionMember);
+				userLocator = new OnlineUserLocator();
+				userLocator.SessionToMember = new TreeMap<String,String>();
+			}
+			else
+			{
+				original = userLocator.clone();
+			}
+			
+			if(userLocator.SessionToMember.size() > 0)
+			{
+				// We have previous connections
+				for(Map.Entry<String,String> entry : userLocator.SessionToMember.entrySet())
+				{
+					String previousSessionId = entry.getKey();
+					String previousMemberId = entry.getValue();
+					
+					if(!previousSessionId.equals(sessionId))
+					{
+						// Old connection was on a different session, expire the old session
+						try {
+							UserSession oldSession = UserSession.findById(previousSessionId);
+							if(oldSession != null)
+							{
+								oldSession.Expired = true;
+								oldSession.Connected = false;
+								oldSession.update();
+							}
+							
+						} catch (SQLException | JsonApiException e) {
+							l.error("Db error trying to expire old session", e);
+						}
+					}
+					
+					// Find the member the old connection is on, and tell them to disconnect
+					DisconnectUserMessage message = new DisconnectUserMessage();
+					message.SessionId = previousSessionId;
+					sendToMember(message, ClusterMembers.get(previousMemberId));
+				}
+				
+				userLocator.SessionToMember.clear();
+			}
+			
+			userLocator.SessionToMember.put(sessionId, getLocalMemberUUID());
+			
+			if(original != null)
+			{
+				if(!OnlineUsers.replace(userId, original, userLocator))
+				{
+					// It changed on us, try again!
+					addOnlineUser(userId, sessionId);
+				}
+			}
+			else
+			{
+				OnlineUsers.set(userId, userLocator);
 			}
 		}
 	}
 	
-	public static void removeOnlineUser(String userId)
+	public static void removeOnlineUser(String userId, String sessionId)
 	{
-		OnlineUsers.remove(userId);
+		if(ServervilleMain.AllowMultipleSessions)
+		{
+			OnlineUserLocator userLocator = OnlineUsers.get(userId);
+			if(userLocator == null)
+				return;
+			
+			OnlineUserLocator original = userLocator.clone();
+			
+			if(userLocator.SessionToMember.remove(sessionId) != null)
+			{
+				if(userLocator.SessionToMember.size() == 0)
+				{
+					if(!OnlineUsers.remove(userId, original))
+					{
+						// Modified - try again
+						removeOnlineUser(userId, sessionId);
+					}
+				}
+				else
+				{
+					if(!OnlineUsers.replace(userId, original, userLocator))
+					{
+						// Modified - try again
+						removeOnlineUser(userId, sessionId);
+					}
+				}
+			}
+		}
+		else
+		{
+			OnlineUsers.remove(userId);
+		}
+		
 	}
 	
 	public static OnlineUserLocator locateOnlineUser(String userId)
@@ -243,14 +314,6 @@ public class ClusterManager
 		return OnlineUsers.get(userId);
 	}
 	
-	public static Member locateUserClusterMember(String userId)
-	{
-		OnlineUserLocator locator = OnlineUsers.get(userId);
-		if(locator == null)
-			return null;
-		
-		return ClusterMembers.get(locator.MemberUUID);
-	}
 	
 	public static void onMemberGracefulExit(String memberId)
 	{
@@ -337,6 +400,11 @@ public class ClusterManager
 		runner.Message = message;
 		
 		RemoteExecutor.executeOnAllMembers(runner);	
+	}
+	
+	public static void sendToMember(IdentifiedDataSerializable message, String clusterMemberId)
+	{
+		sendToMember(message, ClusterMembers.get(clusterMemberId));
 	}
 	
 	public static void sendToMember(IdentifiedDataSerializable message, Member clusterMember)
