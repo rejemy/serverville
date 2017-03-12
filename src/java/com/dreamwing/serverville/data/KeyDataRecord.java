@@ -82,6 +82,10 @@ public class KeyDataRecord {
 			queryBuilder.eq("parent", parentId);
 			and = true;
 		}
+		if(!and)
+		{
+			throw new IllegalArgumentException("Must supply at least one argument");
+		}
 		
 		return queryBuilder.query();
 	}
