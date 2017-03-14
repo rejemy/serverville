@@ -235,7 +235,7 @@ public class ScriptEngineContext {
 			Object result = Engine.invokeMethod(ClientHandlers, apiId, decodedInput, user);
 			return ScriptObjectMirror.wrapAsJSONCompatible(result, null);
 		}
-		catch(ScriptException e)
+		catch(Exception e)
 		{
 			l.error("Error executing client handler "+apiId, e);
 			throw new JsonApiException(ApiErrors.JAVASCRIPT_ERROR, e.getMessage());
@@ -262,7 +262,7 @@ public class ScriptEngineContext {
 			Object result = Engine.invokeMethod(AgentHandlers, apiId, decodedInput);
 			return ScriptObjectMirror.wrapAsJSONCompatible(result, null);
 		}
-		catch(ScriptException e)
+		catch(Exception e)
 		{
 			l.error("Error executing agent handler "+apiId, e);
 			throw new JsonApiException(ApiErrors.JAVASCRIPT_ERROR, e.getMessage());
@@ -282,15 +282,6 @@ public class ScriptEngineContext {
 		return Engine.invokeMethod(CallbackHandlers, handlerName, args);
 	}
 	
-	/*
-	public Object onListenToChannelHandler(String channelId, String listenerId) throws NoSuchMethodException, ScriptException
-	{
-		return Engine.invokeMethod(CallbackHandlers, "onListenToChannel", channelId, listenerId);
-	}
-	
-	public Object onStopListenToChannelHandler(String channelId, String listenerId) throws NoSuchMethodException, ScriptException
-	{
-		return Engine.invokeMethod(CallbackHandlers, "onStopListenToChannel", channelId, listenerId);
-	}*/
+
 
 }
