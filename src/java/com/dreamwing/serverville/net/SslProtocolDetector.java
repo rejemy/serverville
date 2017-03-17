@@ -1,6 +1,9 @@
 package com.dreamwing.serverville.net;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLException;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -19,6 +22,13 @@ public class SslProtocolDetector extends ChannelInboundHandlerAdapter {
 	private static final Logger l = LogManager.getLogger(SslProtocolDetector.class);
 	
 	public static SslContext SharedSslContext = null;
+	
+	private static long KeyFileModifiedAt;
+	private static long CertFileModifiedAt;
+	
+	private static File KeyFile;
+	private static File CertFile;
+	
 	public static boolean AdminSSLOnly = false;
 	public static boolean AgentSSLOnly = false;
 	public static boolean ClientSSLOnly = false;
@@ -36,14 +46,18 @@ public class SslProtocolDetector extends ChannelInboundHandlerAdapter {
         	if(!certChainFile.canRead())
         		throw new Exception("SSL cert chain file "+certChainFile+" not readable");
         	
-        	SslContextBuilder builder = SslContextBuilder.forServer(new File(certChainFileName), new File(keyFileName));
-        	SharedSslContext = builder.build();
+        	KeyFile = new File(keyFileName);
+        	CertFile = new File(certChainFileName);
+        	
+        	reloadCertificate();
         	
         	AdminSSLOnly = Boolean.parseBoolean(ServervilleMain.ServerProperties.getProperty("admin_ssl_only"));
         	AgentSSLOnly = Boolean.parseBoolean(ServervilleMain.ServerProperties.getProperty("agent_ssl_only"));
         	ClientSSLOnly = Boolean.parseBoolean(ServervilleMain.ServerProperties.getProperty("client_ssl_only"));
         	
         	l.info("Using SSL key "+keyFileName);
+        	
+        	startFileWatch();
         }
         else if(keyFileName.length() > 0 || certChainFileName.length() > 0)
         {
@@ -51,6 +65,37 @@ public class SslProtocolDetector extends ChannelInboundHandlerAdapter {
         }
  
 	}
+	
+	
+	static void startFileWatch()
+	{
+		final Runnable certWatch = new Runnable()
+		{
+			public void run()
+			{
+				if(KeyFile.lastModified() != KeyFileModifiedAt && CertFileModifiedAt != CertFile.lastModified())
+				{
+					try {
+						reloadCertificate();
+					} catch (SSLException e) {
+						l.error("Got error trying to reload ssl certificate: ", e);
+					}
+				}
+			}
+		};
+		
+		ServervilleMain.ServiceScheduler.scheduleAtFixedRate(certWatch, 1, 1, TimeUnit.HOURS);
+	}
+	
+	static void reloadCertificate() throws SSLException
+	{
+		KeyFileModifiedAt = KeyFile.lastModified();
+		CertFileModifiedAt = CertFile.lastModified();
+		
+		SslContextBuilder builder = SslContextBuilder.forServer(CertFile, KeyFile);
+    	SharedSslContext = builder.build();
+	}
+	
 	
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg)
