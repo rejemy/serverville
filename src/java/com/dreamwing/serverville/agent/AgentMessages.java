@@ -84,6 +84,12 @@ public class AgentMessages
 		public String key;
 	}
 	
+	public static class DeleteGlobalKeysDataRequest
+	{
+		public String id;
+		public List<String> keys;
+	}
+	
 	public static class DeleteGlobalDataAllRequest
 	{
 		public String id;

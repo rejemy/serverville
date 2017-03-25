@@ -3,16 +3,6 @@
 
 // Javascript to setup a Serverville javascript context
 
-delete quit;
-delete exit;
-delete readLine;
-delete print;
-delete load;
-delete loadWithNewGlobal;
-delete Packages;
-delete JavaImporter;
-delete Java;
-
 "use strict";
 
 // Holder for exposed client handlers
@@ -40,7 +30,8 @@ class KeyData
 	record:KeyDataRecord;
 	data:any;
 	data_info:{[key:string]:DataItemInfo};
-	local_dirty:{[key:string]:DataItemInfo};
+	local_dirty:{[key:string]:boolean};
+	local_deletes:{[key:string]:boolean};
 	most_recent:number;
 	dirty:boolean;
 	
@@ -53,6 +44,7 @@ class KeyData
 		this.data = {};
 		this.data_info = {};
 		this.local_dirty = {};
+		this.local_deletes = {};
 		this.dirty = false;
 		
 		this.most_recent = 0;
@@ -179,9 +171,22 @@ class KeyData
 			this.data_info[key] = info;
 		}
 		this.dirty = true;
-		this.local_dirty[key] = info;
+		this.local_dirty[key] = true;
 	}
 	
+	delete(key:string):void
+	{
+		var info:DataItemInfo = this.data_info[key];
+		if(!info)
+			return;
+		
+		delete this.data[key];
+		delete this.data_info[key];
+
+		this.dirty = true;
+		this.local_deletes[key] = true;
+	}
+
 	save():void
 	{
 		if(this.dirty == false)
@@ -191,7 +196,7 @@ class KeyData
 		
 		for(var key in this.local_dirty)
 		{
-			var info:DataItemInfo = this.local_dirty[key];
+			var info:DataItemInfo = this.data_info[key];
 
 			saveSet.push(
 				{
@@ -203,13 +208,30 @@ class KeyData
 		}
 		
 		if(saveSet.length > 0)
+		{
 			api.setDataKeys(this.id, saveSet);
-		
-		this.local_dirty = {};
+			this.local_dirty = {};
+		}
+
+		var deleteSet:string[] = null;
+		for(var key in this.local_deletes)
+		{
+			if(deleteSet == null)
+				deleteSet = [];
+				
+			deleteSet.push(key);
+		}
+
+		if(deleteSet && deleteSet.length > 0)
+		{
+			api.deleteDataKeys(this.id, deleteSet);
+			this.local_deletes = {};
+		}
+
 		this.dirty = false;
 	}
 	
-	delete():void
+	deleteAll():void
 	{
 		api.deleteKeyData(this.id);
 		this.data = {};

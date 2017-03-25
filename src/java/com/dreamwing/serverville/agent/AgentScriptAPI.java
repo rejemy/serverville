@@ -263,6 +263,20 @@ public class AgentScriptAPI
 		return KeyDataManager.deleteKey(id, key);
 	}
 	
+	public double deleteDataKeys(String id, List<String> keys) throws SQLException, JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
+		
+		for(String key : keys)
+		{
+			if(!KeyDataItem.isValidKeyname(key))
+				throw new JsonApiException(ApiErrors.INVALID_KEY_NAME, key);
+		}
+		
+		return KeyDataManager.deleteKeys(id, keys);
+	}
+	
 	public double deleteAllDataKeys(String id) throws SQLException, JsonApiException
 	{
 		if(StringUtil.isNullOrEmpty(id))

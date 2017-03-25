@@ -1,15 +1,6 @@
 /// <reference path="nashorn.d.ts" />
 /// <reference path="../definition/serverville_int.d.ts" />
 // Javascript to setup a Serverville javascript context
-delete quit;
-delete exit;
-delete readLine;
-delete print;
-delete load;
-delete loadWithNewGlobal;
-delete Packages;
-delete JavaImporter;
-delete Java;
 "use strict";
 // Holder for exposed client handlers
 var client = {};
@@ -32,6 +23,7 @@ var KeyData = (function () {
         this.data = {};
         this.data_info = {};
         this.local_dirty = {};
+        this.local_deletes = {};
         this.dirty = false;
         this.most_recent = 0;
     }
@@ -128,26 +120,46 @@ var KeyData = (function () {
             this.data_info[key] = info;
         }
         this.dirty = true;
-        this.local_dirty[key] = info;
+        this.local_dirty[key] = true;
+    };
+    KeyData.prototype.delete = function (key) {
+        var info = this.data_info[key];
+        if (!info)
+            return;
+        delete this.data[key];
+        delete this.data_info[key];
+        this.dirty = true;
+        this.local_deletes[key] = true;
     };
     KeyData.prototype.save = function () {
         if (this.dirty == false)
             return;
         var saveSet = [];
         for (var key in this.local_dirty) {
-            var info = this.local_dirty[key];
+            var info = this.data_info[key];
             saveSet.push({
                 "key": info.key,
                 "value": info.value,
                 "data_type": info.data_type
             });
         }
-        if (saveSet.length > 0)
+        if (saveSet.length > 0) {
             api.setDataKeys(this.id, saveSet);
-        this.local_dirty = {};
+            this.local_dirty = {};
+        }
+        var deleteSet = null;
+        for (var key in this.local_deletes) {
+            if (deleteSet == null)
+                deleteSet = [];
+            deleteSet.push(key);
+        }
+        if (deleteSet && deleteSet.length > 0) {
+            api.deleteDataKeys(this.id, deleteSet);
+            this.local_deletes = {};
+        }
         this.dirty = false;
     };
-    KeyData.prototype.delete = function () {
+    KeyData.prototype.deleteAll = function () {
         api.deleteKeyData(this.id);
         this.data = {};
         this.data_info = {};

@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.script.Bindings;
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
@@ -67,6 +69,18 @@ public class ScriptEngineContext {
 		
 		Engine.put("api", new AgentScriptAPI(this));
 		addEnum("JsonDataType", JsonDataType.class);
+		
+		// Remove things we don't need in the embedded javascript
+		Bindings engineScope = Engine.getBindings(ScriptContext.ENGINE_SCOPE);
+		engineScope.remove("quit");
+		engineScope.remove("exit");
+		engineScope.remove("readLine");
+		engineScope.remove("print");
+		engineScope.remove("load");
+		engineScope.remove("loadWithNewGlobal");
+		engineScope.remove("Packages");
+		engineScope.remove("JavaImporter");
+		engineScope.remove("Java");
 		
 		try
 		{

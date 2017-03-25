@@ -111,6 +111,7 @@ declare namespace api
 	function getAllDataKeys(id:string, since:number):DataItemInfoMap;
 	function getAllDataKeys(id:string, since:number, includeDeleted:boolean):DataItemInfoMap;
 	function deleteDataKey(id:string, key:string):number;
+	function deleteDataKeys(id:string, keys:string[]):number;
 	function deleteAllDataKeys(id:string):number;
 
 	function getHostWithResident(residentId:string):string;

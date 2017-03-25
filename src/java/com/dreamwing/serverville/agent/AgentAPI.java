@@ -106,6 +106,14 @@ public class AgentAPI
 		reply.updated_at = ApiInst.deleteDataKey(request.id, request.key);
 		return reply;
 	}
+
+	public static SetDataReply DeleteDataKeys(DeleteGlobalKeysDataRequest request) throws JsonApiException, SQLException
+	{
+		SetDataReply reply = new SetDataReply();
+		reply.updated_at = ApiInst.deleteDataKeys(request.id, request.keys);
+		return reply;
+	}
+	
 	
 	public static SetDataReply DeleteAllDataKeys(DeleteGlobalDataAllRequest request) throws JsonApiException, SQLException
 	{
