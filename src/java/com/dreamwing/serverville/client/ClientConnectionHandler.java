@@ -231,9 +231,14 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	}
 	
 	
-	private void authenticate(FullHttpRequest request) throws SQLException, JsonApiException
+	private void authenticate(HttpRequestInfo requestInfo) throws SQLException, JsonApiException
 	{
-		String authToken = request.headers().get(HttpHeaderNames.AUTHORIZATION);
+		String authToken = requestInfo.getOneQuery("session_id", null);
+
+		// See if it's in the header instead
+		if(authToken == null)
+			authToken = requestInfo.Request.headers().get(HttpHeaderNames.AUTHORIZATION);
+		
 		if(authToken == null)
 		{
 			if(Info.User != null)
@@ -371,7 +376,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		
 		try {
-			authenticate(request);
+			authenticate(currRequest);
 		} catch (SQLException e) {
 			return HttpHelpers.sendError(currRequest, ApiErrors.DB_ERROR);
 		} catch (JsonApiException e) {
