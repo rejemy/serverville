@@ -178,10 +178,19 @@ public class ServervilleQueryRunner extends QueryRunner {
 
         stmt.setObject(1, id);
         stmt.setObject(2, item.key);
-        stmt.setObject(3, item.data);
-        stmt.setObject(4, item.datatype.toInt());
-        stmt.setObject(5, time);
+        if(item.data == null || item.data.length <= KeyDataManager.MaxMiniItemBytes)
+        {
+        	stmt.setObject(3, item.data);
+        	stmt.setObject(4, null);
+        }
+        else
+        {
+        	stmt.setObject(3, null);
+        	stmt.setObject(4, item.data);
+        }
+        stmt.setObject(5, item.datatype.toInt());
         stmt.setObject(6, time);
-        stmt.setObject(7, item.deleted);
+        stmt.setObject(7, time);
+        stmt.setObject(8, item.deleted);
     }
 }

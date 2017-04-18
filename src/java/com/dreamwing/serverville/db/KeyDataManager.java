@@ -28,12 +28,13 @@ public class KeyDataManager {
 	public static final long TestRetentionPeriod = 1000 * 60 * 60; // 1 hour in milliseconds
 	public static final long DeleteRetentionPeriod = 1000 * 60 * 60 * 24; // 24 hours in milliseconds
 	
-	public static final int MaxItemBytes = 62000;
+	public static final int MaxMiniItemBytes = 255;
+	public static final int MaxItemBytes = 16777215;
 	
 	private static final String UpsertStatement = 
-			"INSERT INTO `keydata_item` (`id`,`key`,`data`,`datatype`,`created`,`modified`) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `data`=VALUES(`data`), `datatype`=VALUES(`datatype`), `modified`=VALUES(`modified`), `deleted`=NULL;";
+			"INSERT INTO `keydata_item` (`id`,`key`,`data`,`long_data`,`datatype`,`created`,`modified`) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `data`=VALUES(`data`), `long_data`=VALUES(`long_data`), `datatype`=VALUES(`datatype`), `modified`=VALUES(`modified`), `deleted`=NULL;";
 	private static final String UpsertWithDeleteStatement = 
-			"INSERT INTO `keydata_item` (`id`,`key`,`data`,`datatype`,`created`,`modified`,`deleted`) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `data`=VALUES(`data`), `datatype`=VALUES(`datatype`), `modified`=VALUES(`modified`), `deleted`=VALUES(`deleted`);";
+			"INSERT INTO `keydata_item` (`id`,`key`,`data`,`long_data`,`datatype`,`created`,`modified`,`deleted`) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `data`=VALUES(`data`), `long_data`=VALUES(`long_data`), `datatype`=VALUES(`datatype`), `modified`=VALUES(`modified`), `deleted`=VALUES(`deleted`);";
 
 
 	public static String TestIdPrefix = "__sv_test_";
@@ -217,10 +218,17 @@ public class KeyDataManager {
 			throw new IllegalArgumentException("Data item too big");
 		}
 		
+		byte[] longdata = null;
+		if(data != null && data.length > MaxMiniItemBytes)
+		{
+			longdata = data;
+			data = null;
+		}
+		
 		long time = System.currentTimeMillis();
 		
 		try {
-			DatabaseManager.getServer().update(UpsertStatement, id, key, data, datatype.toInt(), time, time);
+			DatabaseManager.getServer().update(UpsertStatement, id, key, data, longdata, datatype.toInt(), time, time);
 		} catch (SQLException e) {
 			l.error("Error saving item "+id+" to database ", e);
 			throw e;
@@ -245,10 +253,18 @@ public class KeyDataManager {
 		
 		key.encode();
 
+		byte[] data = key.data;
+		byte[] longdata = null;
+		if(data != null && data.length > MaxMiniItemBytes)
+		{
+			longdata = data;
+			data = null;
+		}
+		
 		long time = System.currentTimeMillis();
 		
 		try {
-			DatabaseManager.getServer().update(UpsertStatement, id, key.key, key.data, key.datatype.toInt(), time, time);
+			DatabaseManager.getServer().update(UpsertStatement, id, key.key, data, longdata, key.datatype.toInt(), time, time);
 		} catch (SQLException e) {
 			l.error("Error saving item "+id+" to database ", e);
 			throw e;
@@ -295,7 +311,15 @@ public class KeyDataManager {
 			
 			data.encode();
 			
-			params[i++] = new Object[] {id, data.key, data.data, data.datatype.toInt(), updateTime, updateTime};
+			byte[] minidata = data.data;
+			byte[] longdata = null;
+			if(minidata != null && minidata.length > MaxMiniItemBytes)
+			{
+				longdata = minidata;
+				minidata = null;
+			}
+			
+			params[i++] = new Object[] {id, data.key, minidata, longdata, data.datatype.toInt(), updateTime, updateTime};
 		}
 		
 		try {

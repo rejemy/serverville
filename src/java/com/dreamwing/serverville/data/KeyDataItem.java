@@ -60,10 +60,12 @@ public class KeyDataItem
 	{
 		key = rs.getString(2);
 		data = rs.getBytes(3);
-		datatype = KeyDataTypes.fromInt(rs.getInt(4));
-		created = rs.getLong(5);
-		modified = rs.getLong(6);
-		deleted = (Boolean)rs.getObject(7);
+		if(data == null)
+			data = rs.getBytes(4);
+		datatype = KeyDataTypes.fromInt(rs.getInt(5));
+		created = rs.getLong(6);
+		modified = rs.getLong(7);
+		deleted = (Boolean)rs.getObject(8);
 		
 		decode();
 	}

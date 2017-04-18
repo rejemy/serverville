@@ -197,9 +197,10 @@ DROP TABLE IF EXISTS `keydata_item`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `keydata_item` (
-  `id` varchar(255) NOT NULL,
-  `key` varchar(255) NOT NULL,
-  `data` varbinary(62000) DEFAULT NULL,
+  `id` varchar(255) COLLATE utf8_bin NOT NULL,
+  `key` varchar(255) COLLATE utf8_bin NOT NULL,
+  `data` varbinary(255) DEFAULT NULL,
+  `long_data` mediumblob,
   `datatype` int(11) NOT NULL,
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
