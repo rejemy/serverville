@@ -912,7 +912,7 @@ public class AgentScriptAPI
 		msg.From = from;
 		msg.FromUser = fromUser;
 		msg.MessageType = messageType;
-		msg.Content = message;
+		msg.setContent(message);
 		
 		msg.deliver(guaranteed);
 	}

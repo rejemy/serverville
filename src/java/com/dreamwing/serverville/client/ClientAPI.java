@@ -1295,7 +1295,7 @@ public class ClientAPI {
 		msg.From = info.User.getId();
 		msg.FromUser = true;
 		msg.MessageType = request.message_type;
-		msg.Content = request.message;
+		msg.setContent(request.message);
 		
 		msg.deliver(request.guaranteed);
 		
@@ -1315,7 +1315,7 @@ public class ClientAPI {
 			
 			messageNotification.id = msg.MessageId;
 			messageNotification.message_type = msg.MessageType;
-			messageNotification.message = msg.Content;
+			messageNotification.message = msg.getContent();
 			messageNotification.from_id = msg.From;
 			messageNotification.sender_is_user = msg.FromUser;
 			

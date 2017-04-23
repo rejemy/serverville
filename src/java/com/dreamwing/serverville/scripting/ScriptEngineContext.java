@@ -95,7 +95,8 @@ public class ScriptEngineContext {
 		{
 			try
 			{
-				Engine.eval(script.ScriptSource);
+				String source = script.getScriptSource();
+				Engine.eval(source);
 			} catch (Exception e)
 			{
 				l.error("Couldn't setup javascript engine due to exception in "+script.Id, e);

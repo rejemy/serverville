@@ -1,5 +1,6 @@
 package com.dreamwing.serverville.data;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.Date;
@@ -17,8 +18,9 @@ public class ScriptData {
 	@DatabaseField(columnName="id", id=true, canBeNull=false)
 	public String Id;
 	
-	@DatabaseField(columnName="source", canBeNull=false)
-	public String ScriptSource;
+	@DatabaseField(columnName="source", dataType=DataType.BYTE_ARRAY, canBeNull=false)
+	public byte[] ScriptSourceBytes;
+	private String ScriptSource;
 	
 	@DatabaseField(columnName="created", dataType=DataType.DATE_LONG, canBeNull=false)
 	public Date Created;
@@ -48,6 +50,19 @@ public class ScriptData {
 	
 	}
 	
+	public void setScriptSource(String source)
+	{
+		ScriptSource = source;
+		ScriptSourceBytes = ScriptSource.getBytes(StandardCharsets.UTF_8);
+	}
+	
+	public String getScriptSource()
+	{
+		if(ScriptSource == null && ScriptSourceBytes != null)
+			ScriptSource = new String(ScriptSourceBytes, StandardCharsets.UTF_8);
+	
+		return ScriptSource;
+	}
 	
 	public void create() throws SQLException
 	{

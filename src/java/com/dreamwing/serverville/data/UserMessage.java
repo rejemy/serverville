@@ -1,5 +1,6 @@
 package com.dreamwing.serverville.data;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
@@ -40,8 +41,9 @@ public class UserMessage
 	@DatabaseField(columnName="message_type", canBeNull=false)
 	public String MessageType;
 	
-	@DatabaseField(columnName="content", canBeNull=true)
-	public String Content;
+	@DatabaseField(columnName="content", dataType=DataType.BYTE_ARRAY, canBeNull=true)
+	public byte[] ContentBytes;
+	private String Content;
 	
 	@DatabaseField(columnName="created", dataType=DataType.DATE_LONG, canBeNull=false)
 	public Date Created;
@@ -54,6 +56,20 @@ public class UserMessage
 	public static List<UserMessage> loadAllToUser(String userId) throws SQLException
 	{
 		return DatabaseManager.UserMessageDao.queryForEq("to", userId);
+	}
+	
+	public void setContent(String source)
+	{
+		Content = source;
+		ContentBytes = Content.getBytes(StandardCharsets.UTF_8);
+	}
+	
+	public String getContent()
+	{
+		if(Content == null && ContentBytes != null)
+			Content = new String(ContentBytes, StandardCharsets.UTF_8);
+	
+		return Content;
 	}
 	
 	public void delete() throws SQLException

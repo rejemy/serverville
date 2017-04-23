@@ -728,7 +728,7 @@ public class AdminAPI {
 		ScriptDataInfo info = new ScriptDataInfo();
 		
 		info.id = script.Id;
-		info.source = script.ScriptSource;
+		info.source = script.getScriptSource();
 		info.created = script.Created.getTime();
 		info.modified = script.Modified.getTime();
 		
@@ -747,7 +747,8 @@ public class AdminAPI {
 		if(script == null)
 			return HttpHelpers.sendError(req, ApiErrors.NOT_FOUND);
 		
-		return HttpHelpers.sendText(req, script.ScriptSource, "application/javascript");
+		String source = script.getScriptSource();
+		return HttpHelpers.sendText(req, source, "application/javascript");
 	}
 	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
@@ -763,7 +764,7 @@ public class AdminAPI {
 			ScriptDataInfo info = new ScriptDataInfo();
 			
 			info.id = script.Id;
-			info.source = script.ScriptSource;
+			info.source = script.getScriptSource();
 			info.created = script.Created.getTime();
 			info.modified = script.Modified.getTime();
 			
@@ -803,7 +804,7 @@ public class AdminAPI {
 			if(script.Id.equals(id))
 			{
 				newScript = script;
-				newScript.ScriptSource = scriptData;
+				newScript.setScriptSource(scriptData);
 				found = true;
 				break;
 			}
@@ -813,7 +814,7 @@ public class AdminAPI {
 		{
 			newScript = new ScriptData();
 			newScript.Id = id;
-			newScript.ScriptSource = scriptData;
+			newScript.setScriptSource(scriptData);
 			newScript.Created = new Date();
 			newScript.Modified = new Date();
 			

@@ -297,7 +297,7 @@ DROP TABLE IF EXISTS `script`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `script` (
   `id` varchar(255) NOT NULL,
-  `source` longtext NOT NULL,
+  `source` longblob NOT NULL,
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
@@ -353,7 +353,7 @@ CREATE TABLE `user_message` (
   `from` varchar(255) NOT NULL,
   `from_user` tinyint(1) NOT NULL DEFAULT '0',
   `message_type` varchar(255) NOT NULL,
-  `content` text,
+  `content` blob,
   `created` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `ToUser` (`to`)
