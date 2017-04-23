@@ -2,7 +2,7 @@
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -16,7 +16,7 @@
 
 DROP TABLE IF EXISTS `admin_log`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `admin_log` (
   `requestid` varchar(255) NOT NULL,
   `userid` varchar(255) NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE `admin_log` (
   PRIMARY KEY (`requestid`),
   KEY `UserIndex` (`userid`),
   KEY `CreatedIndex` (`created`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -37,7 +37,7 @@ CREATE TABLE `admin_log` (
 
 DROP TABLE IF EXISTS `adminsession`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `adminsession` (
   `id` varchar(255) NOT NULL,
   `userid` varchar(255) NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE `adminsession` (
   `connected` tinyint(4) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `LastActiveIndex` (`lastactive`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -56,12 +56,12 @@ CREATE TABLE `adminsession` (
 
 DROP TABLE IF EXISTS `adminsession_userid`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `adminsession_userid` (
   `userid` varchar(255) NOT NULL,
   `sessionid` varchar(255) NOT NULL,
   KEY `UserIndex` (`userid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -70,14 +70,14 @@ CREATE TABLE `adminsession_userid` (
 
 DROP TABLE IF EXISTS `agent_key`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `agent_key` (
   `key` varchar(255) NOT NULL,
   `comment` varchar(255) DEFAULT NULL,
   `iprange` varchar(45) DEFAULT NULL,
   `expiration` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -86,14 +86,14 @@ CREATE TABLE `agent_key` (
 
 DROP TABLE IF EXISTS `cluster_member`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `cluster_member` (
-  `address` varchar(255) COLLATE utf8_bin NOT NULL,
+  `address` varchar(255) NOT NULL,
   `servernum` int(11) NOT NULL,
   `created` bigint(20) NOT NULL,
   PRIMARY KEY (`address`),
   UNIQUE KEY `servernum_UNIQUE` (`servernum`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -102,7 +102,7 @@ CREATE TABLE `cluster_member` (
 
 DROP TABLE IF EXISTS `currency`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `currency` (
   `userid` varchar(255) NOT NULL,
   `currency` varchar(255) NOT NULL,
@@ -110,7 +110,7 @@ CREATE TABLE `currency` (
   `remainder` double NOT NULL DEFAULT '0',
   `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`userid`,`currency`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -119,7 +119,7 @@ CREATE TABLE `currency` (
 
 DROP TABLE IF EXISTS `currency_history`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `currency_history` (
   `userid` varchar(255) NOT NULL,
   `currency` varchar(255) NOT NULL,
@@ -129,7 +129,7 @@ CREATE TABLE `currency_history` (
   `action` varchar(255) NOT NULL,
   `modified` bigint(20) NOT NULL,
   KEY `UserIndex` (`userid`,`modified`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -138,7 +138,7 @@ CREATE TABLE `currency_history` (
 
 DROP TABLE IF EXISTS `currency_info`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `currency_info` (
   `id` varchar(255) NOT NULL,
   `starting` int(11) NOT NULL DEFAULT '0',
@@ -149,7 +149,7 @@ CREATE TABLE `currency_info` (
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -158,13 +158,13 @@ CREATE TABLE `currency_info` (
 
 DROP TABLE IF EXISTS `invite`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `invite` (
   `id` varchar(255) NOT NULL,
   `created` bigint(20) NOT NULL,
   `created_by` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -173,7 +173,7 @@ CREATE TABLE `invite` (
 
 DROP TABLE IF EXISTS `keydata`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `keydata` (
   `id` varchar(255) NOT NULL,
   `type` varchar(255) NOT NULL,
@@ -186,7 +186,7 @@ CREATE TABLE `keydata` (
   KEY `Type_index` (`type`),
   KEY `Parent_index` (`parent`),
   KEY `Owner_index` (`owner`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -195,10 +195,10 @@ CREATE TABLE `keydata` (
 
 DROP TABLE IF EXISTS `keydata_item`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `keydata_item` (
-  `id` varchar(255) COLLATE utf8_bin NOT NULL,
-  `key` varchar(255) COLLATE utf8_bin NOT NULL,
+  `id` varchar(255) NOT NULL,
+  `key` varchar(255) NOT NULL,
   `data` varbinary(255) DEFAULT NULL,
   `long_data` mediumblob,
   `datatype` int(11) NOT NULL,
@@ -208,7 +208,7 @@ CREATE TABLE `keydata_item` (
   PRIMARY KEY (`id`,`key`),
   KEY `ModifiedTime` (`modified`),
   KEY `DeletedIndex` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -217,7 +217,7 @@ CREATE TABLE `keydata_item` (
 
 DROP TABLE IF EXISTS `product`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `product` (
   `id` varchar(255) NOT NULL,
   `text` text,
@@ -228,7 +228,7 @@ CREATE TABLE `product` (
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -237,7 +237,7 @@ CREATE TABLE `product` (
 
 DROP TABLE IF EXISTS `purchase`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `purchase` (
   `id` varchar(255) NOT NULL,
   `userid` varchar(255) NOT NULL,
@@ -252,7 +252,7 @@ CREATE TABLE `purchase` (
   `error` text,
   PRIMARY KEY (`id`),
   KEY `user` (`userid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -261,14 +261,14 @@ CREATE TABLE `purchase` (
 
 DROP TABLE IF EXISTS `record_permissions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `record_permissions` (
   `recordtype` varchar(255) NOT NULL,
   `properties` mediumtext NOT NULL,
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`recordtype`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -277,16 +277,15 @@ CREATE TABLE `record_permissions` (
 
 DROP TABLE IF EXISTS `resident_permissions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `resident_permissions` (
   `residenttype` varchar(255) NOT NULL,
   `properties` mediumtext NOT NULL,
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`residenttype`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
 
 --
 -- Table structure for table `script`
@@ -294,14 +293,14 @@ CREATE TABLE `resident_permissions` (
 
 DROP TABLE IF EXISTS `script`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `script` (
   `id` varchar(255) NOT NULL,
   `source` longblob NOT NULL,
   `created` bigint(20) NOT NULL,
   `modified` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -310,7 +309,7 @@ CREATE TABLE `script` (
 
 DROP TABLE IF EXISTS `user`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user` (
   `id` varchar(255) NOT NULL,
   `username` varchar(255) DEFAULT NULL,
@@ -322,7 +321,7 @@ CREATE TABLE `user` (
   `modified` bigint(20) NOT NULL,
   `admin` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -331,13 +330,13 @@ CREATE TABLE `user` (
 
 DROP TABLE IF EXISTS `user_email`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user_email` (
   `email` varchar(255) NOT NULL,
   `id` varchar(255) DEFAULT NULL,
   `hold` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -346,7 +345,7 @@ CREATE TABLE `user_email` (
 
 DROP TABLE IF EXISTS `user_message`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user_message` (
   `id` varchar(255) NOT NULL,
   `to` varchar(255) NOT NULL,
@@ -357,7 +356,7 @@ CREATE TABLE `user_message` (
   `created` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `ToUser` (`to`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -366,7 +365,7 @@ CREATE TABLE `user_message` (
 
 DROP TABLE IF EXISTS `user_session`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user_session` (
   `id` varchar(255) NOT NULL,
   `userid` varchar(255) NOT NULL,
@@ -376,7 +375,7 @@ CREATE TABLE `user_session` (
   `connected` tinyint(4) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `LastActiveIndex` (`lastactive`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -385,12 +384,12 @@ CREATE TABLE `user_session` (
 
 DROP TABLE IF EXISTS `user_session_userid`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user_session_userid` (
   `userid` varchar(255) NOT NULL,
   `sessionid` varchar(255) NOT NULL,
   KEY `UserIndex` (`userid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -399,13 +398,13 @@ CREATE TABLE `user_session_userid` (
 
 DROP TABLE IF EXISTS `user_username`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user_username` (
   `username` varchar(255) NOT NULL,
   `id` varchar(255) DEFAULT NULL,
   `hold` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
