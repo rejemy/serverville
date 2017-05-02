@@ -47,6 +47,11 @@ public class OnlineUser
 		return User.getId();
 	}
 	
+	public boolean isListeningTo(BaseResident resident)
+	{
+		return ListeningTo.containsKey(resident.getId());
+	}
+	
 	public void onListeningTo(BaseResident resident)
 	{
 		ListeningTo.put(resident.getId(), resident);

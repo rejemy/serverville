@@ -37,6 +37,7 @@ public class ClusterMessages
 		public static final int GLOBAL_CHANNEL_EVENT = 9;
 		public static final int GLOBAL_CHANNEL_DATA_UPDATE = 10;
 		public static final int REMOVE_GLOBAL_CHANNEL = 11;
+		public static final int CREATE_WORLD_REQUEST = 12;
 		
 		@Override
 		public IdentifiedDataSerializable create(int typeId)
@@ -65,6 +66,8 @@ public class ClusterMessages
 				return new GlobalChannelDataUpdateMessage();
 			case REMOVE_GLOBAL_CHANNEL:
 				return new GlobalChannelDataUpdateMessage();
+			case CREATE_WORLD_REQUEST:
+				return new CreateWorldRequestMessage();
 			default:
 				l.error("Tried to deserialize cluster message with unknown type: "+typeId);
 			}
@@ -115,6 +118,9 @@ public class ClusterMessages
 				break;
 			case ClusterMessageFactory.REMOVE_GLOBAL_CHANNEL:
 				ClusterMessageHandler.onRemoveGlobalChannel((RemoveGlobalChannelMessage)Message);
+				break;
+			case ClusterMessageFactory.CREATE_WORLD_REQUEST:
+				ClusterMessageHandler.onCreateWorldRequest((CreateWorldRequestMessage)Message);
 				break;
 			default:
 				l.error("Tried to run cluster message of unknown type: "+messageType);
@@ -347,6 +353,44 @@ public class ClusterMessages
 		@Override
 		public int getId() {
 			return ClusterMessageFactory.CREATE_CHANNEL_REQUEST;
+		}
+	}
+	
+	public static class CreateWorldRequestMessage implements IdentifiedDataSerializable
+	{
+		public String WorldId;
+		public String ResidentType;
+		public Map<String,Object> Values;
+		
+		@Override
+		public void writeData(ObjectDataOutput out) throws IOException
+		{
+			out.writeUTF(WorldId);
+			out.writeUTF(ResidentType);
+			String encodedValues = null;
+			if(Values != null)
+				encodedValues = JSON.serializeToString(Values);
+			StringUtil.writeUTFNullSafe(out, encodedValues);
+		}
+
+		@Override
+		public void readData(ObjectDataInput in) throws IOException
+		{
+			WorldId = in.readUTF();
+			ResidentType = in.readUTF();
+			String encodedValues = StringUtil.readUTFNullSafe(in);
+			if(encodedValues != null)
+				Values = JSON.deserialize(encodedValues, JSON.StringObjectMapType);
+		}
+
+		@Override
+		public int getFactoryId() {
+			return ClusterMessageFactory.FACTORY_ID;
+		}
+
+		@Override
+		public int getId() {
+			return ClusterMessageFactory.CREATE_WORLD_REQUEST;
 		}
 	}
 	

@@ -202,6 +202,14 @@ public class ClientMessages {
 		public boolean include_deleted;
 	}
 	
+	public static class KeysStartingWithRequest
+	{
+		public String id;
+		public String prefix;
+		public double since;
+		public boolean include_deleted;
+	}
+	
 	public static class AllGlobalKeysRequest
 	{
 		public String id;
@@ -355,6 +363,18 @@ public class ClientMessages {
 		public String channel_id;
 		public Map<String,Object> values;
 		public Map<String,ChannelMemberInfo> members;
+	}
+	
+	public static class UpdateWorldListeningZonesRequest
+	{
+		public String world_id;
+		public List<String> listen_to;
+		public List<String> stop_listen_to;
+	}
+	
+	public static class WorldZonesInfo
+	{
+		public Map<String,ChannelInfo> zones;
 	}
 	
 	public static class SetTransientValueRequest

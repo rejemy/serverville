@@ -13,6 +13,7 @@ import com.dreamwing.serverville.client.ClientConnectionHandler;
 import com.dreamwing.serverville.client.ClientSessionManager;
 import com.dreamwing.serverville.cluster.ClusterMessages.CachedDataUpdateMessage;
 import com.dreamwing.serverville.cluster.ClusterMessages.CreateChannelRequestMessage;
+import com.dreamwing.serverville.cluster.ClusterMessages.CreateWorldRequestMessage;
 import com.dreamwing.serverville.cluster.ClusterMessages.DeliverUserNotificationMessage;
 import com.dreamwing.serverville.cluster.ClusterMessages.DisconnectUserMessage;
 import com.dreamwing.serverville.cluster.ClusterMessages.GlobalChannelDataUpdateMessage;
@@ -29,6 +30,7 @@ import com.dreamwing.serverville.residents.BaseResident;
 import com.dreamwing.serverville.residents.Channel;
 import com.dreamwing.serverville.residents.GlobalChannel;
 import com.dreamwing.serverville.residents.ResidentManager;
+import com.dreamwing.serverville.residents.World;
 import com.dreamwing.serverville.scripting.ScriptManager;
 
 public class ClusterMessageHandler
@@ -163,6 +165,48 @@ public class ClusterMessageHandler
 			chan.setTransientValues(request.Values, true);
 		
 		ClusterManager.createChannelInCluster(chan);
+		
+		/*
+		ResidentManager.addResident(chan);
+		
+		
+		
+		try
+		{
+			ClusterManager.registerLocalResident(chan);
+		}
+		catch(JsonApiException e)
+		{
+			// Oops, we have to clean it up if we couldn't register it on the cluster
+			ResidentManager.removeResident(chan);
+			throw e;
+		}*/
+		
+	}
+	
+	public static void onCreateWorldRequest(CreateWorldRequestMessage request) throws JsonApiException
+	{
+		
+		BaseResident res = ResidentManager.getResident(request.WorldId);
+		if(res != null)
+		{
+			if(res instanceof Channel && request.ResidentType.equals(res.getType()))
+			{
+				if(request.Values != null)
+					res.setTransientValues(request.Values, true);
+				
+				return;
+			}
+			
+			throw new JsonApiException(ApiErrors.CHANNEL_ID_TAKEN, request.WorldId);
+		}	
+		
+		World world = new World(request.WorldId, request.ResidentType);
+		
+		if(request.Values != null)
+			world.setTransientValues(request.Values, true);
+		
+		ClusterManager.createChannelInCluster(world);
 		
 		/*
 		ResidentManager.addResident(chan);

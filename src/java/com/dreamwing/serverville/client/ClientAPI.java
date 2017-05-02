@@ -36,6 +36,8 @@ import com.dreamwing.serverville.residents.BaseResident;
 import com.dreamwing.serverville.residents.Channel;
 import com.dreamwing.serverville.residents.Resident;
 import com.dreamwing.serverville.residents.ResidentManager;
+import com.dreamwing.serverville.residents.World;
+import com.dreamwing.serverville.residents.Zone;
 import com.dreamwing.serverville.serialize.JsonDataDecoder;
 import com.dreamwing.serverville.stripe.StripeInterface;
 import com.dreamwing.serverville.util.CurrencyUtil;
@@ -590,6 +592,50 @@ public class ClientAPI {
 		for(KeyDataItem item : items)
 		{
 
+			DataItemReply data = KeyDataItemToDataItemReply(request.id, item);
+			reply.values.put(data.key, data);
+		}
+		
+		return reply;
+	}
+	
+	@ClientHandlerOptions(auth=false)
+	public static UserDataReply GetDataKeysStartingWith(KeysStartingWithRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		if(StringUtil.isNullOrEmpty(request.id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
+		
+		if(StringUtil.isNullOrEmpty(request.prefix))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "prefix");
+		
+		List<KeyDataItem> items = KeyDataManager.loadKeysStartingWithSince(request.id, request.prefix, (long)request.since, request.include_deleted);
+		if(items == null)
+			items = new ArrayList<KeyDataItem>();
+		
+		UserDataReply reply = new UserDataReply();
+		
+		reply.values = new HashMap<String,DataItemReply>();
+		
+		String userId = info.User != null ? info.User.getId() : null;
+		
+		PropertyPermissions perms = RecordPermissionsManager.UserPermissions;
+		boolean isMe = request.id.equals(userId);
+		if(!isMe)
+		{
+			KeyDataRecord record = KeyDataRecord.load(request.id);
+			if(record != null && record.Owner.equals(userId))
+				isMe = true;
+			perms = RecordPermissionsManager.getPermissions(record);
+		}
+		
+		
+		for(KeyDataItem item : items)
+		{
+			if(isMe && !perms.isOwnerReadable(item.key))
+				continue;
+			else if(!isMe && !perms.isGlobalReadable(item.key))
+				continue;
+			
 			DataItemReply data = KeyDataItemToDataItemReply(request.id, item);
 			reply.values.put(data.key, data);
 		}
@@ -1253,6 +1299,51 @@ public class ClientAPI {
 		channel.removeListener(info.UserPresence);
 		
 		return new EmptyClientReply();
+	}
+	
+	public static WorldZonesInfo UpdateWorldListeningZones(UpdateWorldListeningZonesRequest request, ClientMessageInfo info) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(request.world_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, request.world_id);
+		
+		if(info.UserPresence == null)
+		{
+			throw new JsonApiException(ApiErrors.USER_NOT_PRESENT, info.User.getId());
+		}
+		
+		BaseResident source = ResidentManager.getResident(request.world_id);
+		if(source == null || !(source instanceof World))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, request.world_id);
+		}
+		World world = (World)source;
+		
+		if(request.stop_listen_to != null)
+		{
+			for(String zoneId : request.stop_listen_to)
+			{
+				Zone zone = world.getZone(zoneId);
+				if(zone != null)
+					zone.removeListener(info.UserPresence);
+			}
+		}
+		
+		WorldZonesInfo reply = new WorldZonesInfo();
+		reply.zones = new HashMap<String,ChannelInfo>();
+		
+		if(request.listen_to != null)
+		{
+			for(String zoneId : request.listen_to)
+			{
+				Zone zone = world.getOrCreateZone(zoneId);
+				zone.addListener(info.UserPresence);
+				
+				reply.zones.put(zoneId, zone.getChannelInfo(0));
+			}
+		}
+		
+		
+		return reply;
 	}
 	
 	public static EmptyClientReply TriggerResidentEvent(TriggerResidentEventRequest request, ClientMessageInfo info) throws JsonApiException

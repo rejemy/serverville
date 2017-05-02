@@ -497,6 +497,79 @@ public class KeyDataManager {
 		}
 	}
 	
+	public static List<KeyDataItem> loadKeysStartingWith(String id, String prefix) throws SQLException
+	{
+		return loadKeysStartingWith(id, prefix, false);
+	}
+	
+	public static List<KeyDataItem> loadKeysStartingWith(String id, String prefix, boolean includeDeleted) throws SQLException
+	{
+		if(id == null || id.length() == 0)
+		{
+			l.error("Data item has invalid id: "+id);
+			throw new IllegalArgumentException("Invalid id");
+		}
+		
+		if(prefix == null || prefix.length() == 0)
+		{
+			l.error("Data item has invalid prefix: "+prefix);
+			throw new IllegalArgumentException("Invalid prefix");
+		}
+		
+		String like = prefix+"%";
+		
+		try {
+			List<KeyDataItem> results = null;
+			if(includeDeleted)
+				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `key` LIKE ?", ItemListHandler, id, like);
+			else
+				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `key` LIKE ? AND `deleted` IS NULL;", ItemListHandler, id, like);
+			return results;
+		} catch (SQLException e) {
+			l.error("Error loading item "+id+" to database ", e);
+			throw e;
+		}
+
+	}
+	
+	public static List<KeyDataItem> loadKeysStartingWithSince(String id, String prefix, long time) throws SQLException
+	{
+		return loadKeysStartingWithSince(id, prefix, time, false);
+	}
+	
+	public static List<KeyDataItem> loadKeysStartingWithSince(String id, String prefix, long time, boolean includeDeleted) throws SQLException
+	{
+		if(time <= 0)
+			return loadKeysStartingWith(id, prefix, includeDeleted);
+		
+		if(id == null || id.length() == 0)
+		{
+			l.error("Data item has invalid id: "+id);
+			throw new IllegalArgumentException("Invalid id");
+		}
+		
+		if(prefix == null || prefix.length() == 0)
+		{
+			l.error("Data item has invalid prefix: "+prefix);
+			throw new IllegalArgumentException("Invalid prefix");
+		}
+		
+		String like = prefix+"%";
+		
+		try {
+			List<KeyDataItem> results = null;
+			if(includeDeleted)
+				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `key` LIKE ? AND `modified`>?", ItemListHandler, id, like, time);
+			else
+				results = DatabaseManager.getServer().query("SELECT * FROM `keydata_item` WHERE `id`=? AND `key` LIKE ? AND `modified`>? AND `deleted` IS NULL;", ItemListHandler, id, like, time);
+			return results;
+		} catch (SQLException e) {
+			l.error("Error loading item "+id+" to database ", e);
+			throw e;
+		}
+	}
+	
+	
 	public static List<KeyDataItem> loadAllKeys(String id) throws SQLException
 	{
 		return loadAllKeys(id, false);

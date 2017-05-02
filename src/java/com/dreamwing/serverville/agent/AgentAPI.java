@@ -13,6 +13,7 @@ import com.dreamwing.serverville.client.ClientMessages.GetHostWithResidentReply;
 import com.dreamwing.serverville.client.ClientMessages.GetHostWithResidentRequest;
 import com.dreamwing.serverville.client.ClientMessages.GlobalKeyRequest;
 import com.dreamwing.serverville.client.ClientMessages.GlobalKeysRequest;
+import com.dreamwing.serverville.client.ClientMessages.KeysStartingWithRequest;
 import com.dreamwing.serverville.client.ClientMessages.SetDataReply;
 import com.dreamwing.serverville.client.ClientMessages.TransientDataItemReply;
 import com.dreamwing.serverville.client.ClientMessages.TransientDataItemsReply;
@@ -90,6 +91,13 @@ public class AgentAPI
 		UserDataReply reply = new UserDataReply();
 		
 		reply.values = ApiInst.getDataKeys(request.id, request.keys, request.since, request.include_deleted);
+		return reply;
+	}
+	
+	public static UserDataReply GetDataKeysStartingWith(KeysStartingWithRequest request) throws JsonApiException, SQLException
+	{
+		UserDataReply reply = new UserDataReply();
+		reply.values = ApiInst.getDataKeysStartingWith(request.id, request.prefix, request.since, request.include_deleted);
 		return reply;
 	}
 	

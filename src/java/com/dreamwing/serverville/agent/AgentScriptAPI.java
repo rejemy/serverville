@@ -24,6 +24,7 @@ import com.dreamwing.serverville.client.ClientMessages.ChannelInfo;
 import com.dreamwing.serverville.client.ClientMessages.DataItemReply;
 import com.dreamwing.serverville.cluster.ClusterManager;
 import com.dreamwing.serverville.cluster.ClusterMessages.CreateChannelRequestMessage;
+import com.dreamwing.serverville.cluster.ClusterMessages.CreateWorldRequestMessage;
 import com.dreamwing.serverville.client.ClientSessionManager;
 import com.dreamwing.serverville.data.CurrencyInfo;
 import com.dreamwing.serverville.data.JsonDataType;
@@ -44,6 +45,7 @@ import com.dreamwing.serverville.residents.GlobalChannel;
 import com.dreamwing.serverville.residents.OnlineUser;
 import com.dreamwing.serverville.residents.Resident;
 import com.dreamwing.serverville.residents.ResidentManager;
+import com.dreamwing.serverville.residents.World;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.serialize.JsonDataDecoder;
 import com.dreamwing.serverville.util.FileUtil;
@@ -222,6 +224,39 @@ public class AgentScriptAPI
 		return reply;
 	}
 	
+	public Map<String,DataItemReply> getDataKeysStartingWith(String id, String prefix) throws JsonApiException, SQLException
+	{
+		return getDataKeysStartingWith(id, prefix, 0.0, false);
+	}
+	
+	public Map<String,DataItemReply> getDataKeysStartingWith(String id, String prefix, double since) throws JsonApiException, SQLException
+	{
+		return getDataKeysStartingWith(id, prefix, since, false);
+	}
+	
+	public Map<String,DataItemReply> getDataKeysStartingWith(String id, String prefix, double since, boolean includeDeleted) throws JsonApiException, SQLException
+	{
+		if(StringUtil.isNullOrEmpty(id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "id");
+	
+		if(StringUtil.isNullOrEmpty(prefix))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "prefix");
+		
+		List<KeyDataItem> items = KeyDataManager.loadKeysStartingWithSince(id, prefix, (long)since, includeDeleted);
+		if(items == null)
+			items = new ArrayList<KeyDataItem>();
+		
+		Map<String,DataItemReply> reply = new HashMap<String,DataItemReply>();
+		
+		for(KeyDataItem item : items)
+		{
+			DataItemReply data = AgentShared.KeyDataItemToDataItemReply(id, item, Context);
+			reply.put(data.key, data);
+		}
+		
+		return reply;
+	}
+	
 	public Map<String,DataItemReply> getAllDataKeys(String id) throws JsonApiException, SQLException
 	{
 		return getAllDataKeys(id, 0.0, false);
@@ -301,10 +336,7 @@ public class AgentScriptAPI
 	}
 	
 	public String createChannel(String id, String residentType, Map<String,Object> values) throws JsonApiException
-	{
-		if(StringUtil.isNullOrEmpty(residentType))
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, "residentType");
-		
+	{	
 		if(StringUtil.isNullOrEmpty(id))
 			id = SVID.makeSVID();
 		
@@ -330,9 +362,6 @@ public class AgentScriptAPI
 	
 	public String createGlobalChannel(String id, String residentType, Map<String,Object> values) throws JsonApiException
 	{
-		if(StringUtil.isNullOrEmpty(residentType))
-			throw new JsonApiException(ApiErrors.MISSING_INPUT, "residentType");
-		
 		if(StringUtil.isNullOrEmpty(id))
 			id = SVID.makeSVID();
 		
@@ -360,7 +389,89 @@ public class AgentScriptAPI
 		
 		res.destroy();
 	}
+	
+	public String createWorld(String id) throws JsonApiException
+	{
+		return createWorld(id, null, null);
+	}
+	
+	public String createWorld(String id, String residentType) throws JsonApiException
+	{
+		return createWorld(id, residentType, null);
+	}
+	
+	public String createWorld(String id, String residentType, Map<String,Object> values) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(id))
+			id = SVID.makeSVID();
+		
+		CreateWorldRequestMessage request = new CreateWorldRequestMessage();
+		request.WorldId = id;
+		request.ResidentType = residentType;
+		request.Values = values;
+		
+		ClusterManager.runOnMemberOwningId(request, id);
+		
+		return id;
+	}
 
+	public void addResidentToWorld(String worldId, String zoneId, String residentId) throws JsonApiException
+	{
+		addResidentToWorld(worldId, zoneId, residentId, null);
+	}
+	
+	public void addResidentToWorld(String worldId, String zoneId, String residentId, Map<String,Object> stateUpdate) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(worldId))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, worldId);
+		if(StringUtil.isNullOrEmpty(residentId))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, residentId);
+		
+		BaseResident source = ResidentManager.getResident(worldId);
+		if(source == null || !(source instanceof World))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, worldId);
+		}
+		World world = (World)source;
+		
+		BaseResident listener = ResidentManager.getResident(residentId);
+		if(listener == null || !(listener instanceof Resident))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, residentId);
+		}
+		Resident resident = (Resident)listener;
+		
+		world.addResidentToZone(resident, zoneId, stateUpdate);
+	}
+	
+	public void removeResidentFromWorld(String worldId, String residentId, Map<String,Object> finalValues) throws JsonApiException
+	{
+		if(StringUtil.isNullOrEmpty(worldId))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, worldId);
+		if(StringUtil.isNullOrEmpty(residentId))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, residentId);
+		
+		BaseResident source = ResidentManager.getResident(worldId);
+		if(source == null || !(source instanceof World))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, worldId);
+		}
+		World world = (World)source;
+		
+		BaseResident listener = ResidentManager.getResident(residentId);
+		if(listener == null || !(listener instanceof Resident))
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, residentId);
+		}
+		Resident resident = (Resident)listener;
+		
+		world.removeResidentFromZones(resident, finalValues);
+
+		if(finalValues != null)
+			resident.setTransientValues(finalValues);
+	}
+	
+	
 	public String createResident(String id, String residentType) throws JsonApiException
 	{
 		return createResident(id, residentType, null, null);
