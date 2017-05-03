@@ -23,7 +23,7 @@ declare class KeyData
 	refresh():void;
 	
 	set(key:string, val:any, data_type?:JsonDataTypeItem):void;
-	delete(key:string);
+	delete(key:string):void;
 	
 	save():void;
 	deleteAll():void;

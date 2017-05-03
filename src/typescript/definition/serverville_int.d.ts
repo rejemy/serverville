@@ -107,6 +107,9 @@ declare namespace api
 	function getDataKeys(id:string, keys:string[]):DataItemInfoMap;
 	function getDataKeys(id:string, keys:string[], since:number):DataItemInfoMap;
 	function getDataKeys(id:string, keys:string[], since:number, includeDeleted:boolean):DataItemInfoMap;
+	function getDataKeysStartingWith(id:string, prefix:string):DataItemInfoMap;
+	function getDataKeysStartingWith(id:string, prefix:string, since:number):DataItemInfoMap;
+	function getDataKeysStartingWith(id:string, prefix:string, since:number, includeDeleted:boolean):DataItemInfoMap;
 	function getAllDataKeys(id:string):DataItemInfoMap;
 	function getAllDataKeys(id:string, since:number):DataItemInfoMap;
 	function getAllDataKeys(id:string, since:number, includeDeleted:boolean):DataItemInfoMap;

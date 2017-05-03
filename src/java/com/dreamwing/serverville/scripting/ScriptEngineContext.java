@@ -234,7 +234,7 @@ public class ScriptEngineContext {
 				}
 			}
 
-			methods.put(methodName, info);
+			methods.put(methodName.toLowerCase(), info);
 		}
 		
 		return methods;

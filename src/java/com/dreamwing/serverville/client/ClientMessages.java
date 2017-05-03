@@ -524,4 +524,19 @@ public class ClientMessages {
 		PendingNotificationList.class,
 	};
 	
+	public static class BatchRequestItem
+	{
+		public String api;
+		public String request;
+	}
+	
+	public static class BatchRequest
+	{
+		public List<BatchRequestItem> requests;
+	}
+	
+	public static class BatchRequestReply
+	{
+		public List<Object> replies;
+	}
 }

@@ -472,6 +472,11 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		return HttpHelpers.sendError(currRequest, ApiErrors.NOT_FOUND);
 	}
 	
+	public Object dispatchJsonApi(String messageType, String messageData, ClientMessageInfo info)
+	{
+		return JsonDispatcher.dispatch(messageType, messageData, info);
+	}
+	
 	private ChannelFuture handleWebSocketFrame(ChannelHandlerContext ctx, WebSocketFrame frame)
 	{
 		// Check for closing frame

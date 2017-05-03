@@ -77,7 +77,7 @@ public class ClientDispatcher {
 			action.Authenticate = options.auth();
 		}
 		
-		Methods.put(method.getName(), action);
+		Methods.put(method.getName().toLowerCase(), action);
 	}
 	
 
@@ -110,6 +110,8 @@ public class ClientDispatcher {
 	
 	private Object invokeMethod(String messageType, String messageData, ClientMessageInfo info) throws Exception
 	{
+		messageType = messageType.toLowerCase();
+		
 		// Check if we have an override for it in a script
 		ClientMethodInfo methodInfo = ScriptManager.getClientHandlerInfo(messageType);
 		if(methodInfo == null)
@@ -154,7 +156,7 @@ public class ClientDispatcher {
 			ScriptEngineContext context = ScriptManager.getEngine();
 			try
 			{
-				return context.invokeClientHandler(messageType, messageData, AgentShared.userToUserInfo(info.User));
+				return context.invokeClientHandler(methodInfo.Name, messageData, AgentShared.userToUserInfo(info.User));
 			}
 			finally
 			{

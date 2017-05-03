@@ -1572,4 +1572,20 @@ public class ClientAPI {
 		return reply;
 	}
 	
+	public static BatchRequestReply batchRequest(BatchRequest requestBatch, ClientMessageInfo info) throws JsonApiException
+	{
+		if(requestBatch.requests == null || requestBatch.requests.size() == 0)
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "requests");
+		
+		BatchRequestReply reply = new BatchRequestReply();
+		reply.replies = new ArrayList<Object>(requestBatch.requests.size());
+		
+		for(BatchRequestItem request : requestBatch.requests)
+		{
+			reply.replies.add(info.ConnectionHandler.dispatchJsonApi(request.api, request.request, info));
+		}
+		
+		return reply;
+	}
+	
 }
