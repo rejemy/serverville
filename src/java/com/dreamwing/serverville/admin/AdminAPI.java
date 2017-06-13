@@ -44,7 +44,8 @@ import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.data.UserSession;
 import com.dreamwing.serverville.data.Product.ProductText;
 import com.dreamwing.serverville.db.KeyDataManager;
-import com.dreamwing.serverville.log.IndexedFileManager.LogSearchHits;
+import com.dreamwing.serverville.log.LogIndexManager;
+import com.dreamwing.serverville.log.LogIndexManager.LogSearchHits;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpHandlerOptions;
 import com.dreamwing.serverville.net.HttpRequestInfo;
@@ -202,7 +203,6 @@ public class AdminAPI {
 	}
 	
 
-	
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
 	public static ChannelFuture searchLogs(HttpRequestInfo req)
 	{
@@ -213,16 +213,15 @@ public class AdminAPI {
 	
 		try
 		{
-			LogSearchHits hits = ServervilleMain.LogSearcher.query(query, from, to);
+			LogSearchHits hits = LogIndexManager.query(query, from, to);
 			return HttpHelpers.sendJson(req, hits);
 		}
 		catch(ParseException e)
 		{
 			return HttpHelpers.sendError(req, ApiErrors.INVALID_QUERY, e.getMessage());
-		}
-		
-		
+		}	
 	}
+	
 	
 	public static class SelfTestResult
 	{

@@ -17,14 +17,6 @@ import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.RollingFileAppender;
-import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.Configurator;
-import org.apache.logging.log4j.core.config.plugins.util.PluginManager;
-
-import com.dreamwing.serverville.log.IndexedFileManager;
-
 
 public class Launcher
 {
@@ -49,7 +41,7 @@ public class Launcher
 	
 	public static Launcher Singleton;
 	
-	public static IndexedFileManager LogSearcher=null;
+	//public static IndexedFileManager LogSearcher=null;
 	
 	public static List<LaunchedEnvironment> ServerEnvironments;
 	
@@ -195,15 +187,15 @@ public class Launcher
 			System.out.println("Log4j configuration file missing or not readable: "+propsfile);
 		}
 		
-		PluginManager.addPackage("com.dreamwing.serverville.log");
-		LoggerContext lContext = Configurator.initialize("ServervilleLauncher", propsfile);
-		Configuration logConfig = lContext.getConfiguration();
-		RollingFileAppender appender = (RollingFileAppender)logConfig.getAppender("file");
-		String logFilePath = appender.getFileName();
+		//PluginManager.addPackage("com.dreamwing.serverville.log");
+		//LoggerContext lContext = Configurator.initialize("ServervilleLauncher", propsfile);
+		//Configuration logConfig = lContext.getConfiguration();
+		//RollingFileAppender appender = (RollingFileAppender)logConfig.getAppender("file");
+		//String logFilePath = appender.getFileName();
 		
 		l = LogManager.getLogger(Launcher.class);
 		
-		LogSearcher = IndexedFileManager.getManager(logFilePath);
+		//LogSearcher = IndexedFileManager.getManager(logFilePath);
 	}
 	
 	public void writePidfile()

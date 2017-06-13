@@ -18,9 +18,9 @@
 		<pathelement location="${lib}/jackson-databind-2.8.5.jar"/>
 		<pathelement location="${lib}/jbcrypt-0.4.jar"/>
 		<pathelement location="${lib}/junit-4.12.jar"/>
-		<pathelement location="${lib}/log4j-1.2-api-2.7.jar"/>
-		<pathelement location="${lib}/log4j-api-2.7.jar"/>
-		<pathelement location="${lib}/log4j-core-2.7.jar"/>
+		<pathelement location="${lib}/log4j-1.2-api-2.8.2.jar"/>
+		<pathelement location="${lib}/log4j-api-2.8.2.jar"/>
+		<pathelement location="${lib}/log4j-core-2.8.2.jar"/>
 		<pathelement location="${lib}/lucene-analyzers-common-6.4.1.jar"/>
 		<pathelement location="${lib}/lucene-core-6.4.1.jar"/>
 		<pathelement location="${lib}/lucene-queryparser-6.4.1.jar"/>

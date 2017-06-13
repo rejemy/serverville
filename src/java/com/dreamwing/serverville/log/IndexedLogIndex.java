@@ -1,5 +1,6 @@
 package com.dreamwing.serverville.log;
 
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,9 +29,9 @@ import org.apache.lucene.store.FSDirectory;
 
 import com.dreamwing.serverville.util.FileUtil;
 
+// Manages the Lucene index to a single indexed log file
 public class IndexedLogIndex {
 	
-	protected IndexedFileManager Manager;
 	protected IndexWriter Writer;
 	protected DirectoryReader Reader;
 	protected SearcherManager SearcherMan;
@@ -43,7 +44,14 @@ public class IndexedLogIndex {
 	protected long CreatedTime;
 	protected long LastModifiedTime;
 	
-	public IndexedLogIndex(String indexFilename, String logFilename, boolean readOnly, IndexedFileManager manager)
+	public static class LogSearchHit
+	{
+		public double timestamp;
+		public String message;
+		public int file_pos;
+	}
+	
+	public IndexedLogIndex(String indexFilename, String logFilename, boolean readOnly)
 	{
 		try
 		{
@@ -51,14 +59,14 @@ public class IndexedLogIndex {
 			Path indexPath = IndexDir.toPath();
 			
 			Directory dir = FSDirectory.open(indexPath);
-			Manager = manager;
+			
 			if(readOnly)
 			{
 				Reader = DirectoryReader.open(dir);
 			}
 			else
 			{
-				IndexWriterConfig iwc = new IndexWriterConfig(Manager.getAnalyzer());
+				IndexWriterConfig iwc = new IndexWriterConfig(LogIndexManager.getAnalyzer());
 				iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
 				iwc.setCommitOnClose(true);
 				Writer = new IndexWriter(dir, iwc);
@@ -193,19 +201,19 @@ public class IndexedLogIndex {
 	}
 	
 	
-	public List<IndexedFileManager.LogSearchHit> query(Query query, int maxResults) throws IOException
+	public List<LogSearchHit> query(Query query, int maxResults) throws IOException
 	{
-		List<IndexedFileManager.LogSearchHit> hits = new LinkedList<IndexedFileManager.LogSearchHit>();
+		List<LogSearchHit> hits = new LinkedList<LogSearchHit>();
 		
 		if(CommitLock != null)
 			CommitLock.readLock().lock();
 		
 		try
 		{
-			TopFieldDocs results = Searcher.search(query, maxResults, Manager.GetTimestampSorter());
+			TopFieldDocs results = Searcher.search(query, maxResults, LogIndexManager.getTimestampSorter());
 			for(ScoreDoc score : results.scoreDocs)
 			{
-				IndexedFileManager.LogSearchHit hit = getLogSearchHit(score.doc);
+				LogSearchHit hit = getLogSearchHit(score.doc);
 				hits.add(hit);
 			}
 		}
@@ -219,13 +227,13 @@ public class IndexedLogIndex {
 	}
 	
 
-	protected IndexedFileManager.LogSearchHit getLogSearchHit(int docID) throws IOException
+	protected LogSearchHit getLogSearchHit(int docID) throws IOException
 	{
 		Document doc = Searcher.doc(docID);
 		if(doc == null)
 			return null;
 		
-		IndexedFileManager.LogSearchHit hit = new IndexedFileManager.LogSearchHit();
+		LogSearchHit hit = new LogSearchHit();
 		
 		long filePos = doc.getField("filepos").numericValue().longValue();
 		int length = doc.getField("length").numericValue().intValue();

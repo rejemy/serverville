@@ -18,11 +18,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.plugins.util.PluginManager;
+import org.apache.logging.log4j.LogManager;
 
 import com.dreamwing.serverville.admin.AdminServerSocketInitializer;
 import com.dreamwing.serverville.agent.AgentServerSocketInitializer;
@@ -33,10 +31,8 @@ import com.dreamwing.serverville.data.ClusterMember;
 import com.dreamwing.serverville.data.RecordPermissionsManager;
 import com.dreamwing.serverville.data.ResidentPermissionsManager;
 import com.dreamwing.serverville.db.KeyDataManager;
+import com.dreamwing.serverville.log.LogIndexManager;
 import com.dreamwing.serverville.db.DatabaseManager;
-import com.dreamwing.serverville.launcher.Launcher;
-import com.dreamwing.serverville.log.IndexedFileAppender;
-import com.dreamwing.serverville.log.IndexedFileManager;
 import com.dreamwing.serverville.net.SslProtocolDetector;
 import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.scripting.ScriptManager;
@@ -110,7 +106,7 @@ public class ServervilleMain {
 	
 	private volatile boolean Running=true;
 	
-	public static IndexedFileManager LogSearcher=null;
+	//public static IndexedFileManager LogSearcher=null;
 	
 	public static long StartupTime; 
 	
@@ -392,15 +388,16 @@ public class ServervilleMain {
 			System.out.println("Log4j configuration file missing or not readable: "+propsfile);
 		}
 		
+		LogIndexManager.init();
 		PluginManager.addPackage("com.dreamwing.serverville.log");
-		LoggerContext lContext = Configurator.initialize("Serverville", propsfile);
-		Configuration logConfig = lContext.getConfiguration();
-		IndexedFileAppender appender = (IndexedFileAppender)logConfig.getAppender("file");
-		String logFilePath = appender.getFileName();
+		Configurator.initialize("Serverville", propsfile);
+		//Configuration logConfig = lContext.getConfiguration();
+		//IndexedFileAppender appender = (IndexedFileAppender)logConfig.getAppender("file");
+		//String logFilePath = appender.getFileName();
 		
-		l = LogManager.getLogger(Launcher.class);
+		l = LogManager.getLogger(ServervilleMain.class);
 		
-		LogSearcher = IndexedFileManager.getManager(logFilePath);
+		//LogSearcher = IndexedFileManager.getManager(logFilePath);
 	}
 	
 	

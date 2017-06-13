@@ -15,9 +15,6 @@
 	<classpathentry kind="lib" path="lib/jackson-core-2.8.5.jar" sourcepath="lib/jackson-core-2.8.5-sources.jar"/>
 	<classpathentry kind="lib" path="lib/jackson-annotations-2.8.5.jar" sourcepath="lib/jackson-annotations-2.8.5-sources.jar"/>
 	<classpathentry kind="lib" path="lib/jackson-databind-2.8.5.jar" sourcepath="lib/jackson-databind-2.8.5-sources.jar"/>
-	<classpathentry kind="lib" path="lib/log4j-1.2-api-2.7.jar" sourcepath="lib/log4j-1.2-api-2.7-sources.jar"/>
-	<classpathentry kind="lib" path="lib/log4j-api-2.7.jar" sourcepath="lib/log4j-api-2.7-sources.jar"/>
-	<classpathentry kind="lib" path="lib/log4j-core-2.7.jar" sourcepath="lib/log4j-core-2.7-sources.jar"/>
 	<classpathentry kind="lib" path="lib/okhttp-3.5.0.jar" sourcepath="lib/okhttp-3.5.0-sources.jar"/>
 	<classpathentry kind="lib" path="lib/stripe-java-3.5.0.jar" sourcepath="lib/stripe-java-3.5.0-sources.jar"/>
 	<classpathentry kind="lib" path="lib/okio-1.11.0.jar" sourcepath="lib/okio-1.11.0-sources.jar"/>
@@ -27,5 +24,8 @@
 	<classpathentry kind="lib" path="lib/netty-all-4.1.9.Final.jar" sourcepath="lib/netty-all-4.1.9.Final-sources.jar"/>
 	<classpathentry kind="lib" path="lib/hazelcast-3.8.1.jar" sourcepath="lib/hazelcast-3.8.1-sources.jar"/>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.41.jar" sourcepath="lib/mysql-connector-java-5.1.41-sources.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-1.2-api-2.8.2.jar" sourcepath="lib/log4j-1.2-api-2.8.2-sources.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-api-2.8.2.jar" sourcepath="lib/log4j-api-2.8.2-sources.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-core-2.8.2.jar" sourcepath="lib/log4j-core-2.8.2-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
