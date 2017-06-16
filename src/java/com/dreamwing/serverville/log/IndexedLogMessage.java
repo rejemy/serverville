@@ -4,6 +4,6 @@ import org.apache.lucene.document.Document;
 
 public interface IndexedLogMessage {
 	
-	void toLuceneDocument(Document doc);
+	void addLuceneFields(Document doc);
 
 }

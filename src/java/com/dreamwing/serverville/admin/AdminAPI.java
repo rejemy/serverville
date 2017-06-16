@@ -20,7 +20,7 @@ import javax.script.ScriptException;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 
 import com.dreamwing.serverville.CurrencyInfoManager;
 import com.dreamwing.serverville.ProductManager;
@@ -204,21 +204,30 @@ public class AdminAPI {
 	
 
 	@HttpHandlerOptions(method=HttpHandlerOptions.Method.GET)
-	public static ChannelFuture searchLogs(HttpRequestInfo req)
+	public static ChannelFuture searchLogs(HttpRequestInfo req) throws JsonApiException
 	{
 		String query = req.getOneQuery("q", "*:*");
 
 		long from = (long)req.getOneQueryAsDouble("from", Long.MIN_VALUE);
 		long to = (long)req.getOneQueryAsDouble("to", Long.MAX_VALUE);
-	
+		int max = req.getOneQueryAsInt("max", 100);
+		boolean ascending = req.getOneQueryAsBoolean("ascending", false);
+		if(max > 300)
+			max = 300;
+		
+		if(from > to)
+			return HttpHelpers.sendError(req, ApiErrors.INVALID_INPUT, "to must be greater than or equal to from");
+		
 		try
 		{
-			LogSearchHits hits = LogIndexManager.query(query, from, to);
+			LogSearchHits hits = LogIndexManager.query(query, from, to, max, ascending);
 			return HttpHelpers.sendJson(req, hits);
 		}
-		catch(ParseException e)
+		catch(QueryNodeException e)
 		{
 			return HttpHelpers.sendError(req, ApiErrors.INVALID_QUERY, e.getMessage());
+		} catch (IOException e) {
+			return HttpHelpers.sendError(req, ApiErrors.DB_ERROR, e.getMessage());
 		}	
 	}
 	

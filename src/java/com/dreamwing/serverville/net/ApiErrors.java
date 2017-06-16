@@ -29,6 +29,7 @@ public enum ApiErrors {
 	INVALID_URL(23, "The supplied url could not be parsed"),
 	RESIDENT_ID_TAKEN(24, "This ID is already in use by a different resident"),
 	INTERRUPTED(25, "Operation interrupted by network issue or server crash"),
+	NO_INDEXES(26, "No Lucene index appender as been added to Log4j"),
 	
 	INVALID_QUERY(100, "Invalid lucene query"),
 	INVALID_KEY_NAME(101, "Invalid key name"),

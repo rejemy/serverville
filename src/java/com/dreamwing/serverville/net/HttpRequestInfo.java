@@ -168,6 +168,22 @@ public class HttpRequestInfo {
 		}
 	}
 	
+	public boolean getOneQueryAsBoolean(String query, boolean defValue)
+	{
+		if(QueryParams == null)
+			return defValue;
+		
+		List<String> queries = QueryParams.get(query);
+		if(queries == null || queries.size() == 0)
+			return defValue;
+		
+		String val = queries.get(0).toLowerCase();
+		if(val.equals("false"))
+			return false;
+		
+		return true;
+	}
+	
 	public String getBody()
 	{
 		if(BodyString == null)

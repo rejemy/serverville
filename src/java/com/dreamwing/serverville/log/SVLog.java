@@ -3,6 +3,7 @@ package com.dreamwing.serverville.log;
 import java.net.InetSocketAddress;
 
 import org.apache.logging.log4j.message.Message;
+import org.apache.logging.log4j.util.StringBuilderFormattable;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -11,7 +12,7 @@ import org.apache.lucene.document.TextField;
 import com.dreamwing.serverville.net.HttpRequestInfo;
 import com.dreamwing.serverville.net.HttpConnectionInfo;
 
-public class SVLog implements Message, IndexedLogMessage {
+public class SVLog implements Message, StringBuilderFormattable, IndexedLogMessage {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -39,27 +40,35 @@ public class SVLog implements Message, IndexedLogMessage {
 	}
 	
 	@Override
-	public String getFormattedMessage() {
-		if(Formatted != null)
-			return Formatted;
-		StringBuilder str = new StringBuilder();
-		str.append(Msg);
+	public void formatTo(StringBuilder buffer)
+	{
+		buffer.append(Msg);
 		if(Con != null)
 		{
-			str.append(" Connection(ConnectionId:"+Con.ConnectionId+" RemoteHost:"+Con.Ctx.channel().remoteAddress().toString()+")");
+			buffer.append(" Connection(ConnectionId:"+Con.ConnectionId+" RemoteHost:"+Con.Ctx.channel().remoteAddress().toString()+")");
 		}
 		if(Req != null)
 		{
-			str.append(" Request(RequestId:"+Req.RequestId+" URI:"+Req.Request.uri()+")");
+			buffer.append(" Request(RequestId:"+Req.RequestId+" URI:"+Req.Request.uri()+")");
 		}
+	}
+	
+	@Override
+	public String getFormattedMessage() {
+		if(Formatted != null)
+			return Formatted;
+		
+		StringBuilder str = new StringBuilder();
+		
+		formatTo(str);
 		
 		Formatted = str.toString();
+		
 		return Formatted;
 	}
 	
-	public void toLuceneDocument(Document doc)
+	public void addLuceneFields(Document doc)
 	{
-		doc.add(new TextField("message", Msg, Field.Store.NO));
 		if(Con != null)
 		{
 			InetSocketAddress addr = (InetSocketAddress)Con.Ctx.channel().remoteAddress();
@@ -88,5 +97,7 @@ public class SVLog implements Message, IndexedLogMessage {
 	public Throwable getThrowable() {
 		return null;
 	}
+
+	
 
 }

@@ -16,6 +16,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
@@ -200,7 +201,10 @@ public class ServervilleMain {
 	
 	public void init() throws Exception
 	{
-		ServiceScheduler = Executors.newScheduledThreadPool(1);
+		ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
+		scheduledExecutor.setRemoveOnCancelPolicy(true);
+		ServiceScheduler = scheduledExecutor;
+		
 		MainExecutor = Executors.newCachedThreadPool();
 		
 		String workingDir = System.getProperty("user.dir");
