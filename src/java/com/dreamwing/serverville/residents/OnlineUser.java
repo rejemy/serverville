@@ -70,6 +70,7 @@ public class OnlineUser
 		
 		ResidentJoinedNotification notification = new ResidentJoinedNotification();
 		notification.resident_id = info.resident_id;
+		notification.resident_type = info.resident_type;
 		notification.via_channel = viaChannel.getId();
 		notification.values = info.values;
 		

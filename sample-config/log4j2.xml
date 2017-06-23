@@ -6,6 +6,7 @@
     <Property name="logArchivePath">${logPath}/app-%d{yyyy-MM-dd}-%i.log</Property>
     <Property name="basePattern">%d ${hostName} %5p [%t] %m%n</Property>
     <Property name="errorPattern">%d ${hostName} %5p [%t:%l] %m%n</Property>
+		<Property name="archiveSize">10 MB</Property>
   </Properties>
   <Appenders>
     <RollingRandomAccessFile name="file" fileName="${logFilePath}" filePattern="${logArchivePath}">

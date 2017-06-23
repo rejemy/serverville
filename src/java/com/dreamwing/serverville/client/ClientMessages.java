@@ -318,6 +318,7 @@ public class ClientMessages {
 	public static class ChannelMemberInfo
 	{
 		public String resident_id;
+		public String resident_type;
 		public Map<String,Object> values;
 	}
 	
@@ -331,6 +332,7 @@ public class ClientMessages {
 	public static class ResidentJoinedNotification
 	{
 		public String resident_id;
+		public String resident_type;
 		public String via_channel;
 		public Map<String,Object> values;
 	}
@@ -361,6 +363,7 @@ public class ClientMessages {
 	public static class ChannelInfo
 	{
 		public String channel_id;
+		public String channel_type;
 		public Map<String,Object> values;
 		public Map<String,ChannelMemberInfo> members;
 	}

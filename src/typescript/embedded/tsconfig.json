@@ -2,6 +2,10 @@
 	"compilerOptions": {
 		"target": "es5",
 		"out": "../../resources/javascript/engine.js",
-		"sourceMap": false
+		"sourceMap": false,
+		"strictNullChecks": false,
+		"noImplicitAny": true,
+		"noImplicitThis": true,
+		"alwaysStrict": true
 	}
 }

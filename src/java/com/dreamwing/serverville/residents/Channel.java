@@ -193,6 +193,7 @@ public class Channel extends BaseResident
 		ChannelInfo info = new ChannelInfo();
 		
 		info.channel_id = Id;
+		info.channel_type = ResidentType;
 		info.members = new HashMap<String,ChannelMemberInfo>();
 		info.values = getState(since);
 		

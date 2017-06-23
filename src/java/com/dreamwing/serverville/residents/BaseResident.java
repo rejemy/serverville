@@ -358,6 +358,7 @@ public abstract class BaseResident
 	{
 		ChannelMemberInfo info = new ChannelMemberInfo();
 		info.resident_id = Id;
+		info.resident_type = ResidentType;
 		info.values = getState(since);
 		
 		return info;
