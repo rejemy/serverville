@@ -1,6 +1,7 @@
 package com.dreamwing.serverville.data;
 
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -127,14 +128,6 @@ public class ServervilleUser {
 		try
 		{	
 			// Ok, some complex shit here. First we try to hold the desired username and email
-			if(username != null)
-			{
-				usernamelookup = new UsernameLookup();
-				usernamelookup.Username = username;
-				usernamelookup.Id = user.Id;
-				usernamelookup.Hold = true;
-				DatabaseManager.ServervilleUser_UsernameDao.create(usernamelookup);
-			}
 			
 			if(email != null)
 			{
@@ -142,8 +135,40 @@ public class ServervilleUser {
 				emailLookup.Email = email;
 				emailLookup.Id = user.Id;
 				emailLookup.Hold = true;
-				DatabaseManager.ServervilleUser_EmailDao.create(emailLookup);
+				try
+				{
+					DatabaseManager.ServervilleUser_EmailDao.create(emailLookup);
+				}
+				catch(SQLException e)
+				{
+					emailLookup = null;
+					if(e.getCause() instanceof SQLIntegrityConstraintViolationException)
+						throw new JsonApiException(ApiErrors.ALREADY_REGISTERED);
+					else
+						throw e;
+				}
 			}
+			
+			if(username != null)
+			{
+				usernamelookup = new UsernameLookup();
+				usernamelookup.Username = username;
+				usernamelookup.Id = user.Id;
+				usernamelookup.Hold = true;
+				try
+				{
+					DatabaseManager.ServervilleUser_UsernameDao.create(usernamelookup);
+				}
+				catch(SQLException e)
+				{
+					usernamelookup = null;
+					if(e.getCause() instanceof SQLIntegrityConstraintViolationException)
+						throw new JsonApiException(ApiErrors.USERNAME_UNAVAILABLE);
+					else
+						throw e;
+				}
+			}
+			
 			
 			// Ok, we held the desired username and email, now create the account object
 			DatabaseManager.ServervilleUserDao.create(user);
