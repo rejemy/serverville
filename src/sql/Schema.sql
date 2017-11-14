@@ -75,6 +75,7 @@ CREATE TABLE `agent_key` (
   `key` varchar(255) NOT NULL,
   `comment` varchar(255) DEFAULT NULL,
   `iprange` varchar(45) DEFAULT NULL,
+  `created` bigint(20) NOT NULL,
   `expiration` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
