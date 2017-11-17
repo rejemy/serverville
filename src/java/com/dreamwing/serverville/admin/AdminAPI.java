@@ -70,7 +70,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpUtil;
 
-public class AdminAPI {
+public class AdminAPI
+{
 
 	private static final Logger l = LogManager.getLogger(AdminAPI.class);
 

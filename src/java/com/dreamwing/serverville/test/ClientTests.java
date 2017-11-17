@@ -17,7 +17,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import org.junit.Assert;
 
-public class ClientTests {
+public class ClientTests
+{
 
 	private static class TestUser
 	{

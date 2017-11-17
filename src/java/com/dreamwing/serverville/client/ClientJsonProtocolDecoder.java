@@ -10,7 +10,6 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 
 public class ClientJsonProtocolDecoder extends ByteToMessageDecoder
 {
-
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception
 	{

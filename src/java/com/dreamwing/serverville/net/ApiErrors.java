@@ -2,8 +2,8 @@ package com.dreamwing.serverville.net;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
-public enum ApiErrors {
-
+public enum ApiErrors
+{
 	UNKNOWN_API(1, "Unknown api call"),
 	BAD_AUTH(2, "Invalid authentication", HttpResponseStatus.FORBIDDEN),
 	NOT_AUTHED(3, "Authentication required", HttpResponseStatus.FORBIDDEN),

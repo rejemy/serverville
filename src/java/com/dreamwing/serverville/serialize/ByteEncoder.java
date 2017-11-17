@@ -7,8 +7,8 @@ import java.util.Date;
 
 import com.dreamwing.serverville.data.KeyDataTypes;
 
-public class ByteEncoder {
-
+public class ByteEncoder
+{
 	public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 	
 	public static byte[] encode(byte value)

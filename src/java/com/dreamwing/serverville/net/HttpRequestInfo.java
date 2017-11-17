@@ -12,8 +12,8 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.QueryStringDecoder;
 
-public class HttpRequestInfo {
-
+public class HttpRequestInfo
+{
 	public HttpConnectionInfo Connection;
 	public URI RequestURI;
 	public FullHttpRequest Request;
@@ -33,10 +33,10 @@ public class HttpRequestInfo {
 		RequestId = requestId;
 		
 		if(uri.getQuery() != null)
-    	{
-    		QueryStringDecoder decoder = new QueryStringDecoder(uri);
-    		QueryParams = decoder.parameters();
-    	}
+		{
+			QueryStringDecoder decoder = new QueryStringDecoder(uri);
+			QueryParams = decoder.parameters();
+		}
 		
 		String contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
 		if(contentType != null && contentType.equals("application/x-www-form-urlencoded") && request.content() != null)

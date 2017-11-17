@@ -24,8 +24,8 @@ import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.NashornScriptEngine;
 
-public class ScriptEngineContext {
-
+public class ScriptEngineContext
+{
 	private static final Logger l = LogManager.getLogger(ScriptEngineContext.class);
 	
 	private NashornScriptEngine Engine;
@@ -174,10 +174,10 @@ public class ScriptEngineContext {
 	}
 	
 	public Object invokeFunction(String name, Object... args)
-	        throws ScriptException, NoSuchMethodException
-    {
+			throws ScriptException, NoSuchMethodException
+	{
 		return Engine.invokeFunction(name, args);
-    }
+	}
 	
 	public Object decodeJSON(String json) throws ScriptException
 	{

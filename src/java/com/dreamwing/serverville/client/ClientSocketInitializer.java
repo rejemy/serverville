@@ -16,8 +16,8 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 
-public class ClientSocketInitializer extends ChannelInitializer<SocketChannel> {
-
+public class ClientSocketInitializer extends ChannelInitializer<SocketChannel>
+{
 	private static EventLoopGroup BossGroup;
 	private static EventLoopGroup WorkerGroup;
 	
@@ -39,44 +39,44 @@ public class ClientSocketInitializer extends ChannelInitializer<SocketChannel> {
 	public void initChannel(SocketChannel ch) throws Exception
 	{
 		ChannelPipeline pipeline = ch.pipeline();
-        
+		
 		if(SslProtocolDetector.SharedSslContext != null)
-        {
+		{
 			if(SslProtocolDetector.ClientSSLOnly)
-	        	pipeline.addLast(SslProtocolDetector.SharedSslContext.newHandler(ch.alloc()));
-	        else
-	        	pipeline.addLast(new SslProtocolDetector());
-        }
+				pipeline.addLast(SslProtocolDetector.SharedSslContext.newHandler(ch.alloc()));
+			else
+				pipeline.addLast(new SslProtocolDetector());
+		}
 		
 		// Disabling this thing for now, not used and needs more work
 		//pipeline.addLast("detector", new ClientProtocolDetector());
-      
+	  
 		pipeline.addLast("httpServer", new HttpServerCodec());
-        pipeline.addLast("httpAggregator", new HttpObjectAggregator(ServervilleMain.MaxRequestSize));
-        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
-        pipeline.addLast(new IdleStateHandler(0, 0, 120));
-        pipeline.addLast(new ClientConnectionHandler(JsonDispatcher, FormDispatcher));
+		pipeline.addLast("httpAggregator", new HttpObjectAggregator(ServervilleMain.MaxRequestSize));
+		pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
+		pipeline.addLast(new IdleStateHandler(0, 0, 120));
+		pipeline.addLast(new ClientConnectionHandler(JsonDispatcher, FormDispatcher));
 	}
 
 	public static void startListener(int port) throws Exception
-    {
-    	BossGroup = new NioEventLoopGroup(1);
-    	WorkerGroup = new NioEventLoopGroup();
+	{
+		BossGroup = new NioEventLoopGroup(1);
+		WorkerGroup = new NioEventLoopGroup();
 
-    	ServerBootstrap b = new ServerBootstrap();
-        b.group(BossGroup, WorkerGroup)
-         .channel(NioServerSocketChannel.class)
-         .childHandler(new ClientSocketInitializer());
+		ServerBootstrap b = new ServerBootstrap();
+		b.group(BossGroup, WorkerGroup)
+			.channel(NioServerSocketChannel.class)
+			.childHandler(new ClientSocketInitializer());
 
-        b.bind(port).sync();
-        
-        String protocol = SslProtocolDetector.AdminSSLOnly ? "https" : "http";
-        URL = protocol+"://"+ServervilleMain.Hostname+":"+port+"/";
-    }
-    
-    public static void shutdown()
-    {
-    	BossGroup.shutdownGracefully();
-    	WorkerGroup.shutdownGracefully();
-    }
+		b.bind(port).sync();
+		
+		String protocol = SslProtocolDetector.AdminSSLOnly ? "https" : "http";
+		URL = protocol+"://"+ServervilleMain.Hostname+":"+port+"/";
+	}
+	
+	public static void shutdown()
+	{
+		BossGroup.shutdownGracefully();
+		WorkerGroup.shutdownGracefully();
+	}
 }

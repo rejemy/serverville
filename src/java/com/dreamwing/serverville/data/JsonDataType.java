@@ -3,7 +3,8 @@ package com.dreamwing.serverville.data;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum JsonDataType {
+public enum JsonDataType
+{
 	NULL("null"),
 	BOOLEAN("boolean"),
 	NUMBER("number"),
@@ -24,7 +25,7 @@ public enum JsonDataType {
 	@JsonValue
 	public String value()
 	{
-	    return value;
+		return value;
 	} 
 	
 	@JsonCreator

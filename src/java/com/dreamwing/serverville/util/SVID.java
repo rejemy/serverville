@@ -10,7 +10,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.dreamwing.serverville.ServervilleMain;
 
-public final class SVID {
+public final class SVID
+{
 
 	private static final Logger l = LogManager.getLogger(SVID.class);
 	

@@ -11,7 +11,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 
-public class HttpDispatcher {
+public class HttpDispatcher
+{
 
 	private abstract class DispatchAction
 	{

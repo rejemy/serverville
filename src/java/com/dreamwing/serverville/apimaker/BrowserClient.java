@@ -19,8 +19,8 @@ import com.dreamwing.serverville.apimaker.MakeAPIs.ApiMethodInfo;
 import com.dreamwing.serverville.apimaker.MakeAPIs.PrimitiveTypeInfo;
 import com.dreamwing.serverville.util.FileUtil;
 
-public class BrowserClient {
-
+public class BrowserClient
+{
 	public static void writeBrowserClientApi(List<ApiMethodInfo> apiMethods, List<ApiCustomTypeInfo> apiTypes) throws Exception
 	{
 		System.out.println("Writing client browser/JS API");

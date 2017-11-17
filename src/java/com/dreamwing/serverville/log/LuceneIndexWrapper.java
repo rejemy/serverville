@@ -32,8 +32,8 @@ import com.dreamwing.serverville.util.FileUtil;
 import com.dreamwing.serverville.util.RandomUtil;
 
 // Wrapper that provides a simplified API to a single Lucene index
-public class LuceneIndexWrapper {
-	
+public class LuceneIndexWrapper
+{
 	protected String Id;
 	protected boolean ReadOnly;
 	protected IndexWriter Writer;
@@ -318,16 +318,16 @@ public class LuceneIndexWrapper {
 		String svid = SVID.makeSVID();
 		long time = System.currentTimeMillis();
 		Document doc = new Document();
-    	doc.add(new NumericDocValuesField("timestamp", time));
-    	doc.add(new LongPoint("timestamp", time));
-    	doc.add(new StoredField("timestamp", time));
-    	doc.add(new StringField("level", "info", Field.Store.YES));
-    	doc.add(new StringField("host", "localhost", Field.Store.NO));
-    	doc.add(new TextField("message", "It's message "+svid, Field.Store.YES));
-    	
-    	indexDocument(doc);
-    	
-    	return svid;
+		doc.add(new NumericDocValuesField("timestamp", time));
+		doc.add(new LongPoint("timestamp", time));
+		doc.add(new StoredField("timestamp", time));
+		doc.add(new StringField("level", "info", Field.Store.YES));
+		doc.add(new StringField("host", "localhost", Field.Store.NO));
+		doc.add(new TextField("message", "It's message "+svid, Field.Store.YES));
+		
+		indexDocument(doc);
+		
+		return svid;
 	}
 	
 	public static void test()

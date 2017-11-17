@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
-public class ApiError {
-	
+public class ApiError
+{
 	public boolean isError;
 	
 	public int errorCode;

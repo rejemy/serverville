@@ -27,7 +27,8 @@ import com.fasterxml.jackson.databind.type.ArrayType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
-public final class JSON {
+public final class JSON
+{
 	
 	private static final Logger l = LogManager.getLogger(JSON.class);
 	

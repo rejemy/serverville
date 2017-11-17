@@ -6,8 +6,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 
-public class ClientProtocolDetector extends ChannelInboundHandlerAdapter {
-
+public class ClientProtocolDetector extends ChannelInboundHandlerAdapter
+{
 	public static byte[] MagicHeaderJson = "SV/JSON\n".getBytes(StandardCharsets.UTF_8);
 	
 	private int ReadSoFar = 0;

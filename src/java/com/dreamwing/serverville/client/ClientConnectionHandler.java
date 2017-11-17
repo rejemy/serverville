@@ -56,8 +56,8 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.timeout.IdleStateEvent;
 
-public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object> {
-
+public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
+{
 	private static final Logger l = LogManager.getLogger(ClientConnectionHandler.class);
 	
 	private static final String WEBSOCKET_PATH = "/websocket";
@@ -96,8 +96,8 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	}
 	
 	@Override
-    public void channelActive(final ChannelHandlerContext ctx) throws Exception
-    {
+	public void channelActive(final ChannelHandlerContext ctx) throws Exception
+	{
 		
 		super.channelActive(ctx);
 		Info = new HttpConnectionInfo();
@@ -105,10 +105,10 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		Info.ConnectionId = SVID.makeSVID();
 		
 		l.debug(new SVLog("Client HTTP connection opened", Info));
-    }
+	}
 	
 	@Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception
+	public void channelInactive(ChannelHandlerContext ctx) throws Exception
 	{
 		super.channelInactive(ctx);
 		
@@ -118,7 +118,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		l.debug(new SVLog("Client HTTP connection closed", Info));
 		
 		signOut();
-    }
+	}
 	
 	@Override
 	public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception
@@ -323,11 +323,11 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			FullHttpRequest request = (FullHttpRequest) msg;
 			Keepalive = HttpUtil.isKeepAlive(request);
 			lastWrite = handleHttpRequest(ctx, request);
-        }
+		}
 		else if (msg instanceof WebSocketFrame)
-        {
-        	lastWrite = handleWebSocketFrame(ctx, (WebSocketFrame) msg);
-        }
+		{
+			lastWrite = handleWebSocketFrame(ctx, (WebSocketFrame) msg);
+		}
 		else if(msg instanceof ClientJsonMessageWrapper)
 		{
 			lastWrite = handleBinaryMessage(ctx, (ClientJsonMessageWrapper)msg);
@@ -339,40 +339,40 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		if (!(Keepalive || WebsocketConnected))
 		{
-            // Close the connection when the whole content is written out.
-    		if(lastWrite != null)
-    		{
-    			lastWrite.addListener(ChannelFutureListener.CLOSE);
-    		}
-    		else
-    		{
-    			ctx.close();
-    		}
-        }
+			// Close the connection when the whole content is written out.
+			if(lastWrite != null)
+			{
+				lastWrite.addListener(ChannelFutureListener.CLOSE);
+			}
+			else
+			{
+				ctx.close();
+			}
+		}
 	}
 	
 	private ChannelFuture handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request)
 	{
 		if(request.method() == HttpMethod.OPTIONS)
-    	{
-    		return HttpHelpers.sendPreflightApproval(ctx);
-    	}
+		{
+			return HttpHelpers.sendPreflightApproval(ctx);
+		}
 		
 		HttpRequestInfo currRequest = new HttpRequestInfo();
 		
-    	try {
+		try {
 			currRequest.init(Info, request, SVID.makeSVID());
 		} catch (URISyntaxException e1) {
 			return HttpHelpers.sendError(currRequest, ApiErrors.HTTP_DECODE_ERROR);
 		}
-    	
+		
 		URI uri = currRequest.RequestURI;
-    	
-    	l.debug(new SVLog("Client HTTP request", currRequest));
-    	
+		
+		l.debug(new SVLog("Client HTTP request", currRequest));
+		
 		if (!request.decoderResult().isSuccess()) {
-            return HttpHelpers.sendError(currRequest, ApiErrors.HTTP_DECODE_ERROR);
-        }
+			return HttpHelpers.sendError(currRequest, ApiErrors.HTTP_DECODE_ERROR);
+		}
 		
 		
 		try {
@@ -393,11 +393,11 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			
 			Handshaker = wsFactory.newHandshaker(request);
 			if (Handshaker == null) {
-	            return WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
-	        } else {
-	        	WebsocketConnected = true;
-	        	return Handshaker.handshake(ctx.channel(), request);
-	        }
+				return WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
+			} else {
+				WebsocketConnected = true;
+				return Handshaker.handshake(ctx.channel(), request);
+			}
 		}
 		
 		if(uriPath.startsWith("/api/"))
@@ -480,23 +480,23 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	private ChannelFuture handleWebSocketFrame(ChannelHandlerContext ctx, WebSocketFrame frame)
 	{
 		// Check for closing frame
-        if (frame instanceof CloseWebSocketFrame) {
-        	return Handshaker.close(ctx.channel(), (CloseWebSocketFrame) frame.retain());
-        }
-        else if (frame instanceof PingWebSocketFrame) {
-            return ctx.channel().write(new PongWebSocketFrame(frame.content().retain()));
-        }
-        else if (frame instanceof TextWebSocketFrame)
-        {
-        	TextWebSocketFrame textFrame = (TextWebSocketFrame)frame;
-        	String messageText = textFrame.text();
-        	return handleTextMessage(messageText);
-        }
-        else
-        {
-        	throw new UnsupportedOperationException(String.format("%s frame types not supported", frame.getClass()
-                    .getName()));
-        }
+		if (frame instanceof CloseWebSocketFrame) {
+			return Handshaker.close(ctx.channel(), (CloseWebSocketFrame) frame.retain());
+		}
+		else if (frame instanceof PingWebSocketFrame) {
+			return ctx.channel().write(new PongWebSocketFrame(frame.content().retain()));
+		}
+		else if (frame instanceof TextWebSocketFrame)
+		{
+			TextWebSocketFrame textFrame = (TextWebSocketFrame)frame;
+			String messageText = textFrame.text();
+			return handleTextMessage(messageText);
+		}
+		else
+		{
+			throw new UnsupportedOperationException(String.format("%s frame types not supported", frame.getClass()
+					.getName()));
+		}
 	}
 	
 	
@@ -591,13 +591,13 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	}
 	
 	@Override
-    public void channelReadComplete(ChannelHandlerContext ctx) {
-        ctx.flush();
-    }
+	public void channelReadComplete(ChannelHandlerContext ctx) {
+		ctx.flush();
+	}
 	
 	@Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+		
 		if(cause instanceof IOException)
 		{
 			// Connection closed by other end while we were trying to write something at them. Not the end of the world.
@@ -608,15 +608,15 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 			l.error("Exception caught in client handler: ", cause);
 		}
 		
-        if (ctx.channel().isActive())
-        {
-        	ApiError ise = new ApiError(ApiErrors.INTERNAL_SERVER_ERROR);
-        
-        	HttpResponse response = HttpHelpers.makeErrorJsonResponse(ise, HttpResponseStatus.INTERNAL_SERVER_ERROR);
-        	addNotificationHeader(response);
-        	ctx.writeAndFlush(response);
-        }
-    }
+		if (ctx.channel().isActive())
+		{
+			ApiError ise = new ApiError(ApiErrors.INTERNAL_SERVER_ERROR);
+		
+			HttpResponse response = HttpHelpers.makeErrorJsonResponse(ise, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+			addNotificationHeader(response);
+			ctx.writeAndFlush(response);
+		}
+	}
 	
 	public ChannelFuture sendNotification(String notificationType, Object notification)
 	{

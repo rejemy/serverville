@@ -31,8 +31,8 @@ import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.DataSourceConnectionSource;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
-public class DatabaseManager {
-	
+public class DatabaseManager
+{
 	private static final Logger l = LogManager.getLogger(DatabaseManager.class);
 	
 	private static ComboPooledDataSource DataSource;

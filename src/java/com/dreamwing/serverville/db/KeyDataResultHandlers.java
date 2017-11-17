@@ -17,15 +17,13 @@ public final class KeyDataResultHandlers
 		@Override
 		public KeyDataItem handle(ResultSet rs) throws SQLException {
 			if (!rs.next()) {
-	            return null;
-	        }
+				return null;
+			}
 			
 			KeyDataItem result = new KeyDataItem(rs);
 
 			return result;
-			
 		}
-	
 	}
 	
 	public static class ItemsResultSetHandler implements ResultSetHandler<List<KeyDataItem>> {
@@ -33,8 +31,8 @@ public final class KeyDataResultHandlers
 		@Override
 		public List<KeyDataItem> handle(ResultSet rs) throws SQLException {
 			if (!rs.next()) {
-	            return null;
-	        }
+				return null;
+			}
 			
 			ArrayList<KeyDataItem> results = new ArrayList<KeyDataItem>();
 			
@@ -53,8 +51,8 @@ public final class KeyDataResultHandlers
 		@Override
 		public Integer handle(ResultSet rs) throws SQLException {
 			if (!rs.next()) {
-	            return null;
-	        }
+				return null;
+			}
 			
 			return rs.getInt(1);
 			

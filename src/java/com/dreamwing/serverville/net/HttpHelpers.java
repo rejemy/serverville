@@ -31,8 +31,8 @@ import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.CharsetUtil;
 
-public class HttpHelpers {
-
+public class HttpHelpers
+{
 	private static final Logger l = LogManager.getLogger(HttpHelpers.class);
 	
 	private static ConnectionPool SharedHttpConnectionPool;
@@ -162,14 +162,14 @@ public class HttpHelpers {
 		ApiError err = new ApiError(error);
 		
 		return sendErrorJson(req, err, error.getHttpStatus());
-    }
+	}
 	
 	public static ChannelFuture sendError(HttpRequestInfo req, ApiErrors error, String details)
 	{
 		ApiError err = new ApiError(error, details);
 		
 		return sendErrorJson(req, err, error.getHttpStatus());
-    }
+	}
 	
 
 	public static ChannelFuture sendErrorJson(HttpRequestInfo req, ApiError data, HttpResponseStatus status)
@@ -204,228 +204,227 @@ public class HttpHelpers {
 		return response;
 	}
 	
-    public static ChannelFuture sendRedirect(HttpRequestInfo req, String newUri) {
-        FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.FOUND);
-        response.headers().set(HttpHeaderNames.LOCATION, newUri);
-        
-        setResponseCORS(response);
-        
-        return req.Connection.Ctx.writeAndFlush(response);
-    }
-    
-    public static void setContentTypeHeader(HttpResponse response, String contentType) {
-        
-        response.headers().set(HttpHeaderNames.CONTENT_TYPE, contentType);
-    }
-    
-    public static class JsonResponse<S,E>
-    {
-    	public S Success;
-    	public E Error;
-    }
-    
-    public static <T> T getJson(String url, Class<T> replyClass) throws IOException
-    {
-    	Request request = new Request.Builder()
-        	.url(url)
-        	.build();
-    	
-
-    	Response response = SharedHttpClient.newCall(request).execute();
-    	return JSON.deserialize(response.body().charStream(), replyClass);
-    }
-    
-    public static <S,E> JsonResponse<S,E> getJson(String url, Class<S> successClass, Class<E> errorClass) throws IOException
-    {
-    	Request request = new Request.Builder()
-        	.url(url)
-        	.build();
-    	
-    	JsonResponse<S,E> jsonResponse = new JsonResponse<S,E>();
-    	
-    	Response response = SharedHttpClient.newCall(request).execute();
-    	if(response.code() == 200)
-    	{
-    		jsonResponse.Success = JSON.deserialize(response.body().charStream(), successClass);
-    		return jsonResponse;
-    	}
-    	
-    	jsonResponse.Error = JSON.deserialize(response.body().charStream(), errorClass);
-    	return jsonResponse;
-    }
-    
-
-    
-    public static <S> S getJsonApi(String url, String sessionId, Class<S> successClass) throws IOException, JsonApiException
-    {
-    	Request.Builder requestBuilder = new Request.Builder().url(url);
-    	
-    	if(sessionId != null)
-    		requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
-    	
-    	Request request = requestBuilder.build();
-    	
-
-    	Response response = SharedHttpClient.newCall(request).execute();
-    	if(response.code() == 200)
-    	{
-    		return JSON.deserialize(response.body().charStream(), successClass);
-    	}
-    	
-    	ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
-    	throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
-    }
-    
-    public static byte[] getBytes(String url) throws IOException
-    {
-    	Request request = new Request.Builder()
-    	.url(url)
-    	.build();
+	public static ChannelFuture sendRedirect(HttpRequestInfo req, String newUri) {
+		FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.FOUND);
+		response.headers().set(HttpHeaderNames.LOCATION, newUri);
+		
+		setResponseCORS(response);
+		
+		return req.Connection.Ctx.writeAndFlush(response);
+	}
 	
-    	Response response = SharedHttpClient.newCall(request).execute();
-    	return response.body().bytes();
-    }
-    
-    public static String getString(String url) throws IOException
-    {
-    	Request request = new Request.Builder()
-    	.url(url)
-    	.build();
+	public static void setContentTypeHeader(HttpResponse response, String contentType) {
+		
+		response.headers().set(HttpHeaderNames.CONTENT_TYPE, contentType);
+	}
 	
-    	Response response = SharedHttpClient.newCall(request).execute();
-    	return response.body().string();
-    }
-    
-    public static Response getHttpResponse(String url) throws IOException
-    {
-    	Request request = new Request.Builder()
-    	    	.url(url)
-    	    	.build();
-    		
-    	return SharedHttpClient.newCall(request).execute();
-    }
-    
-    public static String getString(String url, String sessionId) throws IOException
-    {
-    	Request.Builder requestBuilder = new Request.Builder().url(url);
-    	
-    	if(sessionId != null)
-    		requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
-    	
-    	Request request = requestBuilder.build();
+	public static class JsonResponse<S,E>
+	{
+		public S Success;
+		public E Error;
+	}
 	
-    	Response response = SharedHttpClient.newCall(request).execute();
-    	return response.body().string();
-    }
-    
-    public static <T> T postJson(String url, RequestBody body, Class<T> replyClass) throws IOException
-    {
-    	Request request = new Request.Builder()
-        	.url(url)
-        	.method("POST", body)
-        	.build();
-    	
+	public static <T> T getJson(String url, Class<T> replyClass) throws IOException
+	{
+		Request request = new Request.Builder()
+			.url(url)
+			.build();
+		
 
-    	Response response = SharedHttpClient.newCall(request).execute();
-    	return JSON.deserialize(response.body().charStream(), replyClass);
-    }
-    
-    public static <S,E> JsonResponse<S,E> postJson(String url, RequestBody body, Class<S> successClass, Class<E> errorClass) throws IOException
-    {
-    	Request request = new Request.Builder()
-        	.url(url)
-        	.method("POST", body)
-        	.build();
-    	
-    	JsonResponse<S,E> jsonResponse = new JsonResponse<S,E>();
-    	
-    	Response response = SharedHttpClient.newCall(request).execute();
-    	if(response.code() == 200)
-    	{
-    		jsonResponse.Success = JSON.deserialize(response.body().charStream(), successClass);
-    		return jsonResponse;
-    	}
-    	
-    	jsonResponse.Error = JSON.deserialize(response.body().charStream(), errorClass);
-    	return jsonResponse;
-    }
-    
-    public static void postJsonApi(String url, String sessionId, RequestBody body) throws IOException, JsonApiException
-    {
-    	Request.Builder requestBuilder = new Request.Builder()
-    			.url(url)
-    			.method("POST", body);
-    	
-    	if(sessionId != null)
-    		requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
-    	
-    	Request request = requestBuilder.build();
-
-    	Response response = SharedHttpClient.newCall(request).execute();
-    	if(response.code() == 200)
-    	{
-    		return;
-    	}
-    	
-    	ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
-    	throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
-    }
-    
-    public static <S> S postJsonApi(String url, String sessionId, RequestBody body, Class<S> successClass) throws IOException, JsonApiException
-    {
-    	Request.Builder requestBuilder = new Request.Builder()
-    			.url(url)
-    			.method("POST", body);
-    	
-    	if(sessionId != null)
-    		requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
-    	
-    	Request request = requestBuilder.build();
-
-    	Response response = SharedHttpClient.newCall(request).execute();
-    	if(response.code() == 200)
-    	{
-    		return JSON.deserialize(response.body().charStream(), successClass);
-    	}
-    	
-    	ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
-    	throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
-    }
-    
-    public static final MediaType TEXT_CONTENT_TYPE =
-  	      MediaType.parse("text/plain");
-    
-    public static final MediaType JSON_CONTENT_TYPE =
-    	      MediaType.parse("application/json");
-    
-    public static final MediaType JAVASCRIPT_CONTENT_TYPE =
-  	      MediaType.parse("application/javascript");
-    
-    @SuppressWarnings({ "rawtypes" })
-    public static <S> S postClientApi(String url, String sessionId, Object body, TypeReference valueTypeRef) throws IOException, JsonApiException
-    {
-	    	byte[] bodyData = JSON.serializeToBytes(body);
-	    	RequestBody rbody = RequestBody.create(JSON_CONTENT_TYPE, bodyData);
-	    	
-	    	Request.Builder requestBuilder = new Request.Builder()
-	    			.url(url)
-	    			.method("POST", rbody);
-	    	
-	    	if(sessionId != null)
-	    		requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
-	    	
-	    	Request request = requestBuilder.build();
+		Response response = SharedHttpClient.newCall(request).execute();
+		return JSON.deserialize(response.body().charStream(), replyClass);
+	}
 	
-	    	Response response = SharedHttpClient.newCall(request).execute();
-	    	if(response.code() == 200)
-	    	{
-	    		return JSON.JsonMapper.readValue(response.body().charStream(), valueTypeRef);
-	    	}
-	    	
-	    	ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
-	    	throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
-    }
-    
+	public static <S,E> JsonResponse<S,E> getJson(String url, Class<S> successClass, Class<E> errorClass) throws IOException
+	{
+		Request request = new Request.Builder()
+			.url(url)
+			.build();
+		
+		JsonResponse<S,E> jsonResponse = new JsonResponse<S,E>();
+		
+		Response response = SharedHttpClient.newCall(request).execute();
+		if(response.code() == 200)
+		{
+			jsonResponse.Success = JSON.deserialize(response.body().charStream(), successClass);
+			return jsonResponse;
+		}
+		
+		jsonResponse.Error = JSON.deserialize(response.body().charStream(), errorClass);
+		return jsonResponse;
+	}
+	
 
-    
+	
+	public static <S> S getJsonApi(String url, String sessionId, Class<S> successClass) throws IOException, JsonApiException
+	{
+		Request.Builder requestBuilder = new Request.Builder().url(url);
+		
+		if(sessionId != null)
+			requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
+		
+		Request request = requestBuilder.build();
+		
+
+		Response response = SharedHttpClient.newCall(request).execute();
+		if(response.code() == 200)
+		{
+			return JSON.deserialize(response.body().charStream(), successClass);
+		}
+		
+		ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
+		throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
+	}
+	
+	public static byte[] getBytes(String url) throws IOException
+	{
+		Request request = new Request.Builder()
+		.url(url)
+		.build();
+	
+		Response response = SharedHttpClient.newCall(request).execute();
+		return response.body().bytes();
+	}
+	
+	public static String getString(String url) throws IOException
+	{
+		Request request = new Request.Builder()
+		.url(url)
+		.build();
+	
+		Response response = SharedHttpClient.newCall(request).execute();
+		return response.body().string();
+	}
+	
+	public static Response getHttpResponse(String url) throws IOException
+	{
+		Request request = new Request.Builder()
+				.url(url)
+				.build();
+			
+		return SharedHttpClient.newCall(request).execute();
+	}
+	
+	public static String getString(String url, String sessionId) throws IOException
+	{
+		Request.Builder requestBuilder = new Request.Builder().url(url);
+		
+		if(sessionId != null)
+			requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
+		
+		Request request = requestBuilder.build();
+	
+		Response response = SharedHttpClient.newCall(request).execute();
+		return response.body().string();
+	}
+	
+	public static <T> T postJson(String url, RequestBody body, Class<T> replyClass) throws IOException
+	{
+		Request request = new Request.Builder()
+			.url(url)
+			.method("POST", body)
+			.build();
+		
+
+		Response response = SharedHttpClient.newCall(request).execute();
+		return JSON.deserialize(response.body().charStream(), replyClass);
+	}
+	
+	public static <S,E> JsonResponse<S,E> postJson(String url, RequestBody body, Class<S> successClass, Class<E> errorClass) throws IOException
+	{
+		Request request = new Request.Builder()
+			.url(url)
+			.method("POST", body)
+			.build();
+		
+		JsonResponse<S,E> jsonResponse = new JsonResponse<S,E>();
+		
+		Response response = SharedHttpClient.newCall(request).execute();
+		if(response.code() == 200)
+		{
+			jsonResponse.Success = JSON.deserialize(response.body().charStream(), successClass);
+			return jsonResponse;
+		}
+		
+		jsonResponse.Error = JSON.deserialize(response.body().charStream(), errorClass);
+		return jsonResponse;
+	}
+	
+	public static void postJsonApi(String url, String sessionId, RequestBody body) throws IOException, JsonApiException
+	{
+		Request.Builder requestBuilder = new Request.Builder()
+				.url(url)
+				.method("POST", body);
+		
+		if(sessionId != null)
+			requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
+		
+		Request request = requestBuilder.build();
+
+		Response response = SharedHttpClient.newCall(request).execute();
+		if(response.code() == 200)
+		{
+			return;
+		}
+		
+		ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
+		throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
+	}
+	
+	public static <S> S postJsonApi(String url, String sessionId, RequestBody body, Class<S> successClass) throws IOException, JsonApiException
+	{
+		Request.Builder requestBuilder = new Request.Builder()
+				.url(url)
+				.method("POST", body);
+		
+		if(sessionId != null)
+			requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
+		
+		Request request = requestBuilder.build();
+
+		Response response = SharedHttpClient.newCall(request).execute();
+		if(response.code() == 200)
+		{
+			return JSON.deserialize(response.body().charStream(), successClass);
+		}
+		
+		ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
+		throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
+	}
+	
+	public static final MediaType TEXT_CONTENT_TYPE =
+  		  MediaType.parse("text/plain");
+	
+	public static final MediaType JSON_CONTENT_TYPE =
+			  MediaType.parse("application/json");
+	
+	public static final MediaType JAVASCRIPT_CONTENT_TYPE =
+  		  MediaType.parse("application/javascript");
+	
+	@SuppressWarnings({ "rawtypes" })
+	public static <S> S postClientApi(String url, String sessionId, Object body, TypeReference valueTypeRef) throws IOException, JsonApiException
+	{
+		byte[] bodyData = JSON.serializeToBytes(body);
+		RequestBody rbody = RequestBody.create(JSON_CONTENT_TYPE, bodyData);
+		
+		Request.Builder requestBuilder = new Request.Builder()
+				.url(url)
+				.method("POST", rbody);
+		
+		if(sessionId != null)
+			requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
+		
+		Request request = requestBuilder.build();
+
+		Response response = SharedHttpClient.newCall(request).execute();
+		if(response.code() == 200)
+		{
+			return JSON.JsonMapper.readValue(response.body().charStream(), valueTypeRef);
+		}
+		
+		ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
+		throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
+	}
+	
+	
 }

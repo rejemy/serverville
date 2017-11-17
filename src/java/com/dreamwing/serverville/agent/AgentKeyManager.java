@@ -12,8 +12,8 @@ import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.util.SVIDCodec;
 import com.j256.ormlite.stmt.PreparedDelete;
 
-public class AgentKeyManager {
-
+public class AgentKeyManager
+{
 	private static final Logger l = LogManager.getLogger(AgentKey.class);
 	
 	public static AgentKey createAgentKey(String comment, String ipRange, Date expiration) throws SQLException

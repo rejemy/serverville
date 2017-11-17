@@ -2,7 +2,8 @@ package com.dreamwing.serverville.util;
 
 import java.util.Random;
 
-public class PasswordUtil {
+public class PasswordUtil
+{
 	
 	public static boolean validatePassword(String password)
 	{

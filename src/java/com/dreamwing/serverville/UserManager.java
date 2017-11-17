@@ -12,7 +12,8 @@ import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataResultHandlers.IntResultSetHandler;
 import com.dreamwing.serverville.net.JsonApiException;
 
-public class UserManager {
+public class UserManager
+{
 
 	private static final Logger l = LogManager.getLogger(UserManager.class);
 	

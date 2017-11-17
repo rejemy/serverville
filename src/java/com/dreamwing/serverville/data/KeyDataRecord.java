@@ -13,8 +13,8 @@ import com.j256.ormlite.stmt.Where;
 import com.j256.ormlite.table.DatabaseTable;
 
 @DatabaseTable(tableName = "keydata")
-public class KeyDataRecord {
-
+public class KeyDataRecord
+{
 	@DatabaseField(columnName="id", id=true, canBeNull=false)
 	public String Id;
 	

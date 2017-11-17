@@ -17,8 +17,8 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 
-public class SslProtocolDetector extends ChannelInboundHandlerAdapter {
-
+public class SslProtocolDetector extends ChannelInboundHandlerAdapter
+{
 	private static final Logger l = LogManager.getLogger(SslProtocolDetector.class);
 	
 	public static SslContext SharedSslContext = null;
@@ -36,33 +36,33 @@ public class SslProtocolDetector extends ChannelInboundHandlerAdapter {
 	public static void init() throws Exception
 	{
 		String keyFileName = ServervilleMain.ServerProperties.getProperty("ssl_key_file");
-        String certChainFileName = ServervilleMain.ServerProperties.getProperty("ssl_cert_chain_file");
-        if(keyFileName.length() > 0 && certChainFileName.length() > 0)
-        {
-        	File keyFile = new File(keyFileName);
-        	if(!keyFile.canRead())
-        		throw new Exception("SSL key file "+keyFileName+" not readable");
-        	File certChainFile = new File(certChainFileName);
-        	if(!certChainFile.canRead())
-        		throw new Exception("SSL cert chain file "+certChainFile+" not readable");
-        	
-        	KeyFile = new File(keyFileName);
-        	CertFile = new File(certChainFileName);
-        	
-        	reloadCertificate();
-        	
-        	AdminSSLOnly = Boolean.parseBoolean(ServervilleMain.ServerProperties.getProperty("admin_ssl_only"));
-        	AgentSSLOnly = Boolean.parseBoolean(ServervilleMain.ServerProperties.getProperty("agent_ssl_only"));
-        	ClientSSLOnly = Boolean.parseBoolean(ServervilleMain.ServerProperties.getProperty("client_ssl_only"));
-        	
-        	l.info("Using SSL key "+keyFileName);
-        	
-        	startFileWatch();
-        }
-        else if(keyFileName.length() > 0 || certChainFileName.length() > 0)
-        {
-        	throw new Exception("Must set both ssl_key_file and ssl_cert_chain_file for ssl");
-        }
+		String certChainFileName = ServervilleMain.ServerProperties.getProperty("ssl_cert_chain_file");
+		if(keyFileName.length() > 0 && certChainFileName.length() > 0)
+		{
+			File keyFile = new File(keyFileName);
+			if(!keyFile.canRead())
+				throw new Exception("SSL key file "+keyFileName+" not readable");
+			File certChainFile = new File(certChainFileName);
+			if(!certChainFile.canRead())
+				throw new Exception("SSL cert chain file "+certChainFile+" not readable");
+			
+			KeyFile = new File(keyFileName);
+			CertFile = new File(certChainFileName);
+			
+			reloadCertificate();
+			
+			AdminSSLOnly = Boolean.parseBoolean(ServervilleMain.ServerProperties.getProperty("admin_ssl_only"));
+			AgentSSLOnly = Boolean.parseBoolean(ServervilleMain.ServerProperties.getProperty("agent_ssl_only"));
+			ClientSSLOnly = Boolean.parseBoolean(ServervilleMain.ServerProperties.getProperty("client_ssl_only"));
+			
+			l.info("Using SSL key "+keyFileName);
+			
+			startFileWatch();
+		}
+		else if(keyFileName.length() > 0 || certChainFileName.length() > 0)
+		{
+			throw new Exception("Must set both ssl_key_file and ssl_cert_chain_file for ssl");
+		}
  
 	}
 	
@@ -93,14 +93,15 @@ public class SslProtocolDetector extends ChannelInboundHandlerAdapter {
 		CertFileModifiedAt = CertFile.lastModified();
 		
 		SslContextBuilder builder = SslContextBuilder.forServer(CertFile, KeyFile);
-    	SharedSslContext = builder.build();
+		SharedSslContext = builder.build();
 	}
 	
 	
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg)
 	{
-		if (msg instanceof ByteBuf) {
+		if (msg instanceof ByteBuf)
+		{
 			ByteBuf buf = (ByteBuf)msg;
 			
 			if(buf.getByte(0) == 22)
@@ -111,7 +112,6 @@ public class SslProtocolDetector extends ChannelInboundHandlerAdapter {
 			{
 				httpDetected(ctx);
 			}
-
 		}
 		
 		ctx.fireChannelRead(msg);

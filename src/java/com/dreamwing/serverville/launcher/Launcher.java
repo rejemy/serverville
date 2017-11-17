@@ -20,7 +20,6 @@ import org.apache.logging.log4j.Logger;
 
 public class Launcher
 {
-	
 	public static Properties DefaultProperties;
 	public static Properties ServerProperties;
 	

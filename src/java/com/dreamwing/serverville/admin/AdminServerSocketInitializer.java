@@ -22,7 +22,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 
 public class AdminServerSocketInitializer extends ChannelInitializer<SocketChannel>
 {
-
 	private static EventLoopGroup BossGroup;
 	private static EventLoopGroup WorkerGroup;
 	
@@ -31,8 +30,8 @@ public class AdminServerSocketInitializer extends ChannelInitializer<SocketChann
 	public static String URL;
 	
 
-    public AdminServerSocketInitializer() throws Exception
-    {
+	public AdminServerSocketInitializer() throws Exception
+	{
 		Path adminFileRoot = ServervilleMain.ResRoot.resolve("admin/webroot");
 		int cacheSize = Integer.parseInt(ServervilleMain.ServerProperties.getProperty("cache_files_under"));
 		HttpFileServer fileServer = new HttpFileServer(adminFileRoot, cacheSize);
@@ -44,47 +43,47 @@ public class AdminServerSocketInitializer extends ChannelInitializer<SocketChann
 		Dispatcher.addMethod				("/admin/*", fileServer, "getFile");
 		Dispatcher.addAllStaticMethods	("/api/", AdminAPI.class);
 		Dispatcher.addMethod				("/logs/*", logFileServer, "getFile");
-    }
+	}
 
-    @Override
-    public void initChannel(SocketChannel ch)
-    {
-        ChannelPipeline pipeline = ch.pipeline();
-       
-        if(SslProtocolDetector.SharedSslContext != null)
-        {
-	        if(SslProtocolDetector.AdminSSLOnly)
-	        		pipeline.addLast(SslProtocolDetector.SharedSslContext.newHandler(ch.alloc()));
-	        else
-	        		pipeline.addLast(new SslProtocolDetector());
-        }
-        
-        pipeline.addLast(new HttpServerCodec());
-        pipeline.addLast(new HttpObjectAggregator(ServervilleMain.MaxRequestSize));
-        pipeline.addLast(new ChunkedWriteHandler());
-        pipeline.addLast(new IdleStateHandler(0, 0, 60));
-        pipeline.addLast(new AdminServerConnectionHandler(Dispatcher));
-    }
-    
-    public static void startListener(int port) throws Exception
-    {
-	    	BossGroup = new NioEventLoopGroup(1);
-	    	WorkerGroup = new NioEventLoopGroup();
-	    	
-	    	ServerBootstrap b = new ServerBootstrap();
-	    b.group(BossGroup, WorkerGroup)
-	         .channel(NioServerSocketChannel.class)
-	         .childHandler(new AdminServerSocketInitializer());
+	@Override
+	public void initChannel(SocketChannel ch)
+	{
+		ChannelPipeline pipeline = ch.pipeline();
+	   
+		if(SslProtocolDetector.SharedSslContext != null)
+		{
+			if(SslProtocolDetector.AdminSSLOnly)
+					pipeline.addLast(SslProtocolDetector.SharedSslContext.newHandler(ch.alloc()));
+			else
+					pipeline.addLast(new SslProtocolDetector());
+		}
+		
+		pipeline.addLast(new HttpServerCodec());
+		pipeline.addLast(new HttpObjectAggregator(ServervilleMain.MaxRequestSize));
+		pipeline.addLast(new ChunkedWriteHandler());
+		pipeline.addLast(new IdleStateHandler(0, 0, 60));
+		pipeline.addLast(new AdminServerConnectionHandler(Dispatcher));
+	}
+	
+	public static void startListener(int port) throws Exception
+	{
+		BossGroup = new NioEventLoopGroup(1);
+		WorkerGroup = new NioEventLoopGroup();
+		
+		ServerBootstrap b = new ServerBootstrap();
+		b.group(BossGroup, WorkerGroup)
+			 .channel(NioServerSocketChannel.class)
+			 .childHandler(new AdminServerSocketInitializer());
 
-        b.bind(port).sync();
-        
-        String protocol = SslProtocolDetector.AdminSSLOnly ? "https" : "http";
-        URL = protocol+"://"+ServervilleMain.Hostname+":"+port+"/";
-    }
-    
-    public static void shutdown()
-    {
-	    	BossGroup.shutdownGracefully();
-	    	WorkerGroup.shutdownGracefully();
-    }
+		b.bind(port).sync();
+		
+		String protocol = SslProtocolDetector.AdminSSLOnly ? "https" : "http";
+		URL = protocol+"://"+ServervilleMain.Hostname+":"+port+"/";
+	}
+	
+	public static void shutdown()
+	{
+		BossGroup.shutdownGracefully();
+		WorkerGroup.shutdownGracefully();
+	}
 }

@@ -29,8 +29,8 @@ import com.dreamwing.serverville.util.SVID;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 
-public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
-
+public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<FullHttpRequest>
+{
 	private HttpDispatcher Dispatcher;
 	private HttpConnectionInfo Info;
 	private HttpRequestInfo CurrRequest;
@@ -44,17 +44,17 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
 	}
 
 	@Override
-    public void channelActive(final ChannelHandlerContext ctx) throws Exception
-    {
+	public void channelActive(final ChannelHandlerContext ctx) throws Exception
+	{
 		super.channelActive(ctx);
 		Info = new HttpConnectionInfo();
 		Info.Ctx = ctx;
 		Info.ConnectionId = SVID.makeSVID();
 		l.debug(new SVLog("Admin HTTP connection opened", Info));
-    }
+	}
 	
 	@Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		super.channelInactive(ctx);
 		l.debug(new SVLog("Admin HTTP connection closed", Info));
 		
@@ -69,47 +69,47 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
 				l.warn("Exception updating user session:", e);
 			}
 		}
-    }
+	}
 	
-    @Override
-    public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception
-    {
-    	ChannelFuture lastWrite = HandleHttpRequest(ctx, request);
-    	
-    	if (!HttpUtil.isKeepAlive(request)) {
-            // Close the connection when the whole content is written out.
-    		if(lastWrite != null)
-    		{
-    			lastWrite.addListener(ChannelFutureListener.CLOSE);
-    		}
-    		else
-    		{
-    			ctx.close();
-    		}
-        }
-    }
+	@Override
+	public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception
+	{
+		ChannelFuture lastWrite = HandleHttpRequest(ctx, request);
+		
+		if (!HttpUtil.isKeepAlive(request)) {
+			// Close the connection when the whole content is written out.
+			if(lastWrite != null)
+			{
+				lastWrite.addListener(ChannelFutureListener.CLOSE);
+			}
+			else
+			{
+				ctx.close();
+			}
+		}
+	}
 
-    private ChannelFuture HandleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request)
-    {
-    	if(request.method() == HttpMethod.OPTIONS)
-    	{
-    		return HttpHelpers.sendPreflightApproval(ctx);
-    	}
-    	
-    	CurrRequest = new HttpRequestInfo();
-    	try {
-    		CurrRequest.init(Info, request, SVID.makeSVID());
+	private ChannelFuture HandleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request)
+	{
+		if(request.method() == HttpMethod.OPTIONS)
+		{
+			return HttpHelpers.sendPreflightApproval(ctx);
+		}
+		
+		CurrRequest = new HttpRequestInfo();
+		try {
+			CurrRequest.init(Info, request, SVID.makeSVID());
 		} catch (URISyntaxException e1) {
 			return HttpHelpers.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
 		}
-    	
-    	l.debug(new SVLog("Adming HTTP request", CurrRequest));
-    	
-    	if (!request.decoderResult().isSuccess()) {
-    		return HttpHelpers.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
-        }
+		
+		l.debug(new SVLog("Adming HTTP request", CurrRequest));
+		
+		if (!request.decoderResult().isSuccess()) {
+			return HttpHelpers.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
+		}
 
-    	ChannelFuture result;
+		ChannelFuture result;
 		try {
 			result = Dispatcher.dispatch(CurrRequest);
 		}
@@ -132,51 +132,51 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
 			return HttpHelpers.sendError(CurrRequest, ApiErrors.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 
-    	// Log anything other than GETs (and logins, because BORING)
-    	if(request.method() != HttpMethod.GET && !CurrRequest.RequestURI.getPath().equals("/api/signIn") && Info.User != null)
-    	{
-    		AdminActionLog log = new AdminActionLog();
-    		log.RequestId = CurrRequest.RequestId;
-    		log.ConnectionId = CurrRequest.Connection.ConnectionId;
-    		log.SessionId = CurrRequest.Connection.Session.getId();
-    		log.UserId = Info.User.getId();
-    		log.Created = new Date();
-    		String uriPath = CurrRequest.RequestURI.getPath();
-    		String uriQuery = CurrRequest.RequestURI.getQuery();
-    		if(uriQuery != null)
-    			uriPath += uriQuery;
-    		log.API = uriPath;
-    		log.Request = CurrRequest.getBody();
-    		if(log.Request.length() > 65535)
-    			log.Request = log.Request.substring(0, 65535);
-    		
-    		try {
+		// Log anything other than GETs (and logins, because BORING)
+		if(request.method() != HttpMethod.GET && !CurrRequest.RequestURI.getPath().equals("/api/signIn") && Info.User != null)
+		{
+			AdminActionLog log = new AdminActionLog();
+			log.RequestId = CurrRequest.RequestId;
+			log.ConnectionId = CurrRequest.Connection.ConnectionId;
+			log.SessionId = CurrRequest.Connection.Session.getId();
+			log.UserId = Info.User.getId();
+			log.Created = new Date();
+			String uriPath = CurrRequest.RequestURI.getPath();
+			String uriQuery = CurrRequest.RequestURI.getQuery();
+			if(uriQuery != null)
+				uriPath += uriQuery;
+			log.API = uriPath;
+			log.Request = CurrRequest.getBody();
+			if(log.Request.length() > 65535)
+				log.Request = log.Request.substring(0, 65535);
+			
+			try {
 				log.create();
 			} catch (SQLException e) {
 				l.error("Error creating log item: ", e);
 			}
-    	}
-    	
-    	return result;
-    }
-    
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws JsonProcessingException {
-        l.error("Exception in admin handler:", cause);
-        if (ctx.channel().isActive())
-        {
-        	// Close connection on internal server error to simplify things
-        	HttpHelpers.sendError(CurrRequest, ApiErrors.INTERNAL_SERVER_ERROR).addListener(ChannelFutureListener.CLOSE);
-        }
-    }
+		}
+		
+		return result;
+	}
+	
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws JsonProcessingException {
+		l.error("Exception in admin handler:", cause);
+		if (ctx.channel().isActive())
+		{
+			// Close connection on internal server error to simplify things
+			HttpHelpers.sendError(CurrRequest, ApiErrors.INTERNAL_SERVER_ERROR).addListener(ChannelFutureListener.CLOSE);
+		}
+	}
 
-    @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception
-    {
-        if (evt instanceof IdleStateEvent) {
-        	ctx.close();
-        }
-    }
+	@Override
+	public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception
+	{
+		if (evt instanceof IdleStateEvent) {
+			ctx.close();
+		}
+	}
   
 
 }

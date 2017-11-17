@@ -8,8 +8,8 @@ import java.util.Date;
 import com.dreamwing.serverville.data.KeyDataTypes;
 
 
-public final class ByteDecoder {
-
+public final class ByteDecoder
+{
 	public static Object decode(byte[] data, KeyDataTypes dbType)
 	{
 		switch(dbType)

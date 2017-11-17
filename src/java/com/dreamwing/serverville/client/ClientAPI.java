@@ -46,9 +46,8 @@ import com.dreamwing.serverville.util.PasswordUtil;
 import com.dreamwing.serverville.util.SVID;
 import com.dreamwing.serverville.util.StringUtil;
 
-
-public class ClientAPI {
-	
+public class ClientAPI
+{
 	private static final Logger l = LogManager.getLogger(ClientAPI.class);
 	
 	@ClientHandlerOptions(auth=false)

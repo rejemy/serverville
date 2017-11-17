@@ -30,8 +30,8 @@ import com.dreamwing.serverville.ServervilleMain;
 import com.dreamwing.serverville.util.SVID;
 
 
-public class LuceneManager extends AbstractManager {
-
+public class LuceneManager extends AbstractManager
+{
 	private static final LuceneManagerFactory FACTORY = new LuceneManagerFactory();
 	
 	private LuceneIndexWrapper LogIndexer;
@@ -124,27 +124,27 @@ public class LuceneManager extends AbstractManager {
 		checkRollover();
 		
 		Document doc = new Document();
-    	doc.add(new NumericDocValuesField("timestamp", event.getTimeMillis()));
-    	doc.add(new LongPoint("timestamp", event.getTimeMillis()));
-    	doc.add(new StoredField("timestamp", event.getTimeMillis()));
-    	doc.add(new StringField("level", event.getLevel().toString(), Field.Store.NO));
-    	doc.add(new StringField("host", ServervilleMain.Hostname, Field.Store.NO));
-    	
-    	Message m = event.getMessage();
-    	String message = m.getFormattedMessage();
-    	doc.add(new TextField("message", message, Field.Store.NO));
-    	
-    	if(m instanceof IndexedLogMessage)
-    	{
-    		IndexedLogMessage logInfo = (IndexedLogMessage)m;
-    		logInfo.addLuceneFields(doc);
-    	}
-    	
-    	String formattedEvent = (String)layout.toSerializable(event);
-    	doc.add(new StoredField("formatted", (String)formattedEvent));
+		doc.add(new NumericDocValuesField("timestamp", event.getTimeMillis()));
+		doc.add(new LongPoint("timestamp", event.getTimeMillis()));
+		doc.add(new StoredField("timestamp", event.getTimeMillis()));
+		doc.add(new StringField("level", event.getLevel().toString(), Field.Store.NO));
+		doc.add(new StringField("host", ServervilleMain.Hostname, Field.Store.NO));
+		
+		Message m = event.getMessage();
+		String message = m.getFormattedMessage();
+		doc.add(new TextField("message", message, Field.Store.NO));
+		
+		if(m instanceof IndexedLogMessage)
+		{
+			IndexedLogMessage logInfo = (IndexedLogMessage)m;
+			logInfo.addLuceneFields(doc);
+		}
+		
+		String formattedEvent = (String)layout.toSerializable(event);
+		doc.add(new StoredField("formatted", (String)formattedEvent));
  
-    	
-    	try {
+		
+		try {
 			LogIndexer.indexDocument(doc, event.getTimeMillis());
 		} catch (IOException e) {
 			LOGGER.error("LuceneManager.append", e);
@@ -207,75 +207,75 @@ public class LuceneManager extends AbstractManager {
 	}
 	 
 	/**
-     * Returns the LuceneManager.
-     * @param name The name of the lucene index to manage.
-     * @param configuration The configuration.
-     * @return A FileManager for the File.
-     */
-    public static LuceneManager getLuceneManager(final String indexPath, final int maxDocumentsPerIndex, final int maxIndexes, final Configuration configuration) {
-    	return AbstractManager.getManager(indexPath, FACTORY, new FactoryData(maxDocumentsPerIndex, maxIndexes, configuration));
-    }
-    
-    /**
-     * Factory Data.
-     */
-    private static class FactoryData extends ConfigurationFactoryData
-    {
-    	
-    	private final int maxDocumentsPerIndex;
-    	private final int maxIndexes;
-    	
-        /**
-         * Constructor.
-         * @param maxDocumentsPerIndex Number of documents to before the appender rolls over into a new index.
-         * @param maxIndexes Number of indexes to keep before old ones are deleted.
-         * @param configuration the configuration
-         */
-        public FactoryData(final int maxDocumentsPerIndex, final int maxIndexes, final Configuration configuration) {
-            super(configuration);
-            this.maxDocumentsPerIndex = maxDocumentsPerIndex;
-            this.maxIndexes = maxIndexes;
-        }
-        
-        @Override
-        public String toString() {
-            final StringBuilder builder = new StringBuilder();
-            builder.append(super.toString());
-            builder.append("[maxDocumentsPerIndex=");
-            builder.append(maxDocumentsPerIndex);
-            builder.append(", maxIndexes=");
-            builder.append(maxIndexes);
-            builder.append("]");
-            return builder.toString();
-        }
-    }
-    
-    /**
-     * Factory to create a LuceneManager.
-     */
-    private static class LuceneManagerFactory implements ManagerFactory<LuceneManager, FactoryData> {
+	 * Returns the LuceneManager.
+	 * @param name The name of the lucene index to manage.
+	 * @param configuration The configuration.
+	 * @return A FileManager for the File.
+	 */
+	public static LuceneManager getLuceneManager(final String indexPath, final int maxDocumentsPerIndex, final int maxIndexes, final Configuration configuration) {
+		return AbstractManager.getManager(indexPath, FACTORY, new FactoryData(maxDocumentsPerIndex, maxIndexes, configuration));
+	}
+	
+	/**
+	 * Factory Data.
+	 */
+	private static class FactoryData extends ConfigurationFactoryData
+	{
+		
+		private final int maxDocumentsPerIndex;
+		private final int maxIndexes;
+		
+		/**
+		 * Constructor.
+		 * @param maxDocumentsPerIndex Number of documents to before the appender rolls over into a new index.
+		 * @param maxIndexes Number of indexes to keep before old ones are deleted.
+		 * @param configuration the configuration
+		 */
+		public FactoryData(final int maxDocumentsPerIndex, final int maxIndexes, final Configuration configuration) {
+			super(configuration);
+			this.maxDocumentsPerIndex = maxDocumentsPerIndex;
+			this.maxIndexes = maxIndexes;
+		}
+		
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder();
+			builder.append(super.toString());
+			builder.append("[maxDocumentsPerIndex=");
+			builder.append(maxDocumentsPerIndex);
+			builder.append(", maxIndexes=");
+			builder.append(maxIndexes);
+			builder.append("]");
+			return builder.toString();
+		}
+	}
+	
+	/**
+	 * Factory to create a LuceneManager.
+	 */
+	private static class LuceneManagerFactory implements ManagerFactory<LuceneManager, FactoryData> {
 
-        /**
-         * Creates a FileManager.
-         * @param name The name of the File.
-         * @param data The FactoryData
-         * @return The FileManager for the File.
-         */
-        @Override
-        public LuceneManager createManager(final String indexPath, final FactoryData data) {
-        	try {
+		/**
+		 * Creates a FileManager.
+		 * @param name The name of the File.
+		 * @param data The FactoryData
+		 * @return The FileManager for the File.
+		 */
+		@Override
+		public LuceneManager createManager(final String indexPath, final FactoryData data) {
+			try {
 				return new LuceneManager(data.getLoggerContext(), indexPath, data.maxDocumentsPerIndex, data.maxIndexes);
 			} catch (IOException ex) {
 				LOGGER.error("LuceneManager (" + indexPath + ") " + ex, ex);
 			}
-        	return null;
-        }
-    }
-    
-    @Override
-    public void updateData(final Object data)
-    {
-    	//final FactoryData factoryData = (FactoryData) data;
-    }
+			return null;
+		}
+	}
+	
+	@Override
+	public void updateData(final Object data)
+	{
+		//final FactoryData factoryData = (FactoryData) data;
+	}
 
 }

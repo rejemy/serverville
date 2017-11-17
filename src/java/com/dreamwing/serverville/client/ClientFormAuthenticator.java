@@ -5,7 +5,6 @@ import com.dreamwing.serverville.net.HttpRequestInfo;
 
 public class ClientFormAuthenticator implements APIAuthenticator
 {
-
 	@Override
 	public boolean isAuthenticated(HttpRequestInfo req)
 	{

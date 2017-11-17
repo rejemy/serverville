@@ -15,8 +15,8 @@ import com.dreamwing.serverville.util.JSON;
 import io.netty.buffer.ByteBuf;
 
 
-public class AgentDispatcher {
-	
+public class AgentDispatcher
+{	
 	private class DispatchMethod
 	{
 		public Method ClassMethod;

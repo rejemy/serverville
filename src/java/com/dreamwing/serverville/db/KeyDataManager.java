@@ -18,8 +18,8 @@ import com.dreamwing.serverville.db.KeyDataResultHandlers.*;
 import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.serialize.ByteEncoder;
 
-public class KeyDataManager {
-
+public class KeyDataManager
+{
 	private static final Logger l = LogManager.getLogger(KeyDataManager.class);
 	
 	private static ItemResultSetHandler ItemHandler;

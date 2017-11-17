@@ -12,7 +12,8 @@ import org.apache.logging.log4j.Logger;
 import com.dreamwing.serverville.ServervilleMain;
 
 
-public class SelfTest implements Runnable {
+public class SelfTest implements Runnable
+{
 	
 	private static final Logger l = LogManager.getLogger(SelfTest.class);
 	

@@ -11,33 +11,34 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 
-public class FileUtil {
+public class FileUtil
+{
 
 	public static boolean deleteRecursive(File path) throws FileNotFoundException
 	{
-        if (!path.exists()) throw new FileNotFoundException(path.getAbsolutePath());
-        boolean ret = true;
-        if (path.isDirectory()){
-            for (File f : path.listFiles()){
-                ret = ret && deleteRecursive(f);
-            }
-        }
-        return ret && path.delete();
-    }
+		if (!path.exists()) throw new FileNotFoundException(path.getAbsolutePath());
+		boolean ret = true;
+		if (path.isDirectory()){
+			for (File f : path.listFiles()){
+				ret = ret && deleteRecursive(f);
+			}
+		}
+		return ret && path.delete();
+	}
 	
 	private static final int BUFFER_SIZE = 4 * 1024;
 	
 	public static String readStreamToString(InputStream stream, Charset encoding) throws IOException
 	{
 		StringBuilder builder = new StringBuilder();
-	    InputStreamReader reader = new InputStreamReader(stream, encoding);
-	    char[] buffer = new char[BUFFER_SIZE];
-	    int length;
-	    while ((length = reader.read(buffer)) != -1) {
-	        builder.append(buffer, 0, length);
-	    }
-	    reader.close();
-	    return builder.toString();
+		InputStreamReader reader = new InputStreamReader(stream, encoding);
+		char[] buffer = new char[BUFFER_SIZE];
+		int length;
+		while ((length = reader.read(buffer)) != -1) {
+			builder.append(buffer, 0, length);
+		}
+		reader.close();
+		return builder.toString();
 	}
 	
 	public static String readFileToString(String filename, Charset encoding) throws IOException

@@ -1,7 +1,8 @@
 package com.dreamwing.serverville.data;
 
 // Do not reorder - only add to end
-public enum KeyDataTypes {
+public enum KeyDataTypes
+{
 	NULL(0),
 	FALSE(1),
 	TRUE(2),

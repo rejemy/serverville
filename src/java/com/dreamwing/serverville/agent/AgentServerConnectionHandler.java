@@ -43,8 +43,8 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 
-public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Object> {
-
+public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Object>
+{
 	private static final Logger l = LogManager.getLogger(AgentServerConnectionHandler.class);
 	
 	private static final String WEBSOCKET_PATH = "/websocket";
@@ -68,24 +68,23 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 	}
 	
 	@Override
-    public void channelActive(final ChannelHandlerContext ctx) throws Exception
-    {
-		
+	public void channelActive(final ChannelHandlerContext ctx) throws Exception
+	{
 		super.channelActive(ctx);
 		Info = new HttpConnectionInfo();
 		Info.Ctx = ctx;
 		Info.ConnectionId = SVID.makeSVID();
 		
 		l.debug(new SVLog("Agent HTTP connection opened", Info));
-    }
+	}
 	
 	@Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		super.channelInactive(ctx);
 		WebsocketConnected = false;
 		l.debug(new SVLog("Agent HTTP connection closed", Info));
 		
-    }
+	}
 	
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, Object msg)
@@ -99,22 +98,22 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 			FullHttpRequest request = (FullHttpRequest) msg;
 			keepAlive = HttpUtil.isKeepAlive(request);
 			lastWrite = handleHttpRequest(ctx, request);
-        } else if (msg instanceof WebSocketFrame)
-        {
-        	lastWrite = handleWebSocketFrame(ctx, (WebSocketFrame) msg);
-        }
+		} else if (msg instanceof WebSocketFrame)
+		{
+			lastWrite = handleWebSocketFrame(ctx, (WebSocketFrame) msg);
+		}
 		
 		if (!keepAlive) {
-            // Close the connection when the whole content is written out.
-    		if(lastWrite != null)
-    		{
-    			lastWrite.addListener(ChannelFutureListener.CLOSE);
-    		}
-    		else
-    		{
-    			ctx.close();
-    		}
-        }
+			// Close the connection when the whole content is written out.
+			if(lastWrite != null)
+			{
+				lastWrite.addListener(ChannelFutureListener.CLOSE);
+			}
+			else
+			{
+				ctx.close();
+			}
+		}
 	}
 	
 	private boolean authenticate(FullHttpRequest request, InetSocketAddress remoteAddr)
@@ -167,25 +166,25 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 	private ChannelFuture handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request)
 	{
 		if(request.method() == HttpMethod.OPTIONS)
-    	{
-    		return HttpHelpers.sendPreflightApproval(ctx);
-    	}
+		{
+			return HttpHelpers.sendPreflightApproval(ctx);
+		}
 		
 		HttpRequestInfo CurrRequest = new HttpRequestInfo();
 		
-    	try {
-    		CurrRequest.init(Info, request, SVID.makeSVID());
+		try {
+			CurrRequest.init(Info, request, SVID.makeSVID());
 		} catch (URISyntaxException e1) {
 			return HttpHelpers.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
 		}
-    	
+		
 		URI uri = CurrRequest.RequestURI;
-    	
-    	l.debug(new SVLog("Agent HTTP request", CurrRequest));
-    	
+		
+		l.debug(new SVLog("Agent HTTP request", CurrRequest));
+		
 		if (!request.decoderResult().isSuccess()) {
 			return HttpHelpers.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
-        }
+		}
 		
 		if(!authenticate(request, (InetSocketAddress)ctx.channel().remoteAddress()))
 		{
@@ -202,11 +201,11 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 			
 			Handshaker = wsFactory.newHandshaker(request);
 			if (Handshaker == null) {
-	            return WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
-	        } else {
-	        	WebsocketConnected = true;
-	        	return Handshaker.handshake(ctx.channel(), request);
-	        }
+				return WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
+			} else {
+				WebsocketConnected = true;
+				return Handshaker.handshake(ctx.channel(), request);
+			}
 		}
 		
 		if(uriPath.startsWith("/api/"))
@@ -264,23 +263,23 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 	private ChannelFuture handleWebSocketFrame(ChannelHandlerContext ctx, WebSocketFrame frame)
 	{
 		// Check for closing frame
-        if (frame instanceof CloseWebSocketFrame) {
-        	return Handshaker.close(ctx.channel(), (CloseWebSocketFrame) frame.retain());
-        }
-        else if (frame instanceof PingWebSocketFrame) {
-            return ctx.channel().write(new PongWebSocketFrame(frame.content().retain()));
-        }
-        else if (frame instanceof TextWebSocketFrame)
-        {
-        	TextWebSocketFrame textFrame = (TextWebSocketFrame)frame;
-        	String messageText = textFrame.text();
-        	return handleTextMessage(messageText);
-        }
-        else
-        {
-        	throw new UnsupportedOperationException(String.format("%s frame types not supported", frame.getClass()
-                    .getName()));
-        }
+		if (frame instanceof CloseWebSocketFrame) {
+			return Handshaker.close(ctx.channel(), (CloseWebSocketFrame) frame.retain());
+		}
+		else if (frame instanceof PingWebSocketFrame) {
+			return ctx.channel().write(new PongWebSocketFrame(frame.content().retain()));
+		}
+		else if (frame instanceof TextWebSocketFrame)
+		{
+			TextWebSocketFrame textFrame = (TextWebSocketFrame)frame;
+			String messageText = textFrame.text();
+			return handleTextMessage(messageText);
+		}
+		else
+		{
+			throw new UnsupportedOperationException(String.format("%s frame types not supported", frame.getClass()
+					.getName()));
+		}
 	}
 	
 	private ChannelFuture handleTextMessage(String messageText)
@@ -321,15 +320,15 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 	}
 	
 	@Override
-    public void channelReadComplete(ChannelHandlerContext ctx) {
-        ctx.flush();
-    }
+	public void channelReadComplete(ChannelHandlerContext ctx) {
+		ctx.flush();
+	}
 	
 	@Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
-        ctx.close();
-    }
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+		cause.printStackTrace();
+		ctx.close();
+	}
 	
 	private synchronized int getNextMessageNum()
 	{

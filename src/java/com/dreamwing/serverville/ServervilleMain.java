@@ -45,7 +45,8 @@ import com.dreamwing.serverville.util.LocaleUtil;
 import com.dreamwing.serverville.util.SVID;
 
 
-public class ServervilleMain {
+public class ServervilleMain
+{
 
 	public static Properties DefaultProperties;
 	public static Properties ServerProperties;
@@ -153,7 +154,8 @@ public class ServervilleMain {
 	
 	public static void initProps()
 	{
-		try {
+		try
+		{
 			Hostname = InetAddress.getLocalHost().getHostName();
 		} catch (UnknownHostException e) {
 			Hostname = "localhost";
@@ -229,44 +231,44 @@ public class ServervilleMain {
 		String resPath = ServerProperties.getProperty("res_root");
 		ResRoot = WorkingPath.resolve(resPath).normalize();
 		File resRootFile = ResRoot.toFile();
-    	if(!resRootFile.exists() || !resRootFile.canRead() || !resRootFile.isDirectory())
-    		throw new Exception("Invalid res root: "+ResRoot);
-    	
-    	RequireInvite = Boolean.parseBoolean(ServerProperties.getProperty("require_invite"));
-    	
-    	CurrencyUtil.DefaultCurrency = ServervilleMain.ServerProperties.getProperty("default_currency").toUpperCase();
-    	if(!CurrencyUtil.isValidCurrency(CurrencyUtil.DefaultCurrency))
-    		throw new Exception("Invalid default currency: "+CurrencyUtil.DefaultCurrency);
-    	
-    	LocaleUtil.DefaultLanguage = ServervilleMain.ServerProperties.getProperty("default_language");
-    	
-    	ClientPort = Integer.parseInt(ServerProperties.getProperty("client_port"));
-    	
-    	String uniqueAddress = Hostname+":"+ClientPort;
-    	
-    	MaxRequestSize = Integer.parseInt(ServerProperties.getProperty("max_request_size"));
-    	AllowMultipleSessions = Boolean.parseBoolean(ServerProperties.getProperty("allow_muiltiple_sessions"));
-    	
-    	WritableDirectories.init();
-    	StripeInterface.init();
-    	SslProtocolDetector.init();
-    	JSON.init();
-    	DatabaseManager.init();
-    	ServerNumber = ClusterMember.getServerNum(uniqueAddress);
-    	l.info("Assigned server number "+ServerNumber);
-    	
-    	SVID.init();
-    	KeyDataManager.init();
-    	RecordPermissionsManager.init();
-    	ResidentPermissionsManager.init();
-    	CurrencyInfoManager.init();
-    	ProductManager.init();
-    	ResidentManager.init();
-    	UserManager.init();
-    	ClientSessionManager.init();
-    	SelfTest.init();
-    	ScriptManager.init();
-    	ClusterManager.init();
+		if(!resRootFile.exists() || !resRootFile.canRead() || !resRootFile.isDirectory())
+			throw new Exception("Invalid res root: "+ResRoot);
+		
+		RequireInvite = Boolean.parseBoolean(ServerProperties.getProperty("require_invite"));
+		
+		CurrencyUtil.DefaultCurrency = ServervilleMain.ServerProperties.getProperty("default_currency").toUpperCase();
+		if(!CurrencyUtil.isValidCurrency(CurrencyUtil.DefaultCurrency))
+			throw new Exception("Invalid default currency: "+CurrencyUtil.DefaultCurrency);
+		
+		LocaleUtil.DefaultLanguage = ServervilleMain.ServerProperties.getProperty("default_language");
+		
+		ClientPort = Integer.parseInt(ServerProperties.getProperty("client_port"));
+		
+		String uniqueAddress = Hostname+":"+ClientPort;
+		
+		MaxRequestSize = Integer.parseInt(ServerProperties.getProperty("max_request_size"));
+		AllowMultipleSessions = Boolean.parseBoolean(ServerProperties.getProperty("allow_muiltiple_sessions"));
+		
+		WritableDirectories.init();
+		StripeInterface.init();
+		SslProtocolDetector.init();
+		JSON.init();
+		DatabaseManager.init();
+		ServerNumber = ClusterMember.getServerNum(uniqueAddress);
+		l.info("Assigned server number "+ServerNumber);
+		
+		SVID.init();
+		KeyDataManager.init();
+		RecordPermissionsManager.init();
+		ResidentPermissionsManager.init();
+		CurrencyInfoManager.init();
+		ProductManager.init();
+		ResidentManager.init();
+		UserManager.init();
+		ClientSessionManager.init();
+		SelfTest.init();
+		ScriptManager.init();
+		ClusterManager.init();
 	}
 	
 	public static void onClusterStarted()
@@ -424,7 +426,9 @@ public class ServervilleMain {
 				
 				File pidfileRef = new File(pidfilename);
 				pidfileRef.deleteOnExit();
-			} catch (IOException e) {
+			}
+			catch (IOException e)
+			{
 				l.error("Error creating pidfile: ", e);
 			}
 		}

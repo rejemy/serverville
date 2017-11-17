@@ -13,8 +13,8 @@ import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.table.DatabaseTable;
 
 @DatabaseTable(tableName = "script")
-public class ScriptData {
-	
+public class ScriptData
+{
 	@DatabaseField(columnName="id", id=true, canBeNull=false)
 	public String Id;
 	

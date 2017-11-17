@@ -20,8 +20,8 @@ import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.util.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-public class ClientDispatcher {
-	
+public class ClientDispatcher
+{	
 	private static final Logger l = LogManager.getLogger(ClientDispatcher.class);
 	
 	private class DispatchMethod

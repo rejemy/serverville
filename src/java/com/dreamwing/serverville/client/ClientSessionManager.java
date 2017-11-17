@@ -5,8 +5,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import com.dreamwing.serverville.data.UserSession;
 
-public class ClientSessionManager {
-
+public class ClientSessionManager
+{
 	private static ConcurrentMap<String,ClientConnectionHandler> OnlineSessions;
 	private static ConcurrentMap<String,ClientConnectionHandler> OnlineSessionsByUserId;
 	

@@ -6,8 +6,8 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class LaunchedEnvironment extends Thread {
-
+public class LaunchedEnvironment extends Thread
+{
 	private int Id;
 	private Process ServerProcess;
 	private File WorkingDir;

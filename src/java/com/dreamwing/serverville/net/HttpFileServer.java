@@ -215,7 +215,7 @@ public class HttpFileServer
 			}
 			if (HttpUtil.isKeepAlive(request))
 			{
-			    response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+				response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
 			}
 			
 			// Write the initial line and the header.
@@ -251,9 +251,9 @@ public class HttpFileServer
 			// Write the content.
 			lastContentFuture = ctx.writeAndFlush(new HttpChunkedInput(new ChunkedFile(raf, 0, longFileSize, 8192)),
 				ctx.newProgressivePromise());
-	    }
-	    
-	    return lastContentFuture;
+		}
+		
+		return lastContentFuture;
 	}
 	
 	

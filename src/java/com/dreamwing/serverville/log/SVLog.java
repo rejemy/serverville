@@ -12,8 +12,8 @@ import org.apache.lucene.document.TextField;
 import com.dreamwing.serverville.net.HttpRequestInfo;
 import com.dreamwing.serverville.net.HttpConnectionInfo;
 
-public class SVLog implements Message, StringBuilderFormattable, IndexedLogMessage {
-
+public class SVLog implements Message, StringBuilderFormattable, IndexedLogMessage
+{
 	private static final long serialVersionUID = 1L;
 	
 	private String Msg;

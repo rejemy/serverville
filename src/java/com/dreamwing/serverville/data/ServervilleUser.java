@@ -25,8 +25,8 @@ import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
 @DatabaseTable(tableName = "user")
-public class ServervilleUser {
-	
+public class ServervilleUser
+{
 	private static final Logger l = LogManager.getLogger(ServervilleUser.class);
 	
 	public static final int AdminLevel_User = 0b0000;

@@ -22,7 +22,6 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
 public class KeyDataItem
 {
-	
 	public String key;
 	public Object value;
 	public byte[] data;

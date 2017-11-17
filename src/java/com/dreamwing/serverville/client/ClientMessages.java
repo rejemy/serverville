@@ -1,14 +1,12 @@
 package com.dreamwing.serverville.client;
 
-
 import java.util.List;
 import java.util.Map;
 
 import com.dreamwing.serverville.data.JsonDataType;
 
-
-public class ClientMessages {
-
+public class ClientMessages
+{
 	public static class EmptyClientRequest
 	{
 

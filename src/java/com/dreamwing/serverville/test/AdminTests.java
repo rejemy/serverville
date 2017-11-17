@@ -34,7 +34,8 @@ import okhttp3.RequestBody;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
-public class AdminTests {
+public class AdminTests
+{
 
 	private static final Logger l = LogManager.getLogger(AdminTests.class);
 	

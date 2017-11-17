@@ -9,8 +9,8 @@ import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
 @DatabaseTable(tableName = "cluster_member")
-public class ClusterMember {
-	
+public class ClusterMember
+{	
 	@DatabaseField(columnName="address", id=true, canBeNull=false)
 	public String Address;
 	

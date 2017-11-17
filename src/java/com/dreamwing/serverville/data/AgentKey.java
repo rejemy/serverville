@@ -11,8 +11,8 @@ import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
 @DatabaseTable(tableName = "agent_key")
-public class AgentKey {
-
+public class AgentKey
+{
 	@DatabaseField(columnName="key", id=true, canBeNull=false)
 	public String Key;
 	

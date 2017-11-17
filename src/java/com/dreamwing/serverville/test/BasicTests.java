@@ -6,7 +6,8 @@ import com.dreamwing.serverville.util.PasswordUtil;
 import com.dreamwing.serverville.util.SVID;
 import com.dreamwing.serverville.util.SVID.SVIDInfo;
 
-public class BasicTests {
+public class BasicTests
+{
 
 	@Test(order=1)
 	public void TestSVIDGenerator()

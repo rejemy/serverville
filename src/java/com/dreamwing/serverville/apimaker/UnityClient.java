@@ -14,8 +14,8 @@ import com.dreamwing.serverville.apimaker.MakeAPIs.ApiMessageInfo;
 import com.dreamwing.serverville.apimaker.MakeAPIs.ApiMethodInfo;
 import com.dreamwing.serverville.apimaker.MakeAPIs.PrimitiveTypeInfo;
 
-public class UnityClient {
-
+public class UnityClient
+{
 	public static void writeUnityClientApi(List<ApiMethodInfo> apiMethods, List<ApiCustomTypeInfo> apiTypes) throws Exception
 	{
 		System.out.println("Writing Unity client API");

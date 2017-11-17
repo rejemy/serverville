@@ -18,7 +18,8 @@ import com.dreamwing.serverville.net.JsonApiException;
 import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-public class JsonDataDecoder {
+public class JsonDataDecoder
+{
 
 	public static KeyDataItem MakeKeyDataFromJson(String keyname, JsonDataType userSuppliedType, Object data) throws JsonApiException
 	{

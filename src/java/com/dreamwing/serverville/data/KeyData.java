@@ -12,8 +12,8 @@ import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
 
 
-public class KeyData {
-	
+public class KeyData
+{
 	private KeyDataRecord DbRecord;
 	private String Id;
 	private Map<String,KeyDataItem> Keys;

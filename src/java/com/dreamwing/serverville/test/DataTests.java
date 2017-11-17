@@ -11,8 +11,8 @@ import com.dreamwing.serverville.data.KeyDataTypes;
 import com.dreamwing.serverville.db.KeyDataManager;
 import com.dreamwing.serverville.util.SVID;
 
-public class DataTests {
-
+public class DataTests
+{
 
 	@Test(order=1)
 	public void LoadNonexistantItem() throws Exception

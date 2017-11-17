@@ -18,7 +18,6 @@ import com.j256.ormlite.table.DatabaseTable;
 @DatabaseTable(tableName = "adminsession")
 public class AdminUserSession implements HttpSession
 {
-	
 	@DatabaseField(columnName="id", id=true, canBeNull=false)
 	private String Id;
 	

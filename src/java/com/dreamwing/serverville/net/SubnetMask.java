@@ -5,8 +5,8 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class SubnetMask {
-
+public class SubnetMask
+{
 	private String AddrMaskString;
 	
 	private int Ipv4Addr = 0;
@@ -39,9 +39,9 @@ public class SubnetMask {
 			Inet4Address addr4 = (Inet4Address)addr;
 			byte[] b = addr4.getAddress();
 			Ipv4Addr =	 ((b[0] & 0xFF) << 24) |
-	                     ((b[1] & 0xFF) << 16) |
-	                     ((b[2] & 0xFF) << 8)  |
-	                     ((b[3] & 0xFF) << 0);
+						 ((b[1] & 0xFF) << 16) |
+						 ((b[2] & 0xFF) << 8)  |
+						 ((b[3] & 0xFF) << 0);
 			
 			IPv4Mask = (0xffffffff << (32-bits));
 			Ipv4Addr = Ipv4Addr & IPv4Mask;
@@ -59,22 +59,22 @@ public class SubnetMask {
 			byte[] b = addr6.getAddress();
 			
 			Ipv6UpperAddr = ((b[0] & 0xFF) << 56) |
-		                    ((b[1] & 0xFF) << 48) |
-		                    ((b[2] & 0xFF) << 40) |
-		                    ((b[3] & 0xFF) << 32) |
-		                    ((b[4] & 0xFF) << 24) |
-		                    ((b[5] & 0xFF) << 16) |
-		                    ((b[6] & 0xFF) << 8)  |
-		                    ((b[7] & 0xFF) << 0);
+							((b[1] & 0xFF) << 48) |
+							((b[2] & 0xFF) << 40) |
+							((b[3] & 0xFF) << 32) |
+							((b[4] & 0xFF) << 24) |
+							((b[5] & 0xFF) << 16) |
+							((b[6] & 0xFF) << 8)  |
+							((b[7] & 0xFF) << 0);
 			
 			Ipv6LowerAddr = ((b[8]  & 0xFF) << 56) |
-		                    ((b[9]  & 0xFF) << 48) |
-		                    ((b[10] & 0xFF) << 40) |
-		                    ((b[11] & 0xFF) << 32) |
-		                    ((b[12] & 0xFF) << 24) |
-		                    ((b[13] & 0xFF) << 16) |
-		                    ((b[14] & 0xFF) << 8)  |
-		                    ((b[15] & 0xFF) << 0);
+							((b[9]  & 0xFF) << 48) |
+							((b[10] & 0xFF) << 40) |
+							((b[11] & 0xFF) << 32) |
+							((b[12] & 0xFF) << 24) |
+							((b[13] & 0xFF) << 16) |
+							((b[14] & 0xFF) << 8)  |
+							((b[15] & 0xFF) << 0);
 			
 			bits = 128 - bits;
 			
@@ -129,22 +129,22 @@ public class SubnetMask {
 		byte[] b = addr.getAddress();
 		
 		long addrUpper = ((b[0] & 0xFF) << 56) |
-                ((b[1] & 0xFF) << 48) |
-                ((b[2] & 0xFF) << 40) |
-                ((b[3] & 0xFF) << 32) |
-                ((b[4] & 0xFF) << 24) |
-                ((b[5] & 0xFF) << 16) |
-                ((b[6] & 0xFF) << 8)  |
-                ((b[7] & 0xFF) << 0);
+				((b[1] & 0xFF) << 48) |
+				((b[2] & 0xFF) << 40) |
+				((b[3] & 0xFF) << 32) |
+				((b[4] & 0xFF) << 24) |
+				((b[5] & 0xFF) << 16) |
+				((b[6] & 0xFF) << 8)  |
+				((b[7] & 0xFF) << 0);
 
 		long addrLower = ((b[8]  & 0xFF) << 56) |
-                ((b[9]  & 0xFF) << 48) |
-                ((b[10] & 0xFF) << 40) |
-                ((b[11] & 0xFF) << 32) |
-                ((b[12] & 0xFF) << 24) |
-                ((b[13] & 0xFF) << 16) |
-                ((b[14] & 0xFF) << 8)  |
-                ((b[15] & 0xFF) << 0);
+				((b[9]  & 0xFF) << 48) |
+				((b[10] & 0xFF) << 40) |
+				((b[11] & 0xFF) << 32) |
+				((b[12] & 0xFF) << 24) |
+				((b[13] & 0xFF) << 16) |
+				((b[14] & 0xFF) << 8)  |
+				((b[15] & 0xFF) << 0);
 		
 		return Ipv6UpperAddr == (addrUpper & IPv6UpperMask) && Ipv6LowerAddr == (addrLower & IPv6LowerMask);
 	}

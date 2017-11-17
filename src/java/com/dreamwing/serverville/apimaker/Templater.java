@@ -10,8 +10,8 @@ import java.util.regex.Pattern;
 
 import com.dreamwing.serverville.util.FileUtil;
 
-public class Templater {
-
+public class Templater
+{
 	private String Template;
 	private Map<String,String> Replacements;
 	

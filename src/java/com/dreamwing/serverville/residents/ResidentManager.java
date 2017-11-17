@@ -5,8 +5,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import com.dreamwing.serverville.cluster.ClusterManager;
 
-public class ResidentManager {
-	
+public class ResidentManager
+{	
 	private static ConcurrentMap<String,BaseResident> ActiveResidents;
 	public static ConcurrentMap<String,GlobalChannel> GlobalResidents;
 	

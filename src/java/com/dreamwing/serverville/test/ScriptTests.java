@@ -12,7 +12,8 @@ import com.dreamwing.serverville.scripting.ScriptEngineContext;
 import com.dreamwing.serverville.scripting.ScriptManager;
 import com.dreamwing.serverville.util.SVID;
 
-public class ScriptTests {
+public class ScriptTests
+{
 	
 	@Test(order=1)
 	public void EngineCreate() throws Exception
