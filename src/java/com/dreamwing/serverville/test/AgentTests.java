@@ -1,6 +1,8 @@
 package com.dreamwing.serverville.test;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.LinkedList;
 
@@ -42,12 +44,15 @@ public class AgentTests
 	private String TestItemID = KeyDataManager.TestIdPrefix+SVID.makeSVID();
 	
 	@Test(order=1)
-	public void InitAgentKey() throws SQLException
+	public void InitAgentKey() throws SQLException, UnknownHostException
 	{
 		Key = AgentKeyManager.createAgentKey("Agent API test key", null, null);
 		Assert.assertNotNull(Key);
 		
-		LocalhostLimitedKey = AgentKeyManager.createAgentKey("Agent API IP range test key", "127.0.0.1/32", null);
+		InetAddress localaddr = InetAddress.getLocalHost();
+		String address = localaddr.getHostAddress();
+		
+		LocalhostLimitedKey = AgentKeyManager.createAgentKey("Agent API IP range test key", address+"/32", null);
 		Assert.assertNotNull(LocalhostLimitedKey);
 		
 		OtherLimitedKey = AgentKeyManager.createAgentKey("Agent API IP range test key", "20.1.2.0/24", null);

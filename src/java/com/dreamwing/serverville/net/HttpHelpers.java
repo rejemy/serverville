@@ -59,6 +59,7 @@ public class HttpHelpers {
 			.readTimeout(timeout, TimeUnit.MILLISECONDS)
 			.writeTimeout(timeout, TimeUnit.MILLISECONDS);
 		SharedHttpClient = clientBuilder.build();
+		
 	}
 	
 	public static void resetHttpClient()
@@ -403,26 +404,26 @@ public class HttpHelpers {
     @SuppressWarnings({ "rawtypes" })
     public static <S> S postClientApi(String url, String sessionId, Object body, TypeReference valueTypeRef) throws IOException, JsonApiException
     {
-    	byte[] bodyData = JSON.serializeToBytes(body);
-    	RequestBody rbody = RequestBody.create(JSON_CONTENT_TYPE, bodyData);
-    	
-    	Request.Builder requestBuilder = new Request.Builder()
-    			.url(url)
-    			.method("POST", rbody);
-    	
-    	if(sessionId != null)
-    		requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
-    	
-    	Request request = requestBuilder.build();
-
-    	Response response = SharedHttpClient.newCall(request).execute();
-    	if(response.code() == 200)
-    	{
-    		return JSON.JsonMapper.readValue(response.body().charStream(), valueTypeRef);
-    	}
-    	
-    	ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
-    	throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
+	    	byte[] bodyData = JSON.serializeToBytes(body);
+	    	RequestBody rbody = RequestBody.create(JSON_CONTENT_TYPE, bodyData);
+	    	
+	    	Request.Builder requestBuilder = new Request.Builder()
+	    			.url(url)
+	    			.method("POST", rbody);
+	    	
+	    	if(sessionId != null)
+	    		requestBuilder.addHeader(HttpHeaderNames.AUTHORIZATION.toString(), sessionId);
+	    	
+	    	Request request = requestBuilder.build();
+	
+	    	Response response = SharedHttpClient.newCall(request).execute();
+	    	if(response.code() == 200)
+	    	{
+	    		return JSON.JsonMapper.readValue(response.body().charStream(), valueTypeRef);
+	    	}
+	    	
+	    	ApiError error = JSON.deserialize(response.body().charStream(), ApiError.class);
+	    	throw new JsonApiException(error, HttpResponseStatus.valueOf(response.code()));
     }
     
 
