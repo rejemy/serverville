@@ -318,6 +318,18 @@ public class HttpHelpers
 		return response.body().string();
 	}
 	
+	public static int postData(String url, RequestBody body) throws IOException
+	{
+		Request request = new Request.Builder()
+			.url(url)
+			.method("POST", body)
+			.build();
+		
+
+		Response response = SharedHttpClient.newCall(request).execute();
+		return response.code();
+	}
+	
 	public static <T> T postJson(String url, RequestBody body, Class<T> replyClass) throws IOException
 	{
 		Request request = new Request.Builder()
@@ -400,6 +412,9 @@ public class HttpHelpers
 	
 	public static final MediaType JAVASCRIPT_CONTENT_TYPE =
   		  MediaType.parse("application/javascript");
+	
+	public static final MediaType FORM_URLENCODED_CONTENT_TYPE =
+		  MediaType.parse("application/x-www-form-urlencoded");
 	
 	@SuppressWarnings({ "rawtypes" })
 	public static <S> S postClientApi(String url, String sessionId, Object body, TypeReference valueTypeRef) throws IOException, JsonApiException

@@ -68,11 +68,12 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 	
 	private HttpConnectionInfo Info;
 	private OnlineUser UserPresence;
+	private long SessionStartedAt;
 	
 	private boolean Keepalive = false;
 	private boolean WebsocketConnected = false;
 	private boolean BinaryConnected = false;
-
+	
 	private List<PendingNotification> Notifications;
 	
 	public ClientConnectionHandler(ClientDispatcher jsonDispatcher, HttpDispatcher formDispatcher)
@@ -95,6 +96,11 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		return Info != null ? (UserSession)Info.Session : null;
 	}
 	
+	public long getSessionStartedAt()
+	{
+		return SessionStartedAt;
+	}
+	
 	@Override
 	public void channelActive(final ChannelHandlerContext ctx) throws Exception
 	{
@@ -103,6 +109,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		Info = new HttpConnectionInfo();
 		Info.Ctx = ctx;
 		Info.ConnectionId = SVID.makeSVID();
+		Info.ConnectionStartedAt = System.currentTimeMillis();
 		
 		l.debug(new SVLog("Client HTTP connection opened", Info));
 	}
@@ -177,6 +184,8 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		//Info.User.setSessionId(session.Id);
 		Info.Session = session;
+		
+		SessionStartedAt = System.currentTimeMillis();
 		
 		if((WebsocketConnected || Keepalive) && session.Connected == false)
 		{

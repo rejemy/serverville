@@ -163,5 +163,7 @@ declare namespace api
 	function getUrlAsString(url:string):string;
 	function getUrlAsData(url:string):number[];
 	function getUrl(url:string):HttpResponseInfo;
+
+	function createAnalyticEvent(userId:string, eventType:string, eventProperties?:object, userProperties?:object):void;
 	
 }

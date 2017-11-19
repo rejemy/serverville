@@ -32,12 +32,13 @@ import com.dreamwing.serverville.data.ClusterMember;
 import com.dreamwing.serverville.data.RecordPermissionsManager;
 import com.dreamwing.serverville.data.ResidentPermissionsManager;
 import com.dreamwing.serverville.db.KeyDataManager;
+import com.dreamwing.serverville.ext.amplitude.AmplitudeInterface;
+import com.dreamwing.serverville.ext.stripe.StripeInterface;
 import com.dreamwing.serverville.log.LogIndexManager;
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.net.SslProtocolDetector;
 import com.dreamwing.serverville.residents.ResidentManager;
 import com.dreamwing.serverville.scripting.ScriptManager;
-import com.dreamwing.serverville.stripe.StripeInterface;
 import com.dreamwing.serverville.test.SelfTest;
 import com.dreamwing.serverville.util.CurrencyUtil;
 import com.dreamwing.serverville.util.JSON;
@@ -83,7 +84,6 @@ public class ServervilleMain
 		DefaultProperties.setProperty("agent_ssl_only", "false");
 		DefaultProperties.setProperty("client_ssl_only", "false");
 		DefaultProperties.setProperty("hostname", "localhost");
-		DefaultProperties.setProperty("stripe_api_key", "");
 		DefaultProperties.setProperty("default_language", "en-US");
 		DefaultProperties.setProperty("default_currency", "USD");
 		DefaultProperties.setProperty("writeable_directories", "");
@@ -91,6 +91,9 @@ public class ServervilleMain
 		DefaultProperties.setProperty("allowed_origin", "*");
 		DefaultProperties.setProperty("max_request_size", "65536");
 		DefaultProperties.setProperty("allow_muiltiple_sessions", "false");
+		
+		DefaultProperties.setProperty("stripe_api_key", "");
+		DefaultProperties.setProperty("amplitude_api_key", "");
 	}
 	
 	private static Logger l;
@@ -250,7 +253,6 @@ public class ServervilleMain
 		AllowMultipleSessions = Boolean.parseBoolean(ServerProperties.getProperty("allow_muiltiple_sessions"));
 		
 		WritableDirectories.init();
-		StripeInterface.init();
 		SslProtocolDetector.init();
 		JSON.init();
 		DatabaseManager.init();
@@ -266,6 +268,8 @@ public class ServervilleMain
 		ResidentManager.init();
 		UserManager.init();
 		ClientSessionManager.init();
+		StripeInterface.init();
+		AmplitudeInterface.init();
 		SelfTest.init();
 		ScriptManager.init();
 		ClusterManager.init();

@@ -11,12 +11,12 @@ import com.dreamwing.serverville.ProductManager;
 import com.dreamwing.serverville.data.Product;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.data.UserSession;
+import com.dreamwing.serverville.ext.stripe.StripeInterface;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpHandlerOptions;
 import com.dreamwing.serverville.net.HttpHelpers;
 import com.dreamwing.serverville.net.HttpRequestInfo;
 import com.dreamwing.serverville.net.JsonApiException;
-import com.dreamwing.serverville.stripe.StripeInterface;
 import com.dreamwing.serverville.util.CurrencyUtil;
 
 import io.netty.channel.ChannelFuture;

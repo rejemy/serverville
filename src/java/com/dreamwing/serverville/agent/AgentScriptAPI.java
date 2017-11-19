@@ -36,6 +36,7 @@ import com.dreamwing.serverville.data.TransientDataItem;
 import com.dreamwing.serverville.data.UserMessage;
 import com.dreamwing.serverville.db.DatabaseManager;
 import com.dreamwing.serverville.db.KeyDataManager;
+import com.dreamwing.serverville.ext.amplitude.AmplitudeInterface;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpHelpers;
 import com.dreamwing.serverville.net.JsonApiException;
@@ -1245,5 +1246,24 @@ public class AgentScriptAPI
 		info.mimeType = response.body().contentType().toString();
 		
 		return info;
+	}
+	
+	public void createAnalyticEvent(String userId, String eventType) throws JsonApiException
+	{
+		createAnalyticEvent(userId, eventType, null, null);
+	}
+	
+	public void createAnalyticEvent(String userId, String eventType, Object eventProperties) throws JsonApiException
+	{
+		createAnalyticEvent(userId, eventType, eventProperties, null);
+	}
+	
+	public void createAnalyticEvent(String userId, String eventType, Object eventProperties, Object userProperties) throws JsonApiException
+	{
+		ClientConnectionHandler client = ClientSessionManager.getSessionByUserId(userId);
+		if(client == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "user not found");
+		
+		AmplitudeInterface.createEvent(client, eventType, eventProperties, userProperties);
 	}
 }

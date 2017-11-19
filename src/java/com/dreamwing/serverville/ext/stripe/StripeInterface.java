@@ -1,4 +1,4 @@
-package com.dreamwing.serverville.stripe;
+package com.dreamwing.serverville.ext.stripe;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -34,6 +34,8 @@ public class StripeInterface
 			return;
 		
 		Stripe.apiKey = apiKey;
+		
+		l.info("Stripe interface initialized");
 	}
 	
 	public static void makePurchase(ServervilleUser user, Product product, String currency, String stripeToken) throws JsonApiException, SQLException
