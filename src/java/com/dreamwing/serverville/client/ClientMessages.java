@@ -507,6 +507,12 @@ public class ClientMessages
 		public String product_id;
 	}
 	
+	public static class BraintreePurchaseRequest
+	{
+		public String nonce;
+		public String product_id;
+	}
+	
 	public static class ProductPurchasedReply
 	{
 		public String product_id;
@@ -539,5 +545,15 @@ public class ClientMessages
 	public static class BatchRequestReply
 	{
 		public List<Object> replies;
+	}
+	
+	public static class BraintreeClientTokenRequest
+	{
+		public int api_version;
+	}
+	
+	public static class BraintreeClientTokenReply
+	{
+		public String client_token;
 	}
 }

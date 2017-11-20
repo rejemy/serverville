@@ -4,6 +4,7 @@ package com.dreamwing.serverville.client;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Currency;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -30,6 +31,7 @@ import com.dreamwing.serverville.data.TransientDataItem;
 import com.dreamwing.serverville.data.UserMessage;
 import com.dreamwing.serverville.data.UserSession;
 import com.dreamwing.serverville.db.KeyDataManager;
+import com.dreamwing.serverville.ext.braintree.BraintreeInterface;
 import com.dreamwing.serverville.ext.stripe.StripeInterface;
 import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.JsonApiException;
@@ -1456,35 +1458,30 @@ public class ClientAPI
 	
 	public static ProductInfoList GetProducts(GetProductsRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		String currencyCode = CurrencyUtil.getCurrency(info.User.Country);
-		
 		ProductInfoList reply = new ProductInfoList();
 		
 		Collection<Product> products = ProductManager.getProductList();
 		
 		reply.products = new ArrayList<ProductInfo>(products.size());
 		
-		String lang = info.User.getLanguage();
+		Currency currency = CurrencyUtil.getCurrencyForCountry(info.User.getCountry());
 		Locale loc = info.User.getLocale();
 		
 		for(Product prod : products)
 		{
-			Integer price = prod.Price.get(currencyCode);
-			if(price == null)
+			Integer price = prod.Price.get(currency.getCurrencyCode());
+			if(price == null && CurrencyUtil.DefaultCurrency != currency)
 			{
-				if(!CurrencyUtil.DefaultCurrency.equals(currencyCode))
-				{
-					currencyCode = CurrencyUtil.DefaultCurrency;
-					price = prod.Price.get(currencyCode);
-				}
-				
-				if(price == null)
-					throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have prices in "+CurrencyUtil.DefaultCurrency);
+				currency = CurrencyUtil.DefaultCurrency;
+				price = prod.Price.get(currency.getCurrencyCode());
 			}
 			
-			Product.ProductText text = LocaleUtil.getLocalized(lang, prod.Text);
+			if(price == null)
+				throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have prices in "+CurrencyUtil.DefaultCurrency);
+			
+			Product.ProductText text = LocaleUtil.getLocalized(loc, prod.Text);
 			if(text == null)
-				throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have text in "+lang);
+				throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have text in "+loc);
 			
 			ProductInfo prodInfo = new ProductInfo();
 			prodInfo.id = prod.ProductId;
@@ -1492,8 +1489,8 @@ public class ClientAPI
 			prodInfo.description = text.desc;
 			prodInfo.image_url = text.image_url;
 			prodInfo.price = price;
-			prodInfo.display_price = CurrencyUtil.getDisplayPrice(loc, currencyCode, price);
-			prodInfo.currency = currencyCode;
+			prodInfo.display_price = CurrencyUtil.getDisplayPrice(loc, currency, price);
+			prodInfo.currency = currency.getCurrencyCode();
 			
 			reply.products.add(prodInfo);
 		}
@@ -1503,30 +1500,26 @@ public class ClientAPI
 	
 	public static ProductInfo GetProduct(GetProductRequest request, ClientMessageInfo info) throws JsonApiException
 	{
-		String currencyCode = CurrencyUtil.getCurrency(info.User.Country);
-		
 		if(StringUtil.isNullOrEmpty(request.product_id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "product_id");
 		
 		Product prod = ProductManager.getProduct(request.product_id);
 		
-		Integer price = prod.Price.get(currencyCode);
-		if(price == null)
+		Currency currency = CurrencyUtil.getCurrencyForCountry(info.User.getCountry());
+		Integer price = prod.Price.get(currency.getCurrencyCode());
+		if(price == null && CurrencyUtil.DefaultCurrency != currency)
 		{
-			if(!CurrencyUtil.DefaultCurrency.equals(currencyCode))
-			{
-				currencyCode = CurrencyUtil.DefaultCurrency;
-				price = prod.Price.get(currencyCode);
-			}
-			
-			if(price == null)
-				throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have prices in "+CurrencyUtil.DefaultCurrency);
+			currency = CurrencyUtil.DefaultCurrency;
+			price = prod.Price.get(currency.getCurrencyCode());
 		}
 		
-		String lang = info.User.getLanguage();
-		Product.ProductText text = LocaleUtil.getLocalized(lang, prod.Text);
+		if(price == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have prices in "+CurrencyUtil.DefaultCurrency);
+		
+		Locale loc = info.User.getLocale();
+		Product.ProductText text = LocaleUtil.getLocalized(loc, prod.Text);
 		if(text == null)
-			throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have text in "+lang);
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have text in "+loc);
 		
 		ProductInfo prodInfo = new ProductInfo();
 		prodInfo.id = prod.ProductId;
@@ -1534,13 +1527,13 @@ public class ClientAPI
 		prodInfo.description = text.desc;
 		prodInfo.image_url = text.image_url;
 		prodInfo.price = price;
-		prodInfo.display_price = CurrencyUtil.getDisplayPrice(info.User.getLocale(), currencyCode, price);
-		prodInfo.currency = currencyCode;
+		prodInfo.display_price = CurrencyUtil.getDisplayPrice(loc, currency, price);
+		prodInfo.currency = currency.getCurrencyCode();
 		
 		return prodInfo;
 	}
 	
-	public static ProductPurchasedReply stripeCheckout(StripeCheckoutRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	public static ProductPurchasedReply StripeCheckout(StripeCheckoutRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
 	{
 		if(StringUtil.isNullOrEmpty(request.product_id))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "product_id");
@@ -1548,25 +1541,29 @@ public class ClientAPI
 		if(StringUtil.isNullOrEmpty(request.stripe_token))
 			throw new JsonApiException(ApiErrors.MISSING_INPUT, "stripe_token");
 		
-		String currencyCode = CurrencyUtil.getCurrency(info.User.Country);
-		
 		Product prod = ProductManager.getProduct(request.product_id);
 		if(prod == null)
 		{
 			throw new JsonApiException(ApiErrors.NOT_FOUND, "product "+request.product_id+" not found");
 		}
 		
-		if(!prod.Price.containsKey(currencyCode))
+		Currency currency = CurrencyUtil.getCurrencyForCountry(info.User.getCountry());
+		Integer price = prod.Price.get(currency.getCurrencyCode());
+		if(price == null && CurrencyUtil.DefaultCurrency != currency)
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, "product doesn't have a price in currency "+currencyCode);
+			currency = CurrencyUtil.DefaultCurrency;
+			price = prod.Price.get(currency.getCurrencyCode());
 		}
 		
-		StripeInterface.makePurchase(info.User, prod, currencyCode, request.stripe_token);
+		if(price == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have prices in "+CurrencyUtil.DefaultCurrency);
+		
+		StripeInterface.makePurchase(info.User, prod, currency, request.stripe_token);
 		
 		ProductPurchasedReply reply = new ProductPurchasedReply();
 		
 		reply.product_id = request.product_id;
-		reply.price = prod.Price.get(currencyCode);
+		reply.price = price;
 		reply.currencies = prod.Currencies;
 		
 		return reply;
@@ -1587,5 +1584,52 @@ public class ClientAPI
 		
 		return reply;
 	}
+	
+	public static BraintreeClientTokenReply getBraintreeClientToken(BraintreeClientTokenRequest request, ClientMessageInfo info)
+	{
+		BraintreeClientTokenReply reply = new BraintreeClientTokenReply();
+		
+		reply.client_token = BraintreeInterface.getClientToken(info.User, request.api_version);
+		
+		return reply;
+	}
+	
+	public static ProductPurchasedReply BraintreePurchase(BraintreePurchaseRequest request, ClientMessageInfo info) throws JsonApiException, SQLException
+	{
+		if(StringUtil.isNullOrEmpty(request.product_id))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "product_id");
+		
+		if(StringUtil.isNullOrEmpty(request.nonce))
+			throw new JsonApiException(ApiErrors.MISSING_INPUT, "nonce");
+		
+		Product prod = ProductManager.getProduct(request.product_id);
+		if(prod == null)
+		{
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "product "+request.product_id+" not found");
+		}
+		
+		Currency currency = CurrencyUtil.getCurrencyForCountry(info.User.getCountry());
+		Integer price = prod.Price.get(currency.getCurrencyCode());
+		if(price == null && CurrencyUtil.DefaultCurrency != currency)
+		{
+			currency = CurrencyUtil.DefaultCurrency;
+			price = prod.Price.get(currency.getCurrencyCode());
+		}
+		
+		if(price == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have prices in "+CurrencyUtil.DefaultCurrency);
+		
+		BraintreeInterface.makePurchase(info.User, prod, currency, request.nonce);
+		
+		ProductPurchasedReply reply = new ProductPurchasedReply();
+		
+		reply.product_id = request.product_id;
+		reply.price = price;
+		reply.currencies = prod.Currencies;
+		
+		return reply;
+	}
+	
+	
 	
 }

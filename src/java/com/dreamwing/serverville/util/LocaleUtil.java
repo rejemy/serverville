@@ -1,16 +1,61 @@
 package com.dreamwing.serverville.util;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class LocaleUtil
 {
+	public static Locale DefaultLocale;
 	public static String DefaultLanguage;
+	public static String DefaultCountry;
 	
-	public static <T> T getLocalized(String language, Map<String,T> text)
+	private static Set<String> ISO_LANGUAGES;
+	private static Set<String> ISO_COUNTRIES;
+	
+	public static void init()
 	{
-		if(language == null)
-			language = DefaultLanguage;
+		ISO_LANGUAGES = new HashSet<String>(Arrays.asList(Locale.getISOLanguages()));
+		ISO_COUNTRIES = new HashSet<String>(Arrays.asList(Locale.getISOCountries()));
+	}
+	
+	public static boolean isKnownCountryCode(String code)
+	{
+		return ISO_COUNTRIES.contains(code);
+	}
+	
+	public static boolean isKnownLanguageCode(String code)
+	{
+		return ISO_LANGUAGES.contains(code);
+	}
+	
+	public static String normalizeCountryCode(String code)
+	{
+		code = code.toUpperCase();
+		if(ISO_COUNTRIES.contains(code))
+			return code;
+		else
+			return null;
+	}
+	
+	public static String normalizeLanguageCode(String code)
+	{
+		code = code.toLowerCase();
+		if(ISO_LANGUAGES.contains(code))
+			return code;
+		else
+			return null;
+	}
+	
+	public static <T> T getLocalized(Locale loc, Map<String,T> text)
+	{
+		if(loc == null)
+			loc = DefaultLocale;
+		
+		String language = loc.getLanguage();
 		
 		T val = text.get(language);
 		if(val != null)
@@ -43,6 +88,7 @@ public class LocaleUtil
 		}
 		
 		text.putAll(fallbacks);
-		
 	}
+	
+	
 }

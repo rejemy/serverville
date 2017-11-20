@@ -1,6 +1,7 @@
 package com.dreamwing.serverville.ext.stripe;
 
 import java.sql.SQLException;
+import java.util.Currency;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,12 +39,11 @@ public class StripeInterface
 		l.info("Stripe interface initialized");
 	}
 	
-	public static void makePurchase(ServervilleUser user, Product product, String currency, String stripeToken) throws JsonApiException, SQLException
+	public static void makePurchase(ServervilleUser user, Product product, Currency currency, String stripeToken) throws JsonApiException, SQLException
 	{
+		int price = product.Price.get(currency.getCurrencyCode());
 		
-		int price = product.Price.get(currency);
-		
-		Purchase purchase = PurchaseManager.startUserPurchase(user, product, currency, "Stripe");
+		Purchase purchase = PurchaseManager.startUserPurchase(user, product, currency.getCurrencyCode(), "Stripe");
 		
 		Map<String, Object> chargeParams = new HashMap<String, Object>();
 		chargeParams.put("amount", price);
@@ -64,7 +64,7 @@ public class StripeInterface
 		} catch (AuthenticationException | InvalidRequestException | APIConnectionException | CardException | APIException e)
 		{
 			PurchaseManager.failPurchase(purchase, e.getMessage());
-			l.error("Error charging stripe", e);
+			l.error("Error charging Stripe", e);
 			throw new JsonApiException(ApiErrors.CHARGE_ERROR, e.getMessage());
 		}
 		

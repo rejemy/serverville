@@ -1289,6 +1289,9 @@ public class AdminAPI
 			}
 		}
 		
+		if(!prod.Price.containsKey(CurrencyUtil.DefaultCurrency.getCurrencyCode()))
+			throw new JsonApiException(ApiErrors.INVALID_INPUT, "All products must have a price in the default currency");
+		
 		String currenciesJson = req.getOneBody("currencies", null);
 		if(currenciesJson != null)
 		{

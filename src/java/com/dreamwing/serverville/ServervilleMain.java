@@ -12,6 +12,8 @@ import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.IllformedLocaleException;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -84,7 +86,8 @@ public class ServervilleMain
 		DefaultProperties.setProperty("agent_ssl_only", "false");
 		DefaultProperties.setProperty("client_ssl_only", "false");
 		DefaultProperties.setProperty("hostname", "localhost");
-		DefaultProperties.setProperty("default_language", "en-US");
+		DefaultProperties.setProperty("default_country", "US");
+		DefaultProperties.setProperty("default_language", "en");
 		DefaultProperties.setProperty("default_currency", "USD");
 		DefaultProperties.setProperty("writeable_directories", "");
 		DefaultProperties.setProperty("default_property_permission", "w");
@@ -94,6 +97,10 @@ public class ServervilleMain
 		
 		DefaultProperties.setProperty("stripe_api_key", "");
 		DefaultProperties.setProperty("amplitude_api_key", "");
+		DefaultProperties.setProperty("braintree_merchant_id", "");
+		DefaultProperties.setProperty("braintree_public_key", "");
+		DefaultProperties.setProperty("braintree_private_key", "");
+		DefaultProperties.setProperty("braintree_environment", "production");
 	}
 	
 	private static Logger l;
@@ -239,11 +246,7 @@ public class ServervilleMain
 		
 		RequireInvite = Boolean.parseBoolean(ServerProperties.getProperty("require_invite"));
 		
-		CurrencyUtil.DefaultCurrency = ServervilleMain.ServerProperties.getProperty("default_currency").toUpperCase();
-		if(!CurrencyUtil.isValidCurrency(CurrencyUtil.DefaultCurrency))
-			throw new Exception("Invalid default currency: "+CurrencyUtil.DefaultCurrency);
-		
-		LocaleUtil.DefaultLanguage = ServervilleMain.ServerProperties.getProperty("default_language");
+		initLocaleDefaults();
 		
 		ClientPort = Integer.parseInt(ServerProperties.getProperty("client_port"));
 		
@@ -273,6 +276,47 @@ public class ServervilleMain
 		SelfTest.init();
 		ScriptManager.init();
 		ClusterManager.init();
+	}
+	
+	private static void initLocaleDefaults() throws Exception
+	{
+		LocaleUtil.init();
+		
+		String currency = ServervilleMain.ServerProperties.getProperty("default_currency");
+		if(currency == null || currency.length() == 0)
+			throw new Exception("Must set a default currency");
+		
+		CurrencyUtil.DefaultCurrency = CurrencyUtil.getCurrencyFromCode(currency);
+		if(CurrencyUtil.DefaultCurrency == null)
+			throw new Exception("Invalid default currency: "+currency);
+		
+		String language = ServervilleMain.ServerProperties.getProperty("default_language");
+		if(language == null || language.length() == 0)
+			throw new Exception("Must set a default langauge");
+		
+		if(!LocaleUtil.isKnownLanguageCode(language))
+			throw new Exception("Unknown language code: "+language);
+		
+		String country = ServervilleMain.ServerProperties.getProperty("default_country");
+		if(country == null || country.length() == 0)
+			throw new Exception("Must set a default country");
+		
+		if(!LocaleUtil.isKnownCountryCode(country))
+			throw new Exception("Unknown country code: "+country);
+		
+		try
+		{
+			LocaleUtil.DefaultLocale = new Locale.Builder().setLanguage(language).setRegion(country).build();
+		}
+		catch(IllformedLocaleException e)
+		{
+			throw new Exception("Default language or country are ill formed");
+		}
+		
+		LocaleUtil.DefaultLanguage = LocaleUtil.DefaultLocale.getLanguage();
+		LocaleUtil.DefaultCountry = LocaleUtil.DefaultLocale.getCountry();
+		
+		l.info("Default locale: "+LocaleUtil.DefaultLocale.toString());
 	}
 	
 	public static void onClusterStarted()

@@ -3,6 +3,7 @@ package com.dreamwing.serverville.client;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.sql.SQLException;
+import java.util.Currency;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -47,8 +48,6 @@ public class ClientFormAPI
 			throw new JsonApiException(ApiErrors.BAD_AUTH);
 		}
 		
-		String currencyCode = CurrencyUtil.getCurrency(user.Country);
-		
 		URL successUrl = null;
 		URL failUrl = null;
 		
@@ -70,14 +69,20 @@ public class ClientFormAPI
 			throw new JsonApiException(ApiErrors.NOT_FOUND, "product "+productId+" not found");
 		}
 		
-		if(!prod.Price.containsKey(currencyCode))
+		Currency currency = CurrencyUtil.getCurrencyForCountry(user.getCountry());
+		Integer price = prod.Price.get(currency.getCurrencyCode());
+		if(price == null && CurrencyUtil.DefaultCurrency != currency)
 		{
-			throw new JsonApiException(ApiErrors.NOT_FOUND, "product doesn't have a price in currency "+currencyCode);
+			currency = CurrencyUtil.DefaultCurrency;
+			price = prod.Price.get(currency.getCurrencyCode());
 		}
+		
+		if(price == null)
+			throw new JsonApiException(ApiErrors.NOT_FOUND, "Products didn't have prices in "+CurrencyUtil.DefaultCurrency);
 		
 		try
 		{
-			StripeInterface.makePurchase(user, prod, currencyCode, stripeToken);
+			StripeInterface.makePurchase(user, prod, currency, stripeToken);
 		}
 		catch(Exception e)
 		{

@@ -27,5 +27,6 @@
 	<classpathentry kind="lib" path="lib/ormlite-core-5.0.jar" sourcepath="lib/ormlite-core-5.0-sources.jar"/>
 	<classpathentry kind="lib" path="lib/ormlite-jdbc-5.0.jar" sourcepath="lib/ormlite-jdbc-5.0-sources.jar"/>
 	<classpathentry kind="lib" path="lib/stripe-java-5.23.1.jar" sourcepath="lib/stripe-java-5.23.1-sources.jar"/>
+	<classpathentry kind="lib" path="lib/braintree-java-2.73.0.jar" sourcepath="lib/braintree-java-2.73.0-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
