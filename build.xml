@@ -8,6 +8,7 @@
     </target>
 
 	<path id="required_jars">
+		<pathelement location="${lib}/braintree-java-2.73.0.jar"/>
 		<pathelement location="${lib}/c3p0-0.9.5.2.jar"/>
 		<pathelement location="${lib}/commons-dbutils-1.7.jar"/>
 		<pathelement location="${lib}/gson-2.8.2.jar"/>

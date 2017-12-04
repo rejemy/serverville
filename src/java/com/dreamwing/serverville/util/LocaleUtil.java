@@ -34,6 +34,8 @@ public class LocaleUtil
 	
 	public static String normalizeCountryCode(String code)
 	{
+		if(code == null)
+			return null;
 		code = code.toUpperCase();
 		if(ISO_COUNTRIES.contains(code))
 			return code;
@@ -43,6 +45,8 @@ public class LocaleUtil
 	
 	public static String normalizeLanguageCode(String code)
 	{
+		if(code == null)
+			return null;
 		code = code.toLowerCase();
 		if(ISO_LANGUAGES.contains(code))
 			return code;
