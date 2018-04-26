@@ -2,7 +2,6 @@ package com.dreamwing.serverville.agent;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
@@ -174,7 +173,7 @@ public class AgentServerConnectionHandler extends SimpleChannelInboundHandler<Ob
 		
 		try {
 			CurrRequest.init(Info, request, SVID.makeSVID());
-		} catch (URISyntaxException e1) {
+		} catch (Exception e1) {
 			return HttpHelpers.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
 		}
 		

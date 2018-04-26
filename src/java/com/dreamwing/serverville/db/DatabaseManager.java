@@ -28,6 +28,7 @@ import com.dreamwing.serverville.data.UserMessage;
 import com.dreamwing.serverville.data.UserSession;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
+import com.j256.ormlite.db.MysqlDatabaseType;
 import com.j256.ormlite.jdbc.DataSourceConnectionSource;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
@@ -70,6 +71,14 @@ public class DatabaseManager
 	public static Dao<Product, String> ProductDao;
 	public static Dao<Purchase, String> PurchaseDao;
 	
+	static class MysqlNewDatabaseType extends MysqlDatabaseType
+	{
+		@Override
+		protected String getDriverClassName() {
+			return ServervilleMain.ServerProperties.getProperty("jdbc_driver");
+		}
+	}
+	
 	public static void init() throws Exception
 	{
 		String driverClass = ServervilleMain.ServerProperties.getProperty("jdbc_driver");
@@ -111,7 +120,7 @@ public class DatabaseManager
 		
 		SqlServer = new ServervilleQueryRunner(DataSource);
 		
-		DataSourceConnectionSource cs = new DataSourceConnectionSource(DataSource, url);
+		DataSourceConnectionSource cs = new DataSourceConnectionSource(DataSource, new MysqlNewDatabaseType());
 		
 		ClusterMemberDao = DaoManager.createDao(cs, ClusterMember.class);
 		

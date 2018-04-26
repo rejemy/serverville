@@ -1,6 +1,5 @@
 package com.dreamwing.serverville.admin;
 
-import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Date;
 
@@ -99,7 +98,7 @@ public class AdminServerConnectionHandler extends SimpleChannelInboundHandler<Fu
 		CurrRequest = new HttpRequestInfo();
 		try {
 			CurrRequest.init(Info, request, SVID.makeSVID());
-		} catch (URISyntaxException e1) {
+		} catch (Exception e1) {
 			return HttpHelpers.sendError(CurrRequest, ApiErrors.HTTP_DECODE_ERROR);
 		}
 		

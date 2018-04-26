@@ -2,7 +2,6 @@ package com.dreamwing.serverville.client;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.LinkedList;
@@ -371,7 +370,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		try {
 			currRequest.init(Info, request, SVID.makeSVID());
-		} catch (URISyntaxException e1) {
+		} catch (Exception e1) {
 			return HttpHelpers.sendError(currRequest, ApiErrors.HTTP_DECODE_ERROR);
 		}
 		

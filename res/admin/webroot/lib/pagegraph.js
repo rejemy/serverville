@@ -43,7 +43,7 @@ var pg;
 (function (pg) {
     var ui;
     (function (ui) {
-        var ScrollController = (function () {
+        var ScrollController = /** @class */ (function () {
             function ScrollController(container, opts) {
                 this.WheelVelocity = 30;
                 this.MinThumbHeight = 20;

@@ -1,16 +1,23 @@
 package com.dreamwing.serverville.net;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.dreamwing.serverville.data.ServervilleUser;
 
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.multipart.Attribute;
+import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
+import io.netty.handler.codec.http.multipart.InterfaceHttpData;
+import io.netty.handler.codec.http.multipart.InterfaceHttpData.HttpDataType;
 
 public class HttpRequestInfo
 {
@@ -23,7 +30,7 @@ public class HttpRequestInfo
 	public String BodyString;
 	public Map<String,List<String>> FormBody;
 	
-	public void init(HttpConnectionInfo conn, FullHttpRequest request, String requestId) throws URISyntaxException
+	public void init(HttpConnectionInfo conn, FullHttpRequest request, String requestId) throws URISyntaxException, IOException
 	{
 		URI uri = new URI(request.uri());
 		
@@ -38,13 +45,42 @@ public class HttpRequestInfo
 			QueryParams = decoder.parameters();
 		}
 		
-		String contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
-		if(contentType != null && contentType.equals("application/x-www-form-urlencoded") && request.content() != null)
+		CharSequence mimeType = HttpUtil.getMimeType(request);
+		String contentType = mimeType != null ? mimeType.toString() : null;
+		if(contentType != null && request.content() != null)
 		{
-			String formBody = getBody();
-			QueryStringDecoder decoder = new QueryStringDecoder(formBody, false);
-			FormBody = decoder.parameters();
+			if(contentType.equals("application/x-www-form-urlencoded"))
+			{
+				String formBody = getBody();
+				QueryStringDecoder decoder = new QueryStringDecoder(formBody, false);
+				FormBody = decoder.parameters();
+			}
+			else if(contentType.equals("multipart/form-data"))
+			{
+				FormBody = new HashMap<String,List<String>>();
+				
+				HttpPostRequestDecoder decoder = new HttpPostRequestDecoder(request);
+				List<InterfaceHttpData> datas = decoder.getBodyHttpDatas();
+				for(InterfaceHttpData data : datas)
+				{
+					if(data.getHttpDataType() != HttpDataType.Attribute)
+						continue;
+					
+					Attribute attribute = (Attribute)data;
+					String value = attribute.getValue();
+					
+					List<String> values = FormBody.get(attribute.getName());
+					if(values == null)
+					{
+						values = new ArrayList<String>(1);
+						FormBody.put(attribute.getName(), values);
+					}
+					
+					values.add(value);
+				}
+			}
 		}
+		
 	}
 	
 	public ServervilleUser getUser()
