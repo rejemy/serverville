@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.net.APIAuthenticator;
+import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpRequestInfo;
 import com.dreamwing.serverville.net.JsonApiException;
 
@@ -92,7 +93,14 @@ public class AdminAuthentiator implements APIAuthenticator
 			if(HttpUtil.isKeepAlive(req.Request) && session.Connected == false)
 			{
 				session.Connected = true;
-				session.update();
+				try
+				{
+					session.update();
+				}
+				catch(JsonApiException e)
+				{
+					// Tried to update the session concurrently, just ignore for now, should be harmless
+				}
 			}
 			
 			req.Connection.User = user;
@@ -102,8 +110,6 @@ public class AdminAuthentiator implements APIAuthenticator
 			
 		} catch (SQLException e) {
 			l.warn("Sql excpetion while trying to authenticate admin connection", e);
-		} catch (JsonApiException e) {
-			l.warn("API exception while trying to authenticate admin connection", e);
 		}
 		
 		req.Connection.User = null;
