@@ -166,6 +166,12 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<Object>
 		
 		switchSession(session);
 
+		if(Info.User == null)
+		{
+			// Switch sessions signed us out because of other session
+			return;
+		}
+		
 		if(WebsocketConnected)
 		{
 			UserPresence = new OnlineUser(this);

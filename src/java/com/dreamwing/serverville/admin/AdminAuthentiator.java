@@ -8,7 +8,6 @@ import org.apache.logging.log4j.Logger;
 import com.dreamwing.serverville.data.AdminUserSession;
 import com.dreamwing.serverville.data.ServervilleUser;
 import com.dreamwing.serverville.net.APIAuthenticator;
-import com.dreamwing.serverville.net.ApiErrors;
 import com.dreamwing.serverville.net.HttpRequestInfo;
 import com.dreamwing.serverville.net.JsonApiException;
 
