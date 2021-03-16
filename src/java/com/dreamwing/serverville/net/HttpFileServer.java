@@ -21,7 +21,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.GZIPOutputStream;
 
-import javax.activation.MimetypesFileTypeMap;
+import com.dreamwing.serverville.util.MimetypesFileTypeMap;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
